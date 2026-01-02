@@ -1,0 +1,51 @@
+@use '../abstracts/variables' as *;
+
+.race-grid {
+    display: flex;
+    flex-direction: column; // Lista vertical en lugar de cuadrícula
+    gap: 1.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.race-card {
+    display: flex;
+    align-items: center;
+    background-color: $color-surface;
+    border-radius: 12px;
+    padding: 1.5rem;
+    border-left: 5px solid $color-primary; // Borde rojo F1 a la izquierda
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: translateX(10px); // Efecto de movimiento lateral
+        background-color: lighten($color-surface, 5%);
+    }
+
+    &__date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-right: 1.5rem;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        min-width: 80px;
+
+        span:first-child { font-size: 0.9rem; color: $color-text-dim; } // Mes
+        span:last-child { font-size: 1.8rem; font-weight: bold; color: white; } // Día
+    }
+
+    &__info {
+        flex: 1; // Ocupa el espacio del medio
+        padding: 0 1.5rem;
+        
+        h3 { font-size: 1.4rem; color: white; margin-bottom: 0.25rem; }
+        p { color: $color-text-dim; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
+    }
+
+    &__map {
+        width: 120px;
+        filter: invert(1); // Invierte colores para que el mapa negro se vea blanco
+        opacity: 0.8;
+    }
+}

@@ -1,0 +1,170 @@
+@use '../abstracts/variables' as *;
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7); // Fondo oscuro semitransparente
+    backdrop-filter: blur(5px); // Efecto borroso de fondo (Glassmorphism)
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+
+    &.is-visible {
+        opacity: 1;
+        visibility: visible;
+
+        .modal-content {
+            transform: translateY(0);
+        }
+    }
+}
+
+.modal-content {
+    background-color: $color-surface;
+    width: fit-content;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    transform: translateY(20px);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); // Efecto rebote suave
+    position: relative;
+    width: 35%;
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(0,0,0,0.5);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    font-size: 1.2rem;
+    
+    &:hover {
+        background: $color-primary;
+    }
+}
+
+.modal-body {
+    text-align: center;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding-right: 10px;
+    
+    img {
+        // --- CÓDIGO NUEVO ---
+        width: 100%;         // Ocupa todo el ancho disponible
+        height: auto;        // ¡IMPORTANTE! La altura se ajusta a la imagen real
+        max-height: 60vh;    // Límite de seguridad: no más del 60% de la altura de la pantalla
+        object-fit: contain; // Si es muy alta, se ajusta para verse completa sin recortes
+        display: block;      // Elimina espacios fantasma debajo de la imagen
+        // --------------------
+    }
+
+    .info {
+        padding: 2rem;
+        
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: $color-text;
+        }
+        
+        p {
+            color: $color-text-dim;
+            margin-bottom: 1.5rem;
+            
+            // NUEVO: Centramos y alineamos el texto y la bandera
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; // Espacio entre el texto y la bandera
+
+            // NUEVO: Estilo específico para la bandera DENTRO del modal
+            .flag-icon {
+                width: 40px;  // ¡Esto es la clave! Tamaño fijo.
+                height: auto; // Mantiene la proporción correcta.
+                border-radius: 4px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            }
+        }
+
+        table {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 1rem;
+            
+            div {
+                display: flex;
+                flex-direction: column;
+                
+                span:first-child { font-size: 1.5rem; font-weight: bold; color: white; }
+                span:last-child { font-size: 0.8rem; text-transform: uppercase; color: $color-text-dim; }
+            }
+        }
+    }
+}
+
+// Contenedor de las pestañas
+.tabs-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+// Botones de las pestañas
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px 15px;
+    transition: all 0.3s ease;
+    border-bottom: 3px solid transparent;
+
+    &:hover {
+        color: white;
+    }
+
+    // Estado Activo (La pestaña seleccionada)
+    &.active {
+        color: white;
+        border-bottom: 3px solid #e10600; // Rojo F1
+    }
+}
+
+// Estilo general para las tablas
+.results-table {
+    width: 100%;
+    border-collapse: collapse;
+    color: #aeb4bb;
+    
+    th {
+        padding: 10px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+}

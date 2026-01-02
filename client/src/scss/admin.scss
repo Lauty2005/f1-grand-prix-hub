@@ -1,0 +1,336 @@
+// client/src/scss/admin.scss
+
+// Variables básicas (para mantener coherencia con el resto de la app)
+$bg-color: #15151e;
+$card-bg: #1f1f27;
+$primary-color: #e10600;
+$text-color: white;
+$text-dim: #aaa;
+
+body {
+    background-color: $bg-color;
+    color: $text-color;
+    font-family: 'Titillium Web', sans-serif; // O la fuente que uses
+    display: flex;
+    justify-content: center;
+    padding-top: 50px;
+    margin: 0;
+}
+
+.admin-card {
+    background: $card-bg;
+    padding: 2.5rem;
+    border-radius: 16px;
+    border-top: 5px solid $primary-color;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+
+    h1 {
+        text-align: center;
+        color: $primary-color;
+        margin-top: 0;
+        margin-bottom: 30px;
+        text-transform: uppercase;
+        font-weight: 800;
+    }
+}
+
+.form-group {
+    margin-bottom: 20px;
+
+    label {
+        display: block;
+        margin-bottom: 8px;
+        color: $text-dim;
+        font-size: 0.9rem;
+        font-weight: bold;
+    }
+
+    input, select {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: darken($bg-color, 2%);
+        color: white;
+        box-sizing: border-box;
+        font-size: 1rem;
+        transition: border 0.3s;
+
+        &:focus {
+            outline: none;
+            border-color: $primary-color;
+        }
+    }
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.btn-submit {
+    width: 100%;
+    padding: 15px;
+    background: $primary-color;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 0.3s, transform 0.1s;
+    margin-top: 10px;
+
+    &:hover {
+        background: lighten($primary-color, 5%);
+    }
+
+    &:active {
+        transform: scale(0.98);
+    }
+}
+
+.success-msg {
+    color: #00ff88;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+    display: none; // Oculto por defecto
+    
+    &.visible {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* =========================================
+   ESTILOS DEL PANEL DE CONTROL (ADMIN)
+========================================= */
+
+/* --- CONTENEDOR PRINCIPAL --- */
+.race-control-panel {
+    background: #15151e; /* Fondo oscuro F1 */
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border-top: 4px solid #e10600; /* Borde superior rojo característico */
+    max-width: 500px;
+    margin: 40px auto; /* Centrado */
+    color: white;
+    font-family: 'Titillium Web', sans-serif; /* Asegúrate de tener esta fuente o una similar */
+}
+
+/* --- TÍTULO DEL FORMULARIO --- */
+.race-control-panel h2 {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* --- GRUPOS DE FORMULARIO --- */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #aaa;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* --- INPUTS Y SELECTS --- */
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    background: #1f1f27; /* Fondo de input oscuro */
+    border: 1px solid #333;
+    border-radius: 6px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+/* Inputs deshabilitados (como la posición al marcar DNF) */
+.form-control:disabled {
+    background: #2a2a35;
+    color: #666;
+    cursor: not-allowed;
+}
+
+/* Efecto Focus */
+.form-control:focus {
+    border-color: #e10600;
+    box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.2);
+}
+
+/* Personalizar la flecha de los SELECTS */
+select.form-control {
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e10600%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 12px;
+    cursor: pointer;
+}
+
+/* --- CHECKBOXES PERSONALIZADOS --- */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 10px;
+    background: #1f1f27;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.custom-checkbox {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    position: relative;
+    padding-left: 30px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    user-select: none;
+}
+
+/* Esconder el checkbox original */
+.custom-checkbox input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Crear el nuevo "checkmark" */
+.checkmark {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 20px;
+    width: 20px;
+    background-color: #2a2a35;
+    border: 2px solid #444;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+/* Estilo cuando el checkbox está marcado */
+.custom-checkbox input:checked ~ .checkmark {
+    background-color: #e10600;
+    border-color: #e10600;
+}
+
+/* La "palomita" dentro del checkmark */
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 6px;
+    top: 2px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Colores específicos para cada etiqueta */
+.label-fastest { color: #d4a5ff; } /* Morado para Vuelta Rápida */
+.label-dnf { color: #ff4444; }     /* Rojo para DNF */
+.label-dsq { color: #ffffff; background: black; padding: 2px 5px; border-radius: 4px; } /* Blanco sobre negro para DQ */
+.label-dns, .label-dnq { color: #aaaaaa; } /* Gris para DNS/DNQ */
+
+
+/* --- BOTÓN PRINCIPAL (GUARDAR) --- */
+.btn-submit {
+    width: 100%;
+    padding: 15px;
+    background: #e10600; /* Rojo F1 */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(225, 6, 0, 0.3);
+    margin-top: 20px;
+}
+
+.btn-submit:hover {
+    background: #ff1a1a;
+    box-shadow: 0 6px 20px rgba(225, 6, 0, 0.5);
+    transform: translateY(-2px);
+}
+
+
+/* --- ZONA DE PELIGRO --- */
+.danger-zone {
+    margin-top: 40px;
+    padding-top: 25px;
+    border-top: 2px solid #333;
+}
+
+.danger-title {
+    color: #ff4444;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+}
+
+.delete-group {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-delete {
+    padding: 0 20px;
+    background: #3a1515; /* Rojo oscuro para peligro */
+    color: #ff4444;
+    border: 1px solid #ff4444;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-delete:hover {
+    background: #ff4444;
+    color: white;
+}

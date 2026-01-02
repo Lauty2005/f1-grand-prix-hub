@@ -1,0 +1,15 @@
+# Dependencias (Pesadísimas, nunca se suben)
+node_modules/
+client/node_modules/
+server/node_modules/
+
+# Archivos de entorno (Secretos, nunca se suben)
+.env
+server/.env
+
+# Carpetas de compilación
+dist/
+build/
+
+# Archivos de sistema
+.DS_Store

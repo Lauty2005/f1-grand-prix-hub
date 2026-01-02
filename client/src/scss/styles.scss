@@ -1,0 +1,165 @@
+@use 'base/reset';
+@use 'abstracts/variables';
+@use 'components/driver-card';
+@use 'components/modal';
+@use 'components/race-card';
+
+/* --- SCROLLBAR DE ALTO CONTRASTE (PARA PRUEBAS) --- */
+
+::-webkit-scrollbar {
+    width: 10px;             /* Un poco más ancha para verla mejor */
+}
+
+::-webkit-scrollbar-track {
+    background: #000000;     /* Fondo totalmente negro */
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ffffff;     /* BLANCO: Para que se vea sí o sí */
+    border-radius: 5px;
+
+    &:hover {
+        background: #e10600; /* ROJO: Al pasar el mouse */
+    }
+}
+
+/* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */
+.main-navbar {
+    background: #15151e; /* Fondo oscuro */
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    border-bottom: 3px solid #e10600; /* La línea roja característica */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+
+    @media (max-width: 600px) {
+        flex-direction: column;
+        gap: 15px;
+    }
+}
+
+/* --- SELECTOR DE TEMPORADA --- */
+.season-selector-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-right: 1px solid #333;
+    padding-right: 25px;
+
+    @media (max-width: 600px) {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid #333;
+        padding-bottom: 15px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    label {
+        color: #888;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+}
+
+.f1-select {
+    padding: 8px 30px 8px 15px;
+    border-radius: 6px;
+    border: 1px solid #444;
+    background: #1f1f27; /* Gris oscuro */
+    color: white;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    outline: none;
+    transition: all 0.3s ease;
+    
+    /* Icono de flecha personalizado (opcional) */
+    appearance: none; 
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e10600%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+
+    &:hover {
+        border-color: #e10600;
+        background-color: #2a2a35;
+    }
+
+    &:focus {
+        border-color: #e10600;
+        box-shadow: 0 0 0 2px rgba(225, 6, 0, 0.3);
+    }
+}
+
+/* --- BOTONES DE NAVEGACIÓN --- */
+.nav-buttons-group {
+    display: flex;
+    gap: 10px;
+}
+
+.nav-btn {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 8px; /* Bordes redondeados modernos */
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &:hover {
+        border-color: white;
+        transform: translateY(-2px); /* Pequeña elevación */
+    }
+
+    /* ESTADO ACTIVO (Cuando estás en esa sección) */
+    &.active-btn {
+        background: #e10600; /* Rojo F1 */
+        border-color: #e10600;
+        box-shadow: 0 4px 10px rgba(225, 6, 0, 0.4);
+        transform: translateY(0);
+    }
+}
+
+/* --- BOTONES DE PESTAÑA (Pilotos/Constructores) --- */
+.tab-container {
+    display: inline-flex;
+    background: #1f1f27;
+    padding: 5px;
+    border-radius: 50px; /* Forma de píldora */
+    border: 1px solid #333;
+    gap: 5px;
+}
+
+.tab-btn {
+    background: transparent;
+    color: #888;
+    border: none;
+    padding: 8px 24px;
+    border-radius: 40px;
+    font-weight: bold;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+
+    &:hover {
+        color: white;
+    }
+
+    &.active-tab {
+        background: #e10600;
+        color: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+}
