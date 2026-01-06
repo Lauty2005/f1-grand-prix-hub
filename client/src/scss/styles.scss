@@ -1,5 +1,5 @@
 @use 'base/reset';
-@use 'abstracts/variables';
+@use 'abstracts/variables' as *;
 @use 'components/driver-card';
 @use 'components/modal';
 @use 'components/race-card';
@@ -36,8 +36,8 @@
     margin-bottom: 20px;
     flex-wrap: wrap;
 
-    @media (max-width: 600px) {
-        flex-direction: column;
+    @include mobile {
+        padding: 1rem;
         gap: 15px;
     }
 }
@@ -50,13 +50,13 @@
     border-right: 1px solid #333;
     padding-right: 25px;
 
-    @media (max-width: 600px) {
+    @include mobile {
+        width: 100%;
+        justify-content: space-between; // Separar Label del Select
         border-right: none;
         padding-right: 0;
         border-bottom: 1px solid #333;
         padding-bottom: 15px;
-        width: 100%;
-        justify-content: center;
     }
 
     label {
@@ -102,6 +102,18 @@
 .nav-buttons-group {
     display: flex;
     gap: 10px;
+
+    @include mobile {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr; // 3 columnas iguales
+        gap: 5px;
+        
+        .nav-btn {
+            padding: 8px 5px; // Botones más compactos
+            font-size: 0.75rem; // Letra más chica
+        }
+    }
 }
 
 .nav-btn {
@@ -162,4 +174,10 @@
         color: white;
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
+}
+
+.table-responsive {
+    width: 100%;
+    overflow-x: auto; // Scroll horizontal si la tabla es muy ancha
+    -webkit-overflow-scrolling: touch; // Scroll suave en iPhone
 }

@@ -9,3 +9,13 @@ $color-text-dim: #aeb4bb;
 $team-redbull: #061D42;
 $team-ferrari: #DC0000;
 $team-mclaren: #FF8700;
+
+// Breakpoints
+$mobile-width: 768px;
+
+// Mixin para facilitar media queries
+@mixin mobile {
+    @media (max-width: $mobile-width) {
+        @content;
+    }
+}

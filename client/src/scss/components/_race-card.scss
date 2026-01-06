@@ -18,6 +18,15 @@
     border-left: 5px solid $color-primary; // Borde rojo F1 a la izquierda
     transition: transform 0.2s;
 
+    // --- VERSIÓN MÓVIL ---
+    @include mobile {
+        flex-direction: column; // Apilar verticalmente
+        align-items: flex-start; // Alinear a la izquierda
+        gap: 15px; // Espacio entre elementos
+        text-align: center; // Texto centrado (opcional, prueba si te gusta)
+        align-items: center; // Centrar todo en columna
+    }
+
     &:hover {
         transform: translateX(10px); // Efecto de movimiento lateral
         background-color: lighten($color-surface, 5%);
@@ -33,6 +42,19 @@
 
         span:first-child { font-size: 0.9rem; color: $color-text-dim; } // Mes
         span:last-child { font-size: 1.8rem; font-weight: bold; color: white; } // Día
+
+        @include mobile {
+            flex-direction: row; // Poner MES y DÍA lado a lado
+            gap: 10px;
+            align-items: baseline;
+            border-right: none; // Quitar la línea divisoria vertical
+            border-bottom: 1px solid rgba(255,255,255,0.1); // Poner línea horizontal
+            width: 100%;
+            justify-content: center;
+            padding-right: 0;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
     }
 
     &__info {
@@ -41,11 +63,24 @@
         
         h3 { font-size: 1.4rem; color: white; margin-bottom: 0.25rem; }
         p { color: $color-text-dim; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
+    
+        @include mobile {
+            padding: 0;
+            margin-bottom: 10px;
+            
+            p { justify-content: center; } // Centrar la bandera y nombre
+        }
     }
 
     &__map {
         width: 120px;
         filter: invert(1); // Invierte colores para que el mapa negro se vea blanco
         opacity: 0.8;
+
+        @include mobile {
+            width: 100%; // Mapa ancho completo
+            max-width: 200px; // Pero no gigante
+            height: auto;
+        }
     }
 }

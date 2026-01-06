@@ -28,15 +28,26 @@
 
 .modal-content {
     background-color: $color-surface;
-    width: fit-content;
+    // width: 35%;  <-- BORRA O COMENTA ESTA LÍNEA ORIGINAL
+    
+    // NUEVO: Ancho dinámico
+    width: 90%; // Por defecto en PC
+    min-width: 1000px; // Para que no sea ridículamente pequeño
+
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     transform: translateY(20px);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); // Efecto rebote suave
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     position: relative;
-    width: 35%;
+
+    // --- VERSIÓN MÓVIL ---
+    @include mobile {
+        width: 95%;       // Ocupa casi toda la pantalla
+        min-width: auto;  // Quitamos el mínimo
+        max-height: 90vh; // Evitamos que se salga por alto
+    }
 }
 
 .modal-close {
@@ -72,10 +83,18 @@
         object-fit: contain; // Si es muy alta, se ajusta para verse completa sin recortes
         display: block;      // Elimina espacios fantasma debajo de la imagen
         // --------------------
+
+        @include mobile {
+            max-height: 30vh; // Imagen más pequeña en celular para ver la info
+        }
     }
 
     .info {
         padding: 2rem;
+
+        @include mobile {
+            padding: 1rem; // Menos relleno en celular
+        }
         
         h2 {
             font-size: 2rem;
@@ -118,6 +137,12 @@
                 
                 span:first-child { font-size: 1.5rem; font-weight: bold; color: white; }
                 span:last-child { font-size: 0.8rem; text-transform: uppercase; color: $color-text-dim; }
+            }
+
+            @include mobile {
+                gap: 10px; // Menos espacio entre estadísticas
+                
+                span:first-child { font-size: 1.2rem; } // Números un poco más chicos
             }
         }
     }
@@ -167,4 +192,41 @@
         text-transform: uppercase;
         letter-spacing: 1px;
     }
+}
+
+/* --- ESTRUCTURA DE 2 COLUMNAS PARA EL MODAL --- */
+.driver-modal-layout {
+    display: flex;
+    gap: 30px;
+    padding: 20px;
+    text-align: left;
+
+    // En celular se pone uno debajo del otro automáticamente
+    @media (max-width: 768px) {
+        flex-direction: column;
+    }
+}
+
+.driver-info-col {
+    flex: 1; /* Ocupa 1 parte del espacio (Izquierda) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-right: 1px solid rgba(255,255,255,0.1);
+    padding-right: 20px;
+
+    @media (max-width: 768px) {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        padding-bottom: 20px;
+    }
+}
+
+.driver-chart-col {
+    flex: 2; /* Ocupa 2 partes del espacio (Derecha - Más ancho para el gráfico) */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 300px;
 }
