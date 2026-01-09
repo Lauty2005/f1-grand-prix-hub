@@ -14,10 +14,6 @@ dotenv.config();
 const app = express();
 // TIENE que decir process.env.PORT (en mayúsculas)
 const port = process.env.PORT || 3000; 
-
-app.listen(port, '0.0.0.0', () => { // Agrega '0.0.0.0' para asegurar que escuche afuera
-    console.log(`Server on port ${port}`);
-});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -75,7 +71,7 @@ app.use('/api', standingsRoutes);
 // Pero tu frontend llama a /api/constructors-standings.
 // Vamos a ajustar eso en el archivo standings.routes.js (ya te di el código corregido arriba para que coincida).
 
-// Arrancar servidor
-app.listen(port, () => {
-    console.log(`\n🏎️  Motor arrancado en: http://localhost:${port}`);
+// 👇 AGREGAR '0.0.0.0' AQUÍ ES LA CLAVE
+app.listen(port, '0.0.0.0', () => {
+    console.log(`\n🏎️  Motor arrancado en puerto: ${port}`);
 });
