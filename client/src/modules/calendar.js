@@ -415,8 +415,104 @@ async function loadPracticesResults(raceId, isSprint) {
 }
 
 async function loadSprintResults(raceId) {
-    document.getElementById('tab-content').innerHTML = '<p style="text-align:center; color:#666; padding:20px;">Sprint (Datos detallados próximamente)</p>';
+    const container = document.getElementById('tab-content');
+    container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando Sprint...</div>';
+
+    try {
+        const res = await fetch(`${API}/races/${raceId}/sprint`);
+        const json = await res.json();
+
+        if (!json.success || json.data.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">No hay resultados del Sprint aún.</p>';
+            return;
+        }
+
+        const rows = json.data.map(r => {
+            // Lógica para DNF o Tiempo
+            let timeDisplay = r.time_gap || '-';
+            let colorTime = 'white';
+            
+            if (r.dnf) { timeDisplay = 'DNF'; colorTime = '#ff4444'; }
+            else if (r.dns) { timeDisplay = 'DNS'; colorTime = '#aaa'; }
+            else if (r.dsq) { timeDisplay = 'DSQ'; colorTime = 'orange'; }
+
+            // Puntos destacados
+            const pointsDisplay = r.points > 0 ? `<span style="color:#e10600; font-weight:bold;">+${r.points}</span>` : '<span style="color:#444;">0</span>';
+
+            return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding:10px; text-align:center; font-weight:bold; width:40px;">${r.position}</td>
+                <td style="padding:10px; text-align:left;">
+                    <div style="display:flex; align-items:center; gap: 8px;">
+                         <div style="width:3px; height:25px; background:${r.primary_color}; border-radius:2px;"></div>
+                         <div>
+                            <span style="color:white; font-weight:bold;">${r.last_name}</span>
+                            <div style="font-size:0.7rem; color:#888;">${r.team_name}</div>
+                         </div>
+                    </div>
+                </td>
+                <td style="text-align:right; padding-right:15px; font-family:monospace; color:${colorTime};">${timeDisplay}</td>
+                <td style="text-align:center; width:50px;">${pointsDisplay}</td>
+            </tr>`;
+        }).join('');
+
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="color:#666; font-size:0.7rem; text-transform:uppercase; border-bottom: 2px solid #333;">
+                            <th style="padding:10px;">Pos</th>
+                            <th style="text-align:left; padding:10px;">Piloto</th>
+                            <th style="text-align:right; padding-right:15px;">Tiempo</th>
+                            <th style="text-align:center;">Pts</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+    } catch (e) { console.error(e); }
 }
+
 async function loadSprintQualyResults(raceId) {
-    document.getElementById('tab-content').innerHTML = '<p style="text-align:center; color:#666; padding:20px;">Sprint Qualy (Datos detallados próximamente)</p>';
+    const container = document.getElementById('tab-content');
+    container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando Shootout...</div>';
+
+    try {
+        const res = await fetch(`${API}/races/${raceId}/sprint-qualifying`);
+        const json = await res.json();
+
+        if (!json.success || json.data.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">No hay datos de Shootout.</p>';
+            return;
+        }
+
+        const rows = json.data.map(r => `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <td style="padding:10px; text-align:center; font-weight:bold;">${r.position}</td>
+                <td style="padding:10px; text-align:left;">
+                    <span style="color:white; font-weight:bold;">${r.last_name}</span>
+                    <span style="font-size:0.75rem; color:${r.primary_color}; margin-left:5px;">${r.team_name}</span>
+                </td>
+                <td style="text-align:right; font-family:monospace; color:${r.sq1 ? '#fff' : '#444'};">${r.sq1 || '-'}</td>
+                <td style="text-align:right; font-family:monospace; color:${r.sq2 ? '#fff' : '#444'};">${r.sq2 || '-'}</td>
+                <td style="text-align:right; font-family:monospace; color:${r.sq3 ? '#fff' : '#444'}; font-weight:bold;">${r.sq3 || '-'}</td>
+            </tr>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="table-responsive">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="color:#666; font-size:0.7rem; text-transform:uppercase; border-bottom: 2px solid #333;">
+                            <th style="padding:10px;">Pos</th>
+                            <th style="text-align:left; padding:10px;">Piloto</th>
+                            <th style="text-align:right;">SQ1</th>
+                            <th style="text-align:right;">SQ2</th>
+                            <th style="text-align:right;">SQ3</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+    } catch (e) { console.error(e); }
 }

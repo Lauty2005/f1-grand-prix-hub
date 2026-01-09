@@ -34,7 +34,7 @@ export async function loadDriversView() {
                             ${d.team_name}
                         </p>
                         <span style="font-size: 2.5rem; font-weight: 900; color: ${d.primary_color}; line-height: 1;">
-                                ${d.permanent_number}
+                                ${d.permanent_number /* El backend ya trae la suma total aquí */} 
                         </span>
                     </div>
                 </div>
@@ -63,7 +63,7 @@ async function openDriverModal(id) {
 
     let historyHTML = '';
     let raceLabels = [];
-    let cumulativePoints = [];
+    let pointsPerRace = []; 
 
     try {
         const res = await fetch(`${API}/drivers/${id}/results`);
@@ -71,30 +71,36 @@ async function openDriverModal(id) {
         const history = json.data;
         
         if (history.length > 0) {
-            // 1. Preparar datos para el gráfico (Puntos Acumulados)
-            let total = 0;
+            // 1. Preparar datos para el gráfico
             history.forEach(r => {
-                total += (r.points || 0);
                 raceLabels.push(`R${r.round}`);
-                cumulativePoints.push(total);
+                // Usamos el total (Carrera + Sprint) que viene del backend
+                pointsPerRace.push(r.points || 0);
             });
 
-            // 2. Generar tabla HTML
+            // 2. Generar tabla HTML con lógica visual para Sprint
             historyHTML = `
                 <div class="table-responsive" style="max-height: 200px; overflow-y: auto; margin-bottom: 20px;">
                     <table style="width: 100%; border-collapse: collapse;">
-                        ${history.map(r => `
+                        ${history.map(r => {
+                            // 👇 LOGICA VISUAL: Desglose de puntos Sprint
+                            let pointsDisplay = `+${r.points}`;
+
+                            return `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                                 <td style="padding: 12px 0; color: #aaa; font-size: 0.9rem;">R${r.round}</td>
                                 <td style="padding: 12px 10px; color: white; font-weight: bold;">${r.race_name}</td>
                                 <td style="text-align: right;">
                                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
-                                        ${getPositionBadge(r, driver.primary_color)}
                                         ${r.fastest_lap && !r.dnf ? `<span title="Vuelta Rápida">⏱️</span>` : ''}
+                                        
+                                        <span style="font-weight:bold; color:#e10600; font-size:0.9rem;">${pointsDisplay}</span>    
+                                        ${getPositionBadge(r, driver.primary_color)}
                                     </div>
                                 </td>
                             </tr>
-                        `).join('')}
+                            `;
+                        }).join('')}
                     </table>
                 </div>
             `;
@@ -106,7 +112,7 @@ async function openDriverModal(id) {
         historyHTML = '<p style="color:red;">Error de conexión al cargar historial</p>'; 
     }
     
-    // Inyectar HTML del Modal con ESTRUCTURA DE 2 COLUMNAS
+    // Inyectar HTML del Modal
     modalBody.innerHTML = `
         <div class="driver-modal-layout">
             
@@ -132,7 +138,7 @@ async function openDriverModal(id) {
             </div>
 
             <div class="driver-chart-col">
-                <h4 style="color:#aaa; margin-bottom:15px; text-align:center;">Progresión del Campeonato</h4>
+                <h4 style="color:#aaa; margin-bottom:15px; text-align:center;">Puntos por Carrera</h4>
                 <div style="width: 100%; height: 100%; min-height: 300px;">
                     <canvas id="pointsChart"></canvas>
                 </div>
@@ -143,56 +149,57 @@ async function openDriverModal(id) {
 
     // Renderizar el gráfico si hay datos
     if (raceLabels.length > 0) {
-        renderChart(raceLabels, cumulativePoints, driver.primary_color);
+        renderChart(raceLabels, pointsPerRace, driver.primary_color);
     }
 }
 
 function renderChart(labels, data, color) {
     const ctx = document.getElementById('pointsChart').getContext('2d');
     
-    // Si ya existe un gráfico previo, lo destruimos para no sobreescribir
+    // Si ya existe un gráfico previo, lo destruimos
     if (driverChart) {
         driverChart.destroy();
     }
 
-    // Crear nuevo gráfico
+    // GRÁFICO DE BARRAS
     driverChart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar',
         data: {
             labels: labels,
             datasets: [{
-                label: 'Puntos Acumulados',
+                label: 'Puntos',
                 data: data,
-                borderColor: color,
-                backgroundColor: color + '33', // Color con transparencia
-                borderWidth: 3,
-                tension: 0.3, // Curva suave
-                pointBackgroundColor: '#15151e',
-                pointBorderColor: color,
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                fill: true
+                backgroundColor: color, 
+                borderRadius: 4,        
+                barPercentage: 0.6,     
+                hoverBackgroundColor: '#fff' 
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }, // Ocultar leyenda
+                legend: { display: false },
                 tooltip: {
                     backgroundColor: '#1f1f27',
                     titleColor: '#fff',
-                    bodyColor: '#e10600',
+                    bodyColor: color,
                     borderColor: '#333',
                     borderWidth: 1,
-                    displayColors: false
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return `+ ${context.raw} Pts Totales`;
+                        }
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     grid: { color: 'rgba(255,255,255,0.05)' },
-                    ticks: { color: '#666' }
+                    ticks: { color: '#666' },
+                    title: { display: true, text: 'Puntos', color: '#444' }
                 },
                 x: {
                     grid: { display: false },

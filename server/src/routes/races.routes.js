@@ -174,29 +174,31 @@ router.get('/:id/practices', async (req, res) => {
 router.get('/:id/sprint', async (req, res) => {
     try {
         const sql = `
-            SELECT s.*, d.last_name, c.name as team_name, c.primary_color
+            SELECT s.*, d.first_name, d.last_name, c.name as team_name, c.primary_color
             FROM sprint_results s
             JOIN drivers d ON s.driver_id = d.id
             JOIN constructors c ON d.constructor_id = c.id
-            WHERE s.race_id = $1 ORDER BY s.position ASC;
+            WHERE s.race_id = $1
+            ORDER BY s.position ASC;
         `;
         const result = await query(sql, [req.params.id]);
         res.json({ success: true, data: result.rows });
-    } catch (e) { res.status(500).json({ error: 'Error' }); }
+    } catch (e) { res.status(500).json({ error: 'Error al cargar Sprint' }); }
 });
 
 router.get('/:id/sprint-qualifying', async (req, res) => {
     try {
         const sql = `
-            SELECT sq.*, d.last_name, c.name as team_name, c.primary_color
+            SELECT sq.*, d.first_name, d.last_name, c.name as team_name, c.primary_color
             FROM sprint_qualifying sq
             JOIN drivers d ON sq.driver_id = d.id
             JOIN constructors c ON d.constructor_id = c.id
-            WHERE sq.race_id = $1 ORDER BY sq.position ASC;
+            WHERE sq.race_id = $1
+            ORDER BY sq.position ASC;
         `;
         const result = await query(sql, [req.params.id]);
         res.json({ success: true, data: result.rows });
-    } catch (e) { res.status(500).json({ error: 'Error' }); }
+    } catch (e) { res.status(500).json({ error: 'Error al cargar Sprint Qualy' }); }
 });
 
 // --- RUTAS DE CARGA DE DATOS (POST) ---

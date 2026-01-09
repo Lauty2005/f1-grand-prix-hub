@@ -5,41 +5,56 @@ import { createUpload } from '../config/upload.js';
 const router = Router();
 const upload = createUpload('pilots');
 
-// 1. OBTENER PILOTOS (FILTRADOS POR TEMPORADA ACTIVA)
+// 1. OBTENER PILOTOS (SUMANDO CARRERA + SPRINT)
 router.get('/', async (req, res) => {
     try {
         const year = req.query.year || '2025';
         
-        // 👇 CAMBIO CLAVE: Agregamos el filtro WHERE active_seasons LIKE ...
+        // 👇 SQL MEJORADO: Suma puntos de ambas tablas sin duplicar filas
         const sql = `
             SELECT 
                 d.id, d.first_name, d.last_name, d.permanent_number, d.country_code, d.profile_image_url,
                 c.name as team_name,
                 c.primary_color,
                 c.logo_url,
-                COALESCE(SUM(filtered_res.points), 0) as points,
-                COUNT(CASE 
-                    WHEN filtered_res.position >= 1 AND filtered_res.position <= 3 THEN 1 
-                END) as podiums
+                
+                -- 👇 AQUÍ ESTÁ LA MAGIA: Sumamos los dos totales pre-calculados
+                (COALESCE(race_stats.total_points, 0) + COALESCE(sprint_stats.total_points, 0)) as points,
+                
+                COALESCE(race_stats.podiums, 0) as podiums
+
             FROM drivers d
             JOIN constructors c ON d.constructor_id = c.id
+            
+            -- 1. Subconsulta para PUNTOS DE CARRERA
             LEFT JOIN (
-                SELECT r_res.driver_id, r_res.points, r_res.position
+                SELECT 
+                    r_res.driver_id, 
+                    SUM(r_res.points) as total_points,
+                    COUNT(CASE WHEN r_res.position BETWEEN 1 AND 3 THEN 1 END) as podiums
                 FROM results r_res
                 JOIN races r ON r_res.race_id = r.id
                 WHERE EXTRACT(YEAR FROM r.date) = $1
-            ) filtered_res ON d.id = filtered_res.driver_id
-            
-            WHERE d.active_seasons LIKE $2  -- <--- FILTRO DE AÑO ACTIVO
+                GROUP BY r_res.driver_id
+            ) race_stats ON d.id = race_stats.driver_id
 
-            GROUP BY d.id, c.name, c.primary_color, c.logo_url, d.first_name, d.last_name, d.permanent_number, d.country_code, d.profile_image_url
+            -- 2. Subconsulta para PUNTOS DE SPRINT
+            LEFT JOIN (
+                SELECT 
+                    s_res.driver_id, 
+                    SUM(s_res.points) as total_points
+                FROM sprint_results s_res
+                JOIN races r ON s_res.race_id = r.id
+                WHERE EXTRACT(YEAR FROM r.date) = $1
+                GROUP BY s_res.driver_id
+            ) sprint_stats ON d.id = sprint_stats.driver_id
+            
+            WHERE d.active_seasons LIKE $2
+
             ORDER BY points DESC, d.last_name ASC;
         `;
         
-        // Pasamos el año exacto para filtrar resultados ($1)
-        // Y el año como texto parcial para filtrar actividad ($2) -> ej: "%2025%"
         const result = await query(sql, [year, `%${year}%`]);
-        
         res.json({ success: true, data: result.rows });
     } catch (err) {
         console.error("ERROR SQL DRIVERS:", err.message);
@@ -47,7 +62,7 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. HISTORIAL DE UN PILOTO (Sigue igual)
+// 2. HISTORIAL DE UN PILOTO (INCLUYENDO SPRINT)
 router.get('/:id/results', async (req, res) => {
     try {
         const { id } = req.params;
@@ -55,12 +70,23 @@ router.get('/:id/results', async (req, res) => {
             SELECT 
                 r.name as race_name, 
                 r.round, 
+                r.has_sprint,
                 res.position,
                 res.fastest_lap,
-                res.points,
-                res.dnf, res.dsq, res.dns, res.dnq
+                res.dnf, res.dsq, res.dns, res.dnq,
+                
+                -- 👇 PUNTOS TOTALES DEL FIN DE SEMANA (Carrera + Sprint)
+                (res.points + COALESCE(s.points, 0)) as points,
+                
+                -- Desglose por si lo necesitamos
+                res.points as race_points,
+                COALESCE(s.points, 0) as sprint_points
+
             FROM results res
             JOIN races r ON res.race_id = r.id
+            -- Unimos con Sprint Results (si existe para esa carrera y piloto)
+            LEFT JOIN sprint_results s ON (r.id = s.race_id AND res.driver_id = s.driver_id)
+            
             WHERE res.driver_id = $1
             ORDER BY r.round ASC;
         `;
