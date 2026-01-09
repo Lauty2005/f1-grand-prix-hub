@@ -3,6 +3,6 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 
 export const SERVER_URL = isLocal 
     ? 'http://localhost:3000' 
-    : 'https://TU-BACKEND-EN-RAILWAY.up.railway.app'; // 👈 Esto lo actualizaremos luego
+    : 'f1-grand-prix.up.railway.app'; // 👈 Esto lo actualizaremos luego
 
 export const API = `${SERVER_URL}/api`;
