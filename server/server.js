@@ -12,7 +12,12 @@ import standingsRoutes from './src/routes/standings.routes.js';
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+// TIENE que decir process.env.PORT (en mayúsculas)
+const port = process.env.PORT || 3000; 
+
+app.listen(port, '0.0.0.0', () => { // Agrega '0.0.0.0' para asegurar que escuche afuera
+    console.log(`Server on port ${port}`);
+});
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
