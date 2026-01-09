@@ -353,7 +353,7 @@ async function loadPracticesResults(raceId, isSprint) {
                             <div style="width:3px; height:25px; background:${r.primary_color}; border-radius:2px;"></div>
                             <div style="display:flex; flex-direction:column;">
                                 <span style="color:white; font-weight:bold; font-size:0.95rem;">${r.last_name}</span>
-                                <span style="font-size:0.7rem; color:#888; text-transform:uppercase;">${r.team_name}</span>
+                                <span style="font-size:0.7rem; color:#888;">${r.team_name}</span>
                             </div>
                         </div>
                     </td>

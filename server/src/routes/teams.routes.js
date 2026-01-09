@@ -1,62 +1,46 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import { createUpload } from '../config/upload.js'; // 👇 Usamos tu helper
 
 const router = Router();
+const upload = createUpload('teams'); // Las imágenes irán a public/images/teams
 
-// Configuración de Multer (Logos)
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadPath = path.join(process.cwd(), 'public', 'images', 'teams');
-        if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
-        }
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const cleanName = file.originalname.toLowerCase().replace(/\s+/g, '-');
-        cb(null, cleanName);
-    }
-});
-const upload = multer({ storage: storage });
-
-// 1. OBTENER EQUIPOS
+// 1. LISTAR EQUIPOS (Para selectores y gestión)
 router.get('/', async (req, res) => {
     try {
         const sql = 'SELECT * FROM constructors ORDER BY name ASC';
         const result = await query(sql);
         res.json({ success: true, data: result.rows });
     } catch (e) {
-        console.error(e);
+        console.error("❌ [Teams] Error al listar:", e.message);
         res.status(500).json({ error: 'Error al obtener equipos' });
     }
 });
 
-// 2. CREAR EQUIPO (SIN PAÍS)
+// 2. CREAR EQUIPO
 router.post('/', upload.single('logo_image'), async (req, res) => {
     try {
-        // 👇 SOLO RECIBIMOS NOMBRE Y COLOR
         const { name, primary_color } = req.body;
         
+        // Construir URL de la imagen si se subió
         let logo_url = null;
         if (req.file) {
+            // Nota: multer guarda el nombre del archivo en req.file.filename
             logo_url = `/images/teams/${req.file.filename}`;
         }
 
-        // 👇 SQL SIMPLIFICADO (Sin country_code)
         const sql = `
             INSERT INTO constructors (name, primary_color, logo_url)
             VALUES ($1, $2, $3)
             RETURNING id
         `;
-        await query(sql, [name, primary_color, logo_url]);
         
-        res.json({ success: true, message: 'Escudería creada' });
+        await query(sql, [name, primary_color, logo_url]);
+        res.json({ success: true, message: 'Escudería creada exitosamente' });
+
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Error creando escudería: ' + e.message });
+        console.error("❌ [Teams] Error al crear:", e.message);
+        res.status(500).json({ error: 'No se pudo crear la escudería' });
     }
 });
 
@@ -64,15 +48,17 @@ router.post('/', upload.single('logo_image'), async (req, res) => {
 router.delete('/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        // Primero desvinculamos pilotos
+        
+        // Primero liberamos a los pilotos (set NULL) para no romper integridad
         await query('UPDATE drivers SET constructor_id = NULL WHERE constructor_id = $1', [id]);
+        
         // Luego borramos el equipo
         await query('DELETE FROM constructors WHERE id = $1', [id]);
         
         res.json({ success: true, message: 'Escudería eliminada' });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'No se pudo eliminar' });
+        console.error("❌ [Teams] Error al eliminar:", e.message);
+        res.status(500).json({ error: 'No se pudo eliminar la escudería' });
     }
 });
 
