@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Detectamos producción si el Host de la DB NO es localhost
+// Si el Host NO es localhost, estamos en la nube -> Activamos SSL
 const isProduction = process.env.DB_HOST && process.env.DB_HOST !== 'localhost';
 
 const pool = new pg.Pool({
@@ -12,7 +12,6 @@ const pool = new pg.Pool({
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
-    // 👇 ESTA ES LA LÓGICA INFALIBLE:
     ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
