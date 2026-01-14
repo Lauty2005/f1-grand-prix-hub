@@ -25,20 +25,37 @@
 
 /* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */
 .main-navbar {
-    background: #15151e; /* Fondo oscuro */
-    padding: 1rem 2rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 30px;
-    border-bottom: 3px solid #e10600; /* La línea roja característica */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-    margin-bottom: 20px;
-    flex-wrap: wrap;
-
+    background: #15151e;
+    // 👇 CAMBIO: Menos padding vertical (0.8rem en vez de 1rem o más)
+    padding: 0.8rem 2rem; 
+    gap: 20px;
+    border-bottom: 2px solid #e10600; // Línea roja más fina
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    
     @include mobile {
         padding: 1rem;
-        gap: 15px;
+        flex-direction: column;
+    }
+}
+
+/* --- CONTADOR (COUNTDOWN) --- */
+#countdown-display {
+    // 👇 CAMBIO: Altura automática y menos padding
+    min-height: auto !important; 
+    padding: 10px 0 !important;
+    background: #0f0f16 !important; // Un poco más oscuro que el navbar
+    border-bottom: 1px solid #222;
+
+    span {
+        // Hacemos los textos del contador más sutiles
+        &[style*="font-size: 1.5rem"] { 
+            font-size: 1.1rem !important; // Hora más chica
+            font-family: 'Courier New', monospace; // Estilo digital
+        }
+        &[style*="color: #e10600"] {
+            font-size: 0.7rem !important; // "PRÓXIMA CARRERA" más chico
+            opacity: 0.8;
+        }
     }
 }
 
@@ -69,7 +86,7 @@
 }
 
 .f1-select {
-    padding: 8px 30px 8px 15px;
+    padding: 6px 30px 6px 12px;
     border-radius: 6px;
     border: 1px solid #444;
     background: #1f1f27; /* Gris oscuro */
@@ -117,29 +134,22 @@
 }
 
 .nav-btn {
-    background: transparent;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 10px 20px;
-    border-radius: 8px; /* Bordes redondeados modernos */
-    font-weight: 700;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-
+    // 👇 CAMBIO: Botones más compactos
+    padding: 8px 16px; 
+    font-size: 0.85rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    
     &:hover {
+        background: rgba(255,255,255,0.1);
         border-color: white;
-        transform: translateY(-2px); /* Pequeña elevación */
     }
 
-    /* ESTADO ACTIVO (Cuando estás en esa sección) */
     &.active-btn {
-        background: #e10600; /* Rojo F1 */
+        background: #e10600;
         border-color: #e10600;
-        box-shadow: 0 4px 10px rgba(225, 6, 0, 0.4);
-        transform: translateY(0);
+        box-shadow: 0 2px 10px rgba(225, 6, 0, 0.3); // Sombra roja suave
     }
 }
 

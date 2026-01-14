@@ -2,115 +2,90 @@
 
 .driver-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 2rem;
+    // 👇 CAMBIO: Reducimos el mínimo de 300px a 240px para que sean más angostas
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1.5rem; // Menos espacio entre tarjetas
     padding: 2rem;
-    max-width: 1200px;
+    max-width: 1400px; // Permitimos que la grilla sea un poco más ancha
     margin: 0 auto;
 }
 
 .driver-card {
     background-color: $color-surface;
-    border-radius: 12px;
+    border-radius: 8px; // Bordes menos redondeados (más serio)
     overflow: hidden;
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 
     &:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-        border-color: $color-primary;
-    }
-
-    &__header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    &__number {
-        font-size: 2.5rem;
-        font-weight: 900;
-        font-family: 'Arial', sans-serif; // Idealmente una fuente racing
-        opacity: 0.8;
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        border-color: rgba(255, 255, 255, 0.2);
     }
 
     &__image-container {
         width: 100%;
-        height: 250px; // Altura fija para uniformidad
+        // 👇 CAMBIO: Bajamos la altura de 250px a 190px (menos "cabezones")
+        height: 190px; 
         overflow: hidden;
-        background-color: #1f1f27; //#2b2b36Fondo por si la imagen tarda en cargar
+        background: linear-gradient(to bottom, #2b2b36, #15151e);
         position: relative;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
     }
 
     &__image {
         width: 100%;
         height: 100%;
-        object-fit: cover; // La magia: recorta la imagen para llenar el espacio sin deformar
-        object-position: top center; // Enfocar la cara
-        transition: transform 0.5s ease;
+        object-fit: cover;
+        object-position: top center;
+        transition: transform 0.4s ease;
     }
 
-    // Efecto Zoom al pasar el mouse sobre la TARJETA entera
     &:hover &__image {
-        transform: scale(1.1); // Zoom suave
+        transform: scale(1.05);
     }
 
     &__info {
-        padding: 1.5rem;
-    }
+        // 👇 CAMBIO: Menos relleno (padding)
+        padding: 1rem 1.2rem;
+        position: relative;
 
-    &__name {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        color: $color-text;
-    }
+        h3 {
+            // 👇 CAMBIO: Fuente más chica y elegante
+            font-size: 1.1rem; 
+            font-weight: 700;
+            margin: 0 0 0.5rem 0;
+            color: $color-text;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
-    &__team {
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: $color-text-dim;
-    }
+        div {
+            // Ajustes del contenedor de equipo y número
+            align-items: center;
+        }
 
-    // Estilo para la banderita
-    .flag-icon {
-        width: 30px; // Tamaño controlado
-        height: auto;
-        border-radius: 4px; // Bordes redondeados suaves
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); // Sombrita para profundidad
-        display: block; // Para que se comporte bien en flexbox
-    }
-
-    // Ajustamos el contenedor del header para que quede alineado
-    .driver-card__header {
-        // ... estilos anteriores ...
-        // Asegúrate de que tenga esto para alinear número y bandera:
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        p {
+            font-size: 0.85rem;
+            margin: 0;
+            opacity: 0.8;
+        }
     }
 }
 
+// Logo del equipo más pequeño
 .teamLogo {
-    width: 48px;
-    height: 48px;
-    padding: 6px;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: clip;
-    line-height: 0;
-    border-radius: 50%;
-    flex-shrink: 0;
-
+    width: 32px; // Antes era más grande
+    height: 32px;
+    padding: 4px;
+    margin-right: 8px;
+    background-color: rgba(255,255,255,0.1);
+    
     img {
-        width: 36px;
-        height: 36px;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
     }
 }
