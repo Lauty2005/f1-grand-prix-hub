@@ -4,6 +4,16 @@
 @use 'components/modal';
 @use 'components/race-card';
 
+#app {
+    max-width: 1200px;      /* Ancho máximo como querías */
+    width: 95%;             /* Para que no toque los bordes en celulares */
+    margin: 0 auto;         /* Centrar el contenedor horizontalmente */
+    padding-bottom: 50px;   /* Un poco de aire al final */
+    
+    // Opcional: Para asegurar que el contenido interno se comporte bien
+    display: block;         
+}
+
 /* --- SCROLLBAR DE ALTO CONTRASTE (PARA PRUEBAS) --- */
 
 ::-webkit-scrollbar {
