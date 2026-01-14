@@ -27,8 +27,7 @@ const __dirname = path.dirname(__filename);
 const allowedOrigins = [
     'http://localhost:5173', 
     'http://localhost:3000',
-    // Cuando tengas la URL de Vercel, agrégala aquí:
-    // 'https://tu-proyecto.vercel.app' 
+    'https://f1-grand-prix-hub.vercel.app'
 ];
 
 app.use(cors({
