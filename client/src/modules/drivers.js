@@ -29,7 +29,7 @@ export async function loadDriversView() {
                     <div style="display: flex; justify-content: space-between;">
                         <p style="color:${d.primary_color}; display: flex; align-items: center; gap: 8px;">
                             <span class="teamLogo" style="background-color: ${d.primary_color};">
-                                <img src="${d.logo_url}" alt="${d.team_name}" role="presentation">
+                                <img src="${d.logo_url.startsWith('http') ? d.logo_url : SERVER_URL + d.logo_url}" alt="${d.team_name}" role="presentation">
                             </span>
                             ${d.team_name}
                         </p>
