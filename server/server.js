@@ -94,6 +94,18 @@ app.use('/api', standingsRoutes);
 // Pero tu frontend llama a /api/constructors-standings.
 // Vamos a ajustar eso en el archivo standings.routes.js (ya te di el código corregido arriba para que coincida).
 
+app.get('/', (req, res) => {
+    res.send(`
+        <h1 style="font-family: sans-serif;">🏁 F1 API Funcionando</h1>
+        <p style="font-family: sans-serif;">Prueba estas rutas:</p>
+        <ul style="font-family: sans-serif;">
+            <li><a href="/api/drivers">/api/drivers</a> (Pilotos)</li>
+            <li><a href="/api/races">/api/races</a> (Carreras)</li>
+            <li><a href="/api/constructors-standings">/api/constructors-standings</a></li>
+        </ul>
+    `);
+});
+
 // 👇 AGREGAR '0.0.0.0' AQUÍ ES LA CLAVE
 app.listen(port, '0.0.0.0', () => {
     console.log(`\n🏎️  Motor arrancado en puerto: ${port}`);
