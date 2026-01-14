@@ -22,7 +22,7 @@ export async function loadDriversView() {
         const html = result.data.map(d => `
             <article class="driver-card" data-id="${d.id}" style="border-top: 4px solid ${d.primary_color}; cursor: pointer;">
                 <div class="driver-card__image-container">
-                        <img src="${d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url}" class="driver-card__image" alt="${d.last_name}">
+                    <img src="${d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url}" class="driver-card__image" alt="${d.last_name}">
                 </div>
                 <div class="driver-card__info" style="position: relative;">
                     <h3>${d.first_name} ${d.last_name}</h3>
@@ -117,12 +117,12 @@ async function openDriverModal(id) {
         <div class="driver-modal-layout">
             
             <div class="driver-info-col">
-                <img src="${driver.profile_image_url}" style="width: 120px; height: 120px; object-fit: cover; object-position: top; border-radius: 50%; border: 3px solid ${driver.primary_color}; margin-bottom: 10px; background: rgba(255,255,255,0.05);">
-                
+                <img src="${driver.profile_image_url.startsWith('http') ? driver.profile_image_url : SERVER_URL + driver.profile_image_url}" style="width: 120px; height: 120px; object-fit: cover; object-position: top; border-radius: 50%; border: 3px solid ${driver.primary_color}; margin-bottom: 10px; background: rgba(255,255,255,0.05);">
+
                 <h2 style="color: ${driver.primary_color}; font-size: 1.8rem; margin: 0; text-align:center;">${driver.first_name} ${driver.last_name}</h2>
                 
                 <p style="color: #aaa; display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom: 15px;">
-                    <img src="${driver.logo_url}" style="width: 20px;"> ${driver.team_name} | ${getFlagEmoji(driver.country_code)}
+                    <img src="${driver.logo_url.startsWith('http') ? driver.logo_url : SERVER_URL + driver.logo_url}" style="width: 20px;"> ${driver.team_name} | ${getFlagEmoji(driver.country_code)}
                 </p>
 
                 <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; width: 100%;">
