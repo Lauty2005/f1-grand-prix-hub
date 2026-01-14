@@ -39,14 +39,13 @@ export async function loadCalendarView() {
                     display: flex; 
                     align-items: center; 
                     background: #1e1e24; 
-                    border-radius: 6px; 
+                    border-radius: 8px; 
                     overflow: hidden; 
                     cursor: pointer; 
-                    border-left: 3px solid #e10600; 
-                    min-height: 70px;
-                    margin-bottom: 0;
-                    transition: all 0.2s;
-                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    border-left: 4px solid #e10600; 
+                    min-height: 90px;
+                    transition: transform 0.2s, background 0.2s;
+                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
                 "
                 onmouseover="this.style.background='#25252d'; this.style.transform='scale(1.01)'"
                 onmouseout="this.style.background='#1e1e24'; this.style.transform='scale(1)'"
