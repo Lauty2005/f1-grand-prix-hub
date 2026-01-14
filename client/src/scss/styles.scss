@@ -181,11 +181,3 @@
     overflow-x: auto; // Scroll horizontal si la tabla es muy ancha
     -webkit-overflow-scrolling: touch; // Scroll suave en iPhone
 }
-
-/* --- CORRECCIÓN DE LAYOUT GLOBAL (CENTRADO) --- */
-
-/* 1. Fondo general para que los laterales se vean oscuros */
-body {
-    background-color: #000; 
-    margin: 0;
-}
