@@ -3,17 +3,24 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Si el Host NO es localhost, estamos en la nube -> Activamos SSL
-const isProduction = process.env.DB_HOST && process.env.DB_HOST !== 'localhost';
+const isProduction = process.env.NODE_ENV === 'production';
 
-const pool = new pg.Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASSWORD,
-    port: process.env.DB_PORT,
-    ssl: isProduction ? { rejectUnauthorized: false } : false
-});
+// Prioridad: Si existe DATABASE_URL (Render), la usa. Si no, usa las variables sueltas.
+const connectionConfig = process.env.DATABASE_URL 
+    ? {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false }
+      }
+    : {
+        user: process.env.DB_USER,
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+        password: process.env.DB_PASSWORD,
+        port: process.env.DB_PORT,
+        ssl: false
+      };
+
+const pool = new pg.Pool(connectionConfig);
 
 pool.on('error', (err) => {
     console.error('❌ Error inesperado en PostgreSQL', err);

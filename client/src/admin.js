@@ -1,6 +1,6 @@
 import './scss/admin.scss';
 import { COUNTRY_NAMES } from './modules/utils.js';
-import { API } from './modules/config.js'; // Asegúrate de importar API desde config
+import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar API desde config
 
 let allRacesData = [];
 
@@ -70,13 +70,13 @@ async function loadServerImages() {
             // Eventos para previsualizar al seleccionar
             mapSelect.addEventListener('change', (e) => {
                 const img = document.getElementById('previewMap');
-                if (e.target.value) { img.src = `http://localhost:3000${e.target.value}`; img.style.display = 'block'; }
+                if (e.target.value) { img.src = `${SERVER_URL}${e.target.value}`; img.style.display = 'block'; }
                 else { img.style.display = 'none'; }
             });
 
             circuitSelect.addEventListener('change', (e) => {
                 const img = document.getElementById('previewCircuit');
-                if (e.target.value) { img.src = `http://localhost:3000${e.target.value}`; img.style.display = 'block'; }
+                if (e.target.value) { img.src = `${SERVER_URL}${e.target.value}`; img.style.display = 'block'; }
                 else { img.style.display = 'none'; }
             });
         }
