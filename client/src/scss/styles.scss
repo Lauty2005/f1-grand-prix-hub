@@ -4,16 +4,6 @@
 @use 'components/modal';
 @use 'components/race-card';
 
-#app {
-    max-width: 1200px;      /* Ancho máximo como querías */
-    width: 95%;             /* Para que no toque los bordes en celulares */
-    margin: 0 auto;         /* Centrar el contenedor horizontalmente */
-    padding-bottom: 50px;   /* Un poco de aire al final */
-    
-    // Opcional: Para asegurar que el contenido interno se comporte bien
-    display: block;         
-}
-
 /* --- SCROLLBAR DE ALTO CONTRASTE (PARA PRUEBAS) --- */
 
 ::-webkit-scrollbar {
@@ -50,12 +40,6 @@
         padding: 1rem;
         gap: 15px;
     }
-}
-
-#countdown-display {
-    max-width: 1200px;
-    width: 95%;
-    margin: 0 auto;
 }
 
 /* --- SELECTOR DE TEMPORADA --- */
@@ -196,4 +180,41 @@
     width: 100%;
     overflow-x: auto; // Scroll horizontal si la tabla es muy ancha
     -webkit-overflow-scrolling: touch; // Scroll suave en iPhone
+}
+
+/* --- CORRECCIÓN DE LAYOUT GLOBAL (CENTRADO) --- */
+
+/* 1. Fondo general para que los laterales se vean oscuros */
+body {
+    background-color: #000; 
+    margin: 0;
+}
+
+/* 2. Centrar el Contenido Principal (#app) */
+#app {
+    max-width: 1200px;
+    width: 95%;             /* En celulares ocupa casi todo */
+    margin: 0 auto;         /* Centrado horizontal automático */
+    padding-bottom: 50px;
+    display: block;
+    box-sizing: border-box; /* Para que el padding no rompa el ancho */
+}
+
+/* 3. Centrar la Barra de Navegación */
+/* Como se inyecta con JS fuera de #app, hay que centrarla aparte */
+.main-navbar {
+    max-width: 1200px;
+    width: 95%;
+    margin: 0 auto 20px auto !important; /* Forzamos el margen */
+    border-radius: 0 0 15px 15px;        /* Bordes redondeados abajo */
+    box-sizing: border-box;
+}
+
+/* 4. Centrar el Contador */
+#countdown-display {
+    max-width: 1200px;
+    width: 95%;
+    margin: 0 auto !important;
+    background-color: #15151e !important; /* Aseguramos el color de fondo */
+    box-sizing: border-box;
 }
