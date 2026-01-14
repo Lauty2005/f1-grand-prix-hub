@@ -42,10 +42,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
-app.use('/images', express.static('public/images'));
+//app.use('/images', express.static('public/images'));
 
 // Hacer pública la carpeta 'uploads'
-app.use('/images', express.static(path.join(__dirname, '../../public/images')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // --- RUTAS PRINCIPALES ---
 // Todo lo que empiece por /api/drivers va al archivo drivers.routes.js

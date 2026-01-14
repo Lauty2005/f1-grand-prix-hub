@@ -1,4 +1,4 @@
-import { API } from './config.js';
+import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 import { getFlagEmoji, getPositionBadge } from './utils.js';
 
@@ -22,7 +22,7 @@ export async function loadDriversView() {
         const html = result.data.map(d => `
             <article class="driver-card" data-id="${d.id}" style="border-top: 4px solid ${d.primary_color}; cursor: pointer;">
                 <div class="driver-card__image-container">
-                        <img src="${d.profile_image_url}" class="driver-card__image" alt="${d.last_name}">
+                        <img src="${d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url}" class="driver-card__image" alt="${d.last_name}">
                 </div>
                 <div class="driver-card__info" style="position: relative;">
                     <h3>${d.first_name} ${d.last_name}</h3>

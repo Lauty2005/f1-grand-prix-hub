@@ -1,4 +1,4 @@
-import { API } from './config.js';
+import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 
 export async function loadStandingsView() {
@@ -46,7 +46,7 @@ export async function loadStandingsView() {
                 participantInfo = `
                     <div style="display:flex; align-items:center; gap:15px;">
                         <span class="teamLogo" style="background: ${item.primary_color}22; border: 1px solid ${item.primary_color};">
-                            <img src="${item.logo_url}" style="width:30px; height:30px; object-fit:contain;">
+                            <img src="${item.logo_url.startsWith('http') ? item.logo_url : SERVER_URL + item.logo_url}" style="width:30px; height:30px; object-fit:contain;">
                         </span>
                         <span style="color:white; font-weight:800; font-size:1.2rem; letter-spacing:0.5px;">
                             ${item.name}
