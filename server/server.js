@@ -18,7 +18,30 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-app.use(cors());
+//USO LOCAL
+//app.use(cors());
+
+//USO EN LINEA
+
+// Lista de orígenes permitidos (Local + Tu futuro Frontend en Vercel)
+const allowedOrigins = [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    // Cuando tengas la URL de Vercel, agrégala aquí:
+    // 'https://tu-proyecto.vercel.app' 
+];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permite peticiones sin origen (como Postman) o si está en la lista
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('No permitido por CORS'));
+        }
+    }
+}));
+
 app.use(express.json());
 app.use('/images', express.static('public/images'));
 
