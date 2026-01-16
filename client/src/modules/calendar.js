@@ -145,7 +145,7 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 <h2 style="color:#e10600; text-transform:uppercase; margin:0;">${race.name}</h2>
             </div>
 
-            <div style="display: flex; gap: 15px; align-items: stretch; margin-bottom: 20px;">
+            <div class="circuit_info">
                 
                 <div style="flex: 3; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px;">
                     <img src="${displayImage}" style="width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));">
@@ -270,7 +270,7 @@ async function loadQualyResults(raceId) {
         const rows = json.data.map(r => `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <td style="padding:10px; font-weight:bold; text-align:center; color:white;">${r.position}</td>
-                <td style="padding:10px; text-align:left; color:white;">${r.last_name} <span style="font-size:0.7rem; color:${r.primary_color}">(${r.team_name.substring(0, 3).toUpperCase()})</span></td>
+                <td style="font-weight:bold; padding:10px; text-align:left; color:white;">${r.last_name} <span style="font-weight:normal; font-size:0.7rem; color:${r.primary_color}">(${r.team_name.substring(0, 3).toUpperCase()})</span></td>
                 <td style="padding:5px; font-family:monospace; color:#aaa; text-align:center;">${r.q1 || '-'}</td>
                 <td style="padding:5px; font-family:monospace; color:#ccc; text-align:center;">${r.q2 || '-'}</td>
                 <td style="padding:5px; font-family:monospace; color:#e10600; font-weight:bold; text-align:center;">${r.q3 || '-'}</td>

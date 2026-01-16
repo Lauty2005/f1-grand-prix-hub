@@ -37,7 +37,7 @@ export async function loadStandingsView() {
                         <span style="color:white; font-weight:700; font-size:1.1rem;">
                             ${item.first_name} ${item.last_name}
                         </span>
-                        <span style="color:${item.primary_color}; font-size:0.8rem; text-transform:uppercase; letter-spacing:1px;">
+                        <span style="color:${item.primary_color}; font-size:0.8rem; letter-spacing:1px;">
                             ${item.team_name}
                         </span>
                     </div>`;

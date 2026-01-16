@@ -84,3 +84,14 @@
         }
     }
 }
+
+.circuit_info {
+    display: flex; 
+    gap: 15px; 
+    align-items: stretch; 
+    margin-bottom: 20px;
+
+    @include mobile {
+        flex-direction: column;
+    }
+}
