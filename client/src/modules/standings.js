@@ -62,7 +62,7 @@ export async function loadStandingsView() {
                 <td style="padding-left: 20px;">
                     ${participantInfo}
                 </td>
-                <td style="text-align:right; padding-right: 25px;">
+                <td style="text-align:right;">
                     <span style="font-weight:900; font-size:1.4rem; color:#e10600;">${item.points}</span>
                     <span style="font-size:0.7rem; color:#666; font-weight:bold;">PTS</span>
                 </td>
