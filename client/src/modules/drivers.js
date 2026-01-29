@@ -6,7 +6,7 @@ let driverChart = null; // Variable para guardar la instancia del gráfico
 
 export async function loadDriversView() {
     const app = document.querySelector('#app');
-    app.innerHTML = '<h2 style="text-align:center; color:white;">Cargando parrilla...</h2>';
+    app.innerHTML = '<h2 style="text-align:center; color:white; margin-top:50px;">Cargando parrilla...</h2>';
 
     try {
         const res = await fetch(`${API}/drivers?year=${state.currentYear}`);
@@ -49,7 +49,7 @@ export async function loadDriversView() {
 
     } catch (e) {
         console.error(e);
-        app.innerHTML = '<h3 style="color:red; text-align:center">Error cargando pilotos</h3>';
+        app.innerHTML = '<h3 style="text-align:center; color:red; margin-top:50px;">Error cargando pilotos</h3>';
     }
 }
 
@@ -66,7 +66,7 @@ async function openDriverModal(id) {
     let pointsPerRace = []; 
 
     try {
-        const res = await fetch(`${API}/drivers/${id}/results`);
+        const res = await fetch(`${API}/drivers/${id}/results?year=${state.currentYear}`);
         const json = await res.json();
         const history = json.data;
         

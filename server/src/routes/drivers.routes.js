@@ -62,10 +62,13 @@ router.get('/', async (req, res) => {
     }
 });
 
-// 2. HISTORIAL DE UN PILOTO (INCLUYENDO SPRINT)
+// 2. HISTORIAL DE UN PILOTO (INCLUYENDO SPRINT) - FILTRADO POR AÑO
 router.get('/:id/results', async (req, res) => {
     try {
         const { id } = req.params;
+        // 👇 1. Recibimos el año por query (si no viene, usa 2025)
+        const year = req.query.year || '2025'; 
+
         const sql = `
             SELECT 
                 r.name as race_name, 
@@ -75,22 +78,22 @@ router.get('/:id/results', async (req, res) => {
                 res.fastest_lap,
                 res.dnf, res.dsq, res.dns, res.dnq,
                 
-                -- 👇 PUNTOS TOTALES DEL FIN DE SEMANA (Carrera + Sprint)
                 (res.points + COALESCE(s.points, 0)) as points,
                 
-                -- Desglose por si lo necesitamos
                 res.points as race_points,
                 COALESCE(s.points, 0) as sprint_points
 
             FROM results res
             JOIN races r ON res.race_id = r.id
-            -- Unimos con Sprint Results (si existe para esa carrera y piloto)
             LEFT JOIN sprint_results s ON (r.id = s.race_id AND res.driver_id = s.driver_id)
             
             WHERE res.driver_id = $1
+            AND EXTRACT(YEAR FROM r.date) = $2  -- 👈 2. FILTRO CLAVE: Solo carreras de ese año
             ORDER BY r.round ASC;
         `;
-        const result = await query(sql, [id]);
+        
+        // 👇 3. Pasamos 'year' como segundo parámetro
+        const result = await query(sql, [id, year]); 
         res.json({ success: true, data: result.rows });
     } catch (err) {
         console.error(err);

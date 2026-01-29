@@ -82,7 +82,7 @@ export async function loadCalendarView() {
                 <h1 style="text-align:center; color:white; margin-bottom:10px; font-size: 2rem;">CALENDARIO ${state.currentYear}</h1>
             </div>
             
-            <div class="race-list" style="display: flex; flex-direction: column; gap: 15px; max-width: 1000px; margin: 0 auto; padding-bottom: 50px;">
+            <div class="race-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));  flex-direction: column; gap: 15px; max-width: 1000px; margin: 0 auto; padding-bottom: 50px;">
                 ${cardsHtml}
             </div>
         `;

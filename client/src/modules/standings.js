@@ -10,7 +10,7 @@ export async function loadStandingsView() {
         ? `${API}/drivers?year=${state.currentYear}`
         : `${API}/constructors-standings?year=${state.currentYear}`; // Usamos la ruta nueva
 
-    app.innerHTML = '<div class="loader">Cargando campeonato...</div>';
+    app.innerHTML = '<div style="text-align:center; color:white; margin-top:50px;">Cargando campeonato...</div>';
 
     try {
         const res = await fetch(endpoint);
@@ -122,7 +122,7 @@ export async function loadStandingsView() {
         console.error(e);
         app.innerHTML = `
             <div style="text-align:center; margin-top:50px;">
-                <h3 style="color:#ff4444;">Error cargando datos 😕</h3>
+                <h3 style="color:red;">Error cargando datos 😕</h3>
                 <p style="color:#666;">Intenta reiniciar el servidor.</p>
             </div>`;
     }
