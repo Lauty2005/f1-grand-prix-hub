@@ -9,11 +9,6 @@ import { validateResult, validateRace } from '../middleware/validate.middleware.
 const router = Router();
 const POINTS_SYSTEM = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
 
-// Proteger solo escritura
-router.post('*', adminAuth);
-router.delete('*', adminAuth);
-router.put('*', adminAuth);
-
 // --- CONFIGURACIÓN DE MULTER (MEJORADA) ---
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {

@@ -7,11 +7,6 @@ import { validateResult, validateRace } from '../middleware/validate.middleware.
 const router = Router();
 const upload = createUpload('pilots');
 
-// Proteger solo escritura
-router.post('*', adminAuth);
-router.delete('*', adminAuth);
-router.put('*', adminAuth);
-
 // 1. OBTENER PILOTOS (SUMANDO CARRERA + SPRINT)
 router.get('/', async (req, res) => {
     try {
@@ -109,7 +104,7 @@ router.get('/:id/results', async (req, res) => {
 });
 
 // 3. ELIMINAR PILOTO (Sigue igual)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
     try {
         const { id } = req.params;
         await query('DELETE FROM results WHERE driver_id = $1', [id]);
@@ -134,7 +129,7 @@ router.get('/teams/list', async (req, res) => {
 });
 
 // 5. CREAR NUEVO PILOTO (ACTUALIZADO CON SEASONS)
-router.post('/', upload.single('profile_image'), adminAuth, async (req, res) => {
+router.post('/', adminAuth, upload.single('profile_image'), async (req, res) => {
     try {
         // 👇 Recibimos 'seasons' del formulario
         const { first_name, last_name, number, team_id, country, seasons } = req.body;
