@@ -3,9 +3,16 @@ import { query } from '../config/db.js';
 import multer from 'multer'; // Asegúrate de tener instalado multer (npm i multer)
 import path from 'path';
 import fs from 'fs'; // 👈 IMPORTANTE: Agrega esto para manejar carpetas
+import { adminAuth } from '../middleware/auth.middleware.js';
+import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 
 const router = Router();
 const POINTS_SYSTEM = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
+
+// Proteger solo escritura
+router.post('*', adminAuth);
+router.delete('*', adminAuth);
+router.put('*', adminAuth);
 
 // --- CONFIGURACIÓN DE MULTER (MEJORADA) ---
 const storage = multer.diskStorage({
@@ -85,7 +92,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // 2. ELIMINAR CARRERA (¡NUEVO!)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
     try {
         const { id } = req.params;
         await query('DELETE FROM results WHERE race_id = $1', [id]);
@@ -99,7 +106,7 @@ router.delete('/:id', async (req, res) => {
 });
 
 // 3. GUARDAR RESULTADO (POST)
-router.post('/results', async (req, res) => {
+router.post('/results', adminAuth, validateResult, async (req, res) => {
     try {
         const { race_id, driver_id, position, fastest_lap, dnf, dsq, dns, dnq } = req.body;
 
@@ -204,7 +211,7 @@ router.get('/:id/sprint-qualifying', async (req, res) => {
 // --- RUTAS DE CARGA DE DATOS (POST) ---
 
 // 1. GUARDAR SPRINT
-router.post('/sprint', async (req, res) => {
+router.post('/sprint', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id, position, dnf, time_gap } = req.body;
 
@@ -222,7 +229,7 @@ router.post('/sprint', async (req, res) => {
 });
 
 // 2. GUARDAR CLASIFICACIÓN
-router.post('/qualifying', async (req, res) => {
+router.post('/qualifying', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id, position, q1, q2, q3 } = req.body;
         await query(
@@ -235,7 +242,7 @@ router.post('/qualifying', async (req, res) => {
 });
 
 // 3. GUARDAR SPRINT SHOOTOUT
-router.post('/sprint-qualifying', async (req, res) => {
+router.post('/sprint-qualifying', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id, position, sq1, sq2, sq3 } = req.body;
         await query(
@@ -248,7 +255,7 @@ router.post('/sprint-qualifying', async (req, res) => {
 });
 
 // 4. GUARDAR PRÁCTICAS
-router.post('/practices', async (req, res) => {
+router.post('/practices', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id, p1, p2, p3 } = req.body;
         await query(
@@ -260,8 +267,10 @@ router.post('/practices', async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Error guardando Prácticas' }); }
 });
 
+
+
 // --- RUTA POST MEJORADA (ADMITE ARCHIVO O SELECCIÓN) ---
-router.post('/', uploadFields, async (req, res) => {
+router.post('/', uploadFields, adminAuth, validateResult, async (req, res) => {
     try {
         const {
             name, round, circuit_name, country_code, date, sprint,
@@ -319,7 +328,7 @@ router.post('/', uploadFields, async (req, res) => {
 // --- RUTAS DE ELIMINACIÓN DE RESULTADOS INDIVIDUALES (DELETE) ---
 
 // 1. BORRAR RESULTADO DE CARRERA DE UN PILOTO
-router.delete('/:race_id/results/:driver_id', async (req, res) => {
+router.delete('/:race_id/results/:driver_id', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id } = req.params;
         await query('DELETE FROM results WHERE race_id = $1 AND driver_id = $2', [race_id, driver_id]);
@@ -328,7 +337,7 @@ router.delete('/:race_id/results/:driver_id', async (req, res) => {
 });
 
 // 2. BORRAR SPRINT DE UN PILOTO
-router.delete('/:race_id/sprint/:driver_id', async (req, res) => {
+router.delete('/:race_id/sprint/:driver_id', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id } = req.params;
         await query('DELETE FROM sprint_results WHERE race_id = $1 AND driver_id = $2', [race_id, driver_id]);
@@ -337,7 +346,7 @@ router.delete('/:race_id/sprint/:driver_id', async (req, res) => {
 });
 
 // 3. BORRAR QUALY DE UN PILOTO
-router.delete('/:race_id/qualifying/:driver_id', async (req, res) => {
+router.delete('/:race_id/qualifying/:driver_id', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id } = req.params;
         await query('DELETE FROM qualifying WHERE race_id = $1 AND driver_id = $2', [race_id, driver_id]);
@@ -346,7 +355,7 @@ router.delete('/:race_id/qualifying/:driver_id', async (req, res) => {
 });
 
 // 4. BORRAR SPRINT SHOOTOUT
-router.delete('/:race_id/sprint-qualifying/:driver_id', async (req, res) => {
+router.delete('/:race_id/sprint-qualifying/:driver_id', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id } = req.params;
         await query('DELETE FROM sprint_qualifying WHERE race_id = $1 AND driver_id = $2', [race_id, driver_id]);
@@ -355,7 +364,7 @@ router.delete('/:race_id/sprint-qualifying/:driver_id', async (req, res) => {
 });
 
 // 5. BORRAR PRÁCTICAS
-router.delete('/:race_id/practices/:driver_id', async (req, res) => {
+router.delete('/:race_id/practices/:driver_id', adminAuth, async (req, res) => {
     try {
         const { race_id, driver_id } = req.params;
         await query('DELETE FROM practices WHERE race_id = $1 AND driver_id = $2', [race_id, driver_id]);

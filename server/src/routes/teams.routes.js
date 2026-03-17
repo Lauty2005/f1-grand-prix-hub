@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { createUpload } from '../config/upload.js'; // 👇 Usamos tu helper
+import { adminAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
 const upload = createUpload('teams'); // Las imágenes irán a public/images/teams
@@ -18,7 +19,7 @@ router.get('/', async (req, res) => {
 });
 
 // 2. CREAR EQUIPO
-router.post('/', upload.single('logo_image'), async (req, res) => {
+router.post('/', adminAuth, upload.single('logo_image'), async (req, res) => {
     try {
         const { name, primary_color } = req.body;
         
@@ -45,7 +46,7 @@ router.post('/', upload.single('logo_image'), async (req, res) => {
 });
 
 // 3. ELIMINAR EQUIPO
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', adminAuth, async (req, res) => {
     try {
         const { id } = req.params;
         

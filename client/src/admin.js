@@ -4,6 +4,18 @@ import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar
 
 let allRacesData = [];
 
+const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN;
+
+export const adminFetch = (url, options = {}) => {
+    return Fetch(url, {
+        ...options,
+        headers: {
+            ...options.headers,
+            'x-admin-token': ADMIN_TOKEN
+        }
+    });
+};
+
 // ==========================================
 // 1. CARGA PARA EL PANEL SUPERIOR (Control)
 // ==========================================
@@ -13,7 +25,7 @@ async function loadRaces(year) {
     raceSelect.innerHTML = '<option>Cargando...</option>';
 
     try {
-        const res = await fetch(`${API}/races?year=${year}`);
+        const res = await adminFetch(`${API}/races?year=${year}`);
         const json = await res.json();
 
         allRacesData = json.data;
@@ -34,7 +46,7 @@ async function loadRacesForDelete() {
     select.innerHTML = '<option>Cargando...</option>';
 
     try {
-        const res = await fetch(`${API}/races?year=${year}`);
+        const res = await adminFetch(`${API}/races?year=${year}`);
         const json = await res.json();
 
         if (json.data.length === 0) {
@@ -51,7 +63,7 @@ async function loadRacesForDelete() {
 
 async function loadServerImages() {
     try {
-        const res = await fetch(`${API}/races/images/list`);
+        const res = await adminFetch(`${API}/races/images/list`);
         const json = await res.json();
 
         if (json.success) {
@@ -110,7 +122,7 @@ async function loadDrivers() {
     const selectedYear = document.getElementById('seasonSelect').value;
 
     try {
-        const res = await fetch(`${API}/drivers?year=${selectedYear}`);
+        const res = await adminFetch(`${API}/drivers?year=${selectedYear}`);
         const json = await res.json();
         const drivers = json.data;
 
@@ -135,7 +147,7 @@ async function loadDriversForDelete() {
     select.innerHTML = '<option>Cargando...</option>';
 
     try {
-        const res = await fetch(`${API}/drivers?year=${year}`);
+        const res = await adminFetch(`${API}/drivers?year=${year}`);
         const json = await res.json();
         const drivers = json.data;
 
@@ -281,7 +293,7 @@ async function handleSubmit(e) {
     }
 
     try {
-        const res = await fetch(`${API}${endpoint}`, {
+        const res = await adminFetch(`${API}${endpoint}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(bodyData)
@@ -321,7 +333,7 @@ async function handleDelete() {
 
     if (confirm(`¿Estás seguro de eliminar: ${raceText}?\n\nSe borrarán todos los resultados asociados.`)) {
         try {
-            await fetch(`${API}/races/${raceId}`, { method: 'DELETE' });
+            await adminFetch(`${API}/races/${raceId}`, { method: 'DELETE' });
             alert('Eliminada.');
 
             // Recargamos AMBAS listas por si acaso
@@ -340,7 +352,7 @@ async function handleDeleteDriver() {
 
     if (confirm('⚠️ ¿ESTÁS SEGURO?\n\nSe borrará al piloto Y TODOS SUS RESULTADOS históricos.\nEsta acción no se puede deshacer.')) {
         try {
-            const res = await fetch(`${API}/drivers/${driverId}`, { method: 'DELETE' });
+            const res = await adminFetch(`${API}/drivers/${driverId}`, { method: 'DELETE' });
             if (res.ok) {
                 alert('✅ Piloto eliminado.');
                 loadDrivers();
@@ -353,7 +365,7 @@ async function handleDeleteDriver() {
 
 async function loadTeams() {
     try {
-        const res = await fetch(`${API}/drivers/teams/list`);
+        const res = await adminFetch(`${API}/drivers/teams/list`);
         const json = await res.json();
         const select = document.getElementById('newDriverTeam');
         select.innerHTML = '<option value="">Elegir Equipo...</option>' +
@@ -420,7 +432,7 @@ async function handleCreateRace(e) {
     }
 
     try {
-        const res = await fetch(`${API}/races`, {
+        const res = await adminFetch(`${API}/races`, {
             method: 'POST',
             body: formData
         });
@@ -473,7 +485,7 @@ async function handleCreateDriver(e) {
     formData.append('seasons', activeSeasons.join(','));
 
     try {
-        const res = await fetch(`${API}/drivers`, { method: 'POST', body: formData });
+        const res = await adminFetch(`${API}/drivers`, { method: 'POST', body: formData });
         if (res.ok) {
             alert('✅ Piloto creado.');
             loadDrivers();
@@ -512,7 +524,7 @@ async function handleDeleteSpecificResult() {
     }
 
     try {
-        const res = await fetch(`${API}${endpoint}`, { method: 'DELETE' });
+        const res = await adminFetch(`${API}${endpoint}`, { method: 'DELETE' });
         if (res.ok) {
             alert('🗑️ Datos eliminados.');
             document.getElementById('posInput').value = '';

@@ -1,9 +1,16 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
 import { createUpload } from '../config/upload.js';
+import { adminAuth } from '../middleware/auth.middleware.js';
+import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 
 const router = Router();
 const upload = createUpload('pilots');
+
+// Proteger solo escritura
+router.post('*', adminAuth);
+router.delete('*', adminAuth);
+router.put('*', adminAuth);
 
 // 1. OBTENER PILOTOS (SUMANDO CARRERA + SPRINT)
 router.get('/', async (req, res) => {
@@ -127,7 +134,7 @@ router.get('/teams/list', async (req, res) => {
 });
 
 // 5. CREAR NUEVO PILOTO (ACTUALIZADO CON SEASONS)
-router.post('/', upload.single('profile_image'), async (req, res) => {
+router.post('/', upload.single('profile_image'), adminAuth, async (req, res) => {
     try {
         // 👇 Recibimos 'seasons' del formulario
         const { first_name, last_name, number, team_id, country, seasons } = req.body;

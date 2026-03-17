@@ -6,6 +6,7 @@ server/node_modules/
 # Archivos de entorno (Secretos, nunca se suben)
 .env
 server/.env
+client/.env
 
 # Carpetas de compilación
 dist/

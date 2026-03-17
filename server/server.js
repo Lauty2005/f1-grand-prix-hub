@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import driversRoutes from './src/routes/drivers.routes.js';
 import racesRoutes from './src/routes/races.routes.js';
 import standingsRoutes from './src/routes/standings.routes.js';
+import { adminAuth } from './src/middleware/auth.middleware.js';
 
 dotenv.config();
 
@@ -18,25 +19,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Middlewares
-//USO LOCAL
-//app.use(cors());
+app.use('/api/drivers', driversRoutes);          // GET público
+app.use('/api/races', racesRoutes);              // GET público
 
 //USO EN LINEA
 
 // Lista de orígenes permitidos (Local + Tu futuro Frontend en Vercel)
-const allowedOrigins = [
-    'http://localhost:5173', 
-    'http://localhost:3000',
-    'https://f1-grand-prix-hub.vercel.app'
-];
+const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? ['https://f1-grand-prix-hub.vercel.app']
+    : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({
-    origin: function (origin, callback) {
-        // Permite peticiones sin origen (como Postman) o si está en la lista
+    origin: (origin, callback) => {
         if (!origin || allowedOrigins.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error('No permitido por CORS'));
+            callback(new Error(`Origen no permitido: ${origin}`));
         }
     }
 }));
@@ -66,7 +64,7 @@ app.use('/api/races', racesRoutes);
 import { query } from './src/config/db.js';
 const POINTS_SYSTEM = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
 
-app.post('/api/results', async (req, res) => {
+app.post('/api/results', adminAuth, async (req, res) => {
     // Lógica duplicada temporalmente para no romper admin.js sin editarlo
     try {
         const { race_id, driver_id, position, fastest_lap, dnf, dsq, dns, dnq } = req.body;
