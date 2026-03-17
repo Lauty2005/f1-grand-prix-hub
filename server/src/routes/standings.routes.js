@@ -6,7 +6,7 @@ const router = Router();
 // ==========================================
 // OBTENER CAMPEONATO DE CONSTRUCTORES
 // ==========================================
-router.get('/', async (req, res) => {
+router.get('/constructors-standings', async (req, res) => {
     try {
         const year = req.query.year || '2025';
 

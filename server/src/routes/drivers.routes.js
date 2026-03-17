@@ -51,12 +51,12 @@ router.get('/', async (req, res) => {
                 GROUP BY s_res.driver_id
             ) sprint_stats ON d.id = sprint_stats.driver_id
             
-            WHERE d.active_seasons LIKE $2
+            WHERE $2 = ANY(d.active_seasons)
 
             ORDER BY points DESC, d.last_name ASC;
         `;
         
-        const result = await query(sql, [year, `%${year}%`]);
+        const result = await query(sql, [year, year]);
         res.json({ success: true, data: result.rows });
     } catch (err) {
         console.error("ERROR SQL DRIVERS:", err.message);
@@ -143,7 +143,7 @@ router.post('/', adminAuth, upload.single('profile_image'), async (req, res) => 
         }
 
         // Si no mandan temporadas, ponemos las dos por defecto
-        const seasonsToSave = seasons || '2025,2026';
+        const seasonsToSave = seasons ? seasons.split(',') : ['2025', '2026'];
 
         // 👇 Agregamos active_seasons al INSERT
         await query(

@@ -59,29 +59,6 @@ app.use('/api/races', racesRoutes);
 // Así que la ruta quedó como: /api/races/results.
 // ESTO ES UN CAMBIO IMPORTANTE. 
 
-// OPCIÓN A: Mapear la ruta vieja a la nueva lógica
-// Para no romper tu admin.js que llama a '/api/results', vamos a dejar este puente aquí:
-import { query } from './src/config/db.js';
-const POINTS_SYSTEM = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
-
-app.post('/api/results', adminAuth, async (req, res) => {
-    // Lógica duplicada temporalmente para no romper admin.js sin editarlo
-    try {
-        const { race_id, driver_id, position, fastest_lap, dnf, dsq, dns, dnq } = req.body;
-        let points = POINTS_SYSTEM[position] || 0;
-        if (dnf || dsq || dns || dnq) points = 0;
-        else if (fastest_lap && position <= 10) points += 1;
-
-        await query(
-            `INSERT INTO results (race_id, driver_id, position, points, fastest_lap, dnf, dsq, dns, dnq) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [race_id, driver_id, position, points, fastest_lap, dnf, dsq, dns, dnq]
-        );
-        res.json({ success: true });
-    } catch (e) { res.status(500).json({ error: 'Error' }); }
-});
-
-// Rutas de campeonato
-app.use('/api/constructors-standings', standingsRoutes);
 // Nota: En standings.routes.js la ruta es '/constructors', 
 // así que la URL final será /api/constructors-standings/constructors.
 // CORRECCIÓN RÁPIDA:
