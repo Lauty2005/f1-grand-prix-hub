@@ -5,9 +5,12 @@ import path from 'path';
 import fs from 'fs'; // 👈 IMPORTANTE: Agrega esto para manejar carpetas
 import { adminAuth } from '../middleware/auth.middleware.js';
 import { validateResult, validateRace } from '../middleware/validate.middleware.js';
+import { POINTS_SYSTEM, SPRINT_POINTS_SYSTEM } from '../config/points.js';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = Router();
-const POINTS_SYSTEM = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
 
 // --- CONFIGURACIÓN DE MULTER (MEJORADA) ---
 const storage = multer.diskStorage({
@@ -20,7 +23,7 @@ const storage = multer.diskStorage({
 
         // 2. USAR RUTA ABSOLUTA (Esta es la clave)
         // process.cwd() obtiene la carpeta raíz donde corre el servidor
-        const uploadPath = path.join(process.cwd(), '../public', 'images', subFolder);
+        const uploadPath = path.join(__dirname, '../../public/images', subFolder);
         
         // 3. Imprimir en consola para verificar (MIRA TU TERMINAL AL GUARDAR)
         console.log(`📂 Guardando archivo en: ${uploadPath}`);
@@ -212,7 +215,7 @@ router.post('/sprint', adminAuth, async (req, res) => {
 
         // Sistema de puntos Sprint 2025 (8 para el 1ro, hasta 1 para el 8vo)
         let points = 0;
-        if (!dnf && position <= 8) points = 9 - position;
+        if (!dnf && position <= 8) points = SPRINT_POINTS_SYSTEM[position] || 0;
 
         await query(
             `INSERT INTO sprint_results (race_id, driver_id, position, points, dnf, time_gap) 

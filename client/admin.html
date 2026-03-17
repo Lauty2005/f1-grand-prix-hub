@@ -152,6 +152,9 @@
                         GUARDAR RESULTADO
                     </button>
 
+                    <p id="msg" class="success-msg">✅ ¡Operación exitosa!</p>
+                    <div id="errorMsg" class="error-msg">❌ <span id="errorText"></span></div>
+
                     <button type="button" id="btnDeleteResult" title="Borrar datos de este piloto en esta sesión"
                         style="background: #2a1f1f; border: 1px solid #ff4444; color: #ff4444; width: 60px; border-radius: 6px; cursor: pointer; font-size: 1.5rem; transition: all 0.2s;">
                         🗑️
@@ -247,6 +250,8 @@
                         </div>
 
                         <button type="submit" class="btn-create span-full">AGREGAR GP</button>
+                        <div id="errorMsgRace" class="error-msg span-full">❌ <span id="errorTextRace"></span></div>
+<p id="msgRace" class="success-msg span-full">✅ ¡Carrera creada!</p>
                     </form>
                 </div>
 
@@ -282,6 +287,8 @@
 
                         <button type="submit" class="btn-create span-full" style="margin-top:15px;">AGREGAR
                             PILOTO</button>
+                        <div id="errorMsgDriver" class="error-msg span-full">❌ <span id="errorTextDriver"></span></div>
+<p id="msgDriver" class="success-msg span-full">✅ ¡Piloto creado!</p>
                     </form>
                 </div>
 

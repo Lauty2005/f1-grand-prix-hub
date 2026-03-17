@@ -316,7 +316,7 @@ async function handleSubmit(e) {
 
         } else {
             const err = await res.json();
-            alert('❌ Error: ' + (err.error || 'Desconocido'));
+            showError(err.error || 'Error desconocido');
         }
     } catch (err) { console.error(err); alert('Error de conexión'); }
     finally { btn.disabled = false; btn.innerText = 'GUARDAR RESULTADO'; }
@@ -357,7 +357,7 @@ async function handleDeleteDriver() {
                 alert('✅ Piloto eliminado.');
                 loadDrivers();
             } else {
-                alert('❌ Error al eliminar.');
+                showError('No se pudo eliminar. Intentá de nuevo.');
             }
         } catch (e) { console.error(e); alert('Error de conexión'); }
     }
@@ -530,7 +530,7 @@ async function handleDeleteSpecificResult() {
             document.getElementById('posInput').value = '';
             ['time1', 'time2', 'time3'].forEach(id => document.getElementById(id).value = '');
             document.getElementById('mainStatus').value = 'finished';
-        } else { alert('❌ Error al eliminar.'); }
+        } else { showError('No se pudo eliminar. Intentá de nuevo.'); }
     } catch (e) { console.error(e); alert('Error de conexión'); }
 }
 
@@ -573,3 +573,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // Esto fuerza a que se muestren los campos correctos apenas entras
     updateFormFields();
 });
+
+// --- Errores ---
+
+const showError = (text, id = 'errorMsg', errorTextId = 'errorText') => {
+    const msg = document.getElementById(id);
+    const errorText = document.getElementById(errorTextId);
+    errorText.textContent = text;
+    msg.classList.add('visible');
+    setTimeout(() => msg.classList.remove('visible'), 4000);
+};
+
+const showSuccess = (id = 'msg') => {
+    const msg = document.getElementById(id);
+    msg.classList.add('visible');
+    setTimeout(() => msg.classList.remove('visible'), 3000);
+};

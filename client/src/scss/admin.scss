@@ -593,3 +593,16 @@ select.form-control {
         font-size: 1rem;
     }
 }
+
+.error-msg {
+    color: #ff4444;
+    text-align: center;
+    margin-top: 15px;
+    font-weight: bold;
+    display: none;
+
+    &.visible {
+        display: block;
+        animation: fadeIn 0.5s;
+    }
+}

@@ -24,10 +24,10 @@ export async function loadCalendarView() {
             const dateObj = new Date(race.date);
             const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
             const adjustedDate = new Date(dateObj.getTime() + userTimezoneOffset);
-            
+
             const month = adjustedDate.toLocaleString('es-ES', { month: 'short' }).toUpperCase().replace('.', '');
-            const day = adjustedDate.getDate(); 
-            
+            const day = adjustedDate.getDate();
+
             // 👇 2. ARREGLO DE IMAGEN (LISTA): Si es relativa, pegamos SERVER_URL
             let mapSrc = race.map_image_url;
             if (mapSrc && !mapSrc.startsWith('http')) {
@@ -66,7 +66,7 @@ export async function loadCalendarView() {
                     </div>
 
                     <div style="padding: 10px 30px; display: flex; align-items: center; justify-content: center;">
-                        <img src="${mapSrc}" class="race-card__map" alt="Map" style="
+                        <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy" style="
                             height: 50px; 
                             width: auto; 
                             opacity: 0.7; 
@@ -91,7 +91,7 @@ export async function loadCalendarView() {
             card.addEventListener('click', () => {
                 // 👇 Leemos la URL corregida directamente de la imagen
                 const mapUrl = card.querySelector('.race-card__map').src;
-                const hasSprint = card.dataset.sprint === 'true'; 
+                const hasSprint = card.dataset.sprint === 'true';
                 openRaceModal(card.dataset.id, mapUrl, hasSprint);
             });
         });
@@ -118,7 +118,7 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
 
         // 👇 3. ARREGLO IMAGEN MODAL: Prioridad circuit > map > mapUrl
         let rawImage = race.circuit_image_url || race.map_image_url || mapUrl;
-        
+
         let displayImage = rawImage;
         if (displayImage && !displayImage.startsWith('http')) {
             displayImage = `${SERVER_URL}${displayImage}`;
@@ -127,8 +127,8 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
         // Preparación de Tabs
         let tabsHTML = '';
         const btnStyle = "background:none; border:none; color:#aaa; padding:10px 15px; cursor:pointer; font-weight:bold; font-size:0.9rem; transition: color 0.3s;";
-        const createBtn = (type, label) => 
-            `<button class="tab-btn" onclick="loadTab('${type}', ${raceId})" style="${btnStyle}">${label}</button>`;
+        const createBtn = (type, label) =>
+            `<button class="tab-btn" data-type="${type}" data-id="${raceId}" style="${btnStyle}">${label}</button>`;
 
         if (hasSprint) {
             tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')}`;
@@ -188,24 +188,36 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
         `;
 
         // 4. LÓGICA DE TABS
-        window.loadTab = (type, id) => {
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.style.color = '#aaa';
-                btn.style.borderBottom = 'none';
-                if (btn.getAttribute('onclick').includes(`'${type}'`)) {
-                    btn.style.color = 'white';
-                    btn.style.borderBottom = '2px solid #e10600';
-                }
-            });
+        const loadTab = (type, id) => {
+            try {
+                document.querySelectorAll('.tab-btn').forEach(btn => {
+                    btn.style.color = '#aaa';
+                    btn.style.borderBottom = 'none';
+                    if (btn.dataset.type === type) {
+                        btn.style.color = 'white';
+                        btn.style.borderBottom = '2px solid #e10600';
+                    }
+                });
 
-            if (type === 'race') loadRaceResults(id);
-            if (type === 'qualy') loadQualyResults(id);
-            if (type === 'sprint') loadSprintResults(id);
-            if (type === 'practices') loadPracticesResults(id, hasSprint);
-            if (type === 'sprint-qualy') loadSprintQualyResults(id);
+                if (type === 'race') loadRaceResults(id);
+                if (type === 'qualy') loadQualyResults(id);
+                if (type === 'sprint') loadSprintResults(id);
+                if (type === 'practices') loadPracticesResults(id, hasSprint);
+                if (type === 'sprint-qualy') loadSprintQualyResults(id);
+            } catch (e) {
+                console.error('Error cargando tab:', e);
+            }
         };
 
-        window.loadTab('race', raceId);
+        // Agregar listeners a los botones
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                loadTab(btn.dataset.type, btn.dataset.id);
+            });
+        });
+
+        // Carga inicial
+        loadTab('race', raceId);
 
     } catch (e) {
         console.error(e);
@@ -242,7 +254,7 @@ async function loadRaceResults(raceId) {
                 </td>
             </tr>
         `).join('');
-        
+
         container.innerHTML = `
             <div class="table-responsive"> 
                 <table style="width: 100%; border-collapse: collapse; font-size:0.9rem;">
@@ -266,7 +278,7 @@ async function loadQualyResults(raceId) {
         const res = await fetch(`${API}/races/${raceId}/qualifying`);
         const json = await res.json();
         if (!json.success || json.data.length === 0) { container.innerHTML = '<p style="color:#aaa; text-align:center;">No hay datos.</p>'; return; }
-        
+
         const rows = json.data.map(r => `
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
                 <td style="padding:10px; font-weight:bold; text-align:center; color:white;">${r.position}</td>
@@ -282,7 +294,7 @@ async function loadQualyResults(raceId) {
 
 async function loadPracticesResults(raceId, isSprint) {
     const container = document.getElementById('tab-content');
-    
+
     // 1. Carga inicial
     container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando tiempos...</div>';
 
@@ -300,14 +312,14 @@ async function loadPracticesResults(raceId, isSprint) {
         // 2. FUNCIÓN DE RENDERIZADO (Reutilizable)
         const renderSession = (sessionKey) => {
             const tableContainer = document.getElementById('practice-table-container');
-            
+
             // A. ACTUALIZAR BOTONES (Solo si existen, es decir, si NO es Sprint)
             if (!isSprint) {
                 ['p1', 'p2', 'p3'].forEach(key => {
                     const btn = document.getElementById(`btn-${key}`);
                     if (btn) {
                         if (key === sessionKey) {
-                            btn.style.background = '#e10600'; 
+                            btn.style.background = '#e10600';
                             btn.style.color = 'white';
                             btn.style.border = '1px solid #e10600';
                         } else {
@@ -330,7 +342,7 @@ async function loadPracticesResults(raceId, isSprint) {
                 const isGapA = timeA.startsWith('+');
                 const isGapB = timeB.startsWith('+');
 
-                if (!isGapA && isGapB) return -1; 
+                if (!isGapA && isGapB) return -1;
                 if (isGapA && !isGapB) return 1;
 
                 return timeA.localeCompare(timeB, undefined, { numeric: true });
@@ -342,7 +354,7 @@ async function loadPracticesResults(raceId, isSprint) {
                 const hasTime = timeValue !== '-';
                 const position = hasTime ? index + 1 : '-';
                 const isLeader = index === 0 && hasTime;
-                
+
                 return `
                 <tr style="${isLeader ? 'background: rgba(0, 255, 136, 0.1);' : 'border-bottom: 1px solid rgba(255,255,255,0.05);'}">
                     <td style="padding:10px; text-align:center; color:${isLeader ? '#00ff88' : '#666'}; font-weight:bold; width:40px;">
@@ -389,7 +401,7 @@ async function loadPracticesResults(raceId, isSprint) {
         } else {
             // --- MODO NORMAL: Mostramos botones FP1, FP2, FP3 ---
             const subBtnStyle = `background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 5px 15px; cursor: pointer; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;`;
-            
+
             container.innerHTML = `
                 <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 20px; padding-top: 10px;">
                     <button id="btn-p1" style="${subBtnStyle}">FP1</button>
@@ -398,12 +410,12 @@ async function loadPracticesResults(raceId, isSprint) {
                 </div>
                 <div id="practice-table-container"></div>
             `;
-            
+
             // Asignar eventos
             document.getElementById('btn-p1').onclick = () => renderSession('p1');
             document.getElementById('btn-p2').onclick = () => renderSession('p2');
             document.getElementById('btn-p3').onclick = () => renderSession('p3');
-            
+
             // Cargar FP1 por defecto
             renderSession('p1');
         }
@@ -431,7 +443,7 @@ async function loadSprintResults(raceId) {
             // Lógica para DNF o Tiempo
             let timeDisplay = r.time_gap || '-';
             let colorTime = 'white';
-            
+
             if (r.dnf) { timeDisplay = 'DNF'; colorTime = '#ff4444'; }
             else if (r.dns) { timeDisplay = 'DNS'; colorTime = '#aaa'; }
             else if (r.dsq) { timeDisplay = 'DSQ'; colorTime = 'orange'; }

@@ -93,8 +93,7 @@ function createModalHTML() {
 async function initCountdown() {
     const container = document.getElementById('countdown-display');
     try {
-        const currentYear = new Date().getFullYear();
-        const res = await fetch(`${API}/races?year=${currentYear}`);
+        const res = await fetch(`${API}/races?year=${state.currentYear}`);
         const json = await res.json();
         
         const now = new Date();
@@ -268,9 +267,5 @@ async function loadSession(type) {
         container.innerHTML = '<p style="color:red; text-align:center;">Error al cargar la tabla.</p>';
     }
 }
-
-// EXPORTAR GLOBALES
-window.openRaceModal = openRaceModal;
-window.loadSession = loadSession;
 
 init();
