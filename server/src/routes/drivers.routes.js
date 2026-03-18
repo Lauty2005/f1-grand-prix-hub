@@ -51,12 +51,12 @@ router.get('/', async (req, res) => {
                 GROUP BY s_res.driver_id
             ) sprint_stats ON d.id = sprint_stats.driver_id
             
-            WHERE $2 = ANY(d.active_seasons)
+            WHERE d.active_seasons::text LIKE $2
 
             ORDER BY points DESC, d.last_name ASC;
         `;
         
-        const result = await query(sql, [year, year]);
+        const result = await query(sql, [parseInt(year), '%' + year + '%']);
         res.json({ success: true, data: result.rows });
     } catch (err) {
         console.error("ERROR SQL DRIVERS:", err.message);
