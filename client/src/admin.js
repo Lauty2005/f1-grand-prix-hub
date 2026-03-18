@@ -7,7 +7,7 @@ let allRacesData = [];
 const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN;
 
 export const adminFetch = (url, options = {}) => {
-    return Fetch(url, {
+    return fetch(url, {
         ...options,
         headers: {
             ...options.headers,
@@ -365,7 +365,7 @@ async function handleDeleteDriver() {
 
 async function loadTeams() {
     try {
-        const res = await adminFetch(`${API}/drivers/teams/list`);
+        const res = await fetch(`${API}/drivers/teams/list`);
         const json = await res.json();
         const select = document.getElementById('newDriverTeam');
         select.innerHTML = '<option value="">Elegir Equipo...</option>' +

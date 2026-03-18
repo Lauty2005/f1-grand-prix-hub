@@ -26,7 +26,8 @@ export const COUNTRY_NAMES = {
     'SAU': 'Arabia Saudita',
     'SIN': 'Singapur',
     'TAI': 'Tailandia', // Usé tu código TAI
-    'USA': 'Estados Unidos'
+    'USA': 'Estados Unidos',
+    'FIN': 'Finlandia'
 };
 
 const countryCodes = { 
@@ -35,7 +36,7 @@ const countryCodes = {
     'USA': 'us', 'ITA': 'it', 'ABU': 'ae', 'CAN': 'ca', 'ATN': 'at',
     'BEL': 'be', 'HUN': 'hu', 'AZB': 'az', 'SIN': 'sg', 'BRZ': 'br',
     'QAT': 'qa', 'TAI': 'th', 'NZE': 'nz', 'FRA': 'fr', 'GER': 'de',
-    'ARG': 'ar'
+    'ARG': 'ar', 'FIN': 'fi'
 };
 
 export function getFlagEmoji(code) {

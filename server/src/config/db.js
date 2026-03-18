@@ -9,7 +9,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 const connectionConfig = process.env.DATABASE_URL 
     ? {
         connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false }
+        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
       }
     : {
         user: process.env.DB_USER,

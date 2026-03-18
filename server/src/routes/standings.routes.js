@@ -19,7 +19,6 @@ router.get('/constructors-standings', async (req, res) => {
                 c.primary_color, 
                 c.logo_url,
                 (
-                    -- 1. Suma Puntos Carrera
                     COALESCE((
                         SELECT SUM(r.points)
                         FROM results r
@@ -29,7 +28,6 @@ router.get('/constructors-standings', async (req, res) => {
                         AND EXTRACT(YEAR FROM ra.date) = $1::int
                     ), 0)
                     +
-                    -- 2. Suma Puntos Sprint
                     COALESCE((
                         SELECT SUM(s.points)
                         FROM sprint_results s
@@ -40,10 +38,18 @@ router.get('/constructors-standings', async (req, res) => {
                     ), 0)
                 ) as points
             FROM constructors c
+            -- Solo mostrar equipos que tienen pilotos activos ese año
+            WHERE EXISTS (
+                SELECT 1 FROM drivers d 
+                WHERE d.constructor_id = c.id 
+                AND d.active_seasons::text LIKE $2
+            )
             ORDER BY points DESC, c.name ASC;
         `;
 
-        const result = await query(sql, [year]);
+        const result = await query(sql, [year, `%${year}%`]);
+
+        //const result = await query(sql, [year]);
         res.json({ success: true, data: result.rows });
 
     } catch (e) {
