@@ -24,7 +24,7 @@ const pool = new pg.Pool(connectionConfig);
 
 pool.on('error', (err) => {
     console.error('❌ Error inesperado en PostgreSQL', err);
-    process.exit(-1);
 });
 
 export const query = (text, params) => pool.query(text, params);
+export { pool };

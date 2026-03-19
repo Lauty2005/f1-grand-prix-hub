@@ -1,6 +1,7 @@
 // client/src/scss/admin.scss
 
 @use 'abstracts/variables' as *;
+@use 'sass:color';
 
 // Variables básicas (para mantener coherencia con el resto de la app)
 $bg-color: #15151e;
@@ -67,7 +68,7 @@ body {
         padding: 12px;
         border-radius: 8px;
         border: 1px solid rgba(255,255,255,0.1);
-        background: darken($bg-color, 2%);
+        background: color.adjust($bg-color, $lightness: -2%);
         color: white;
         box-sizing: border-box;
         font-size: 1rem;
@@ -106,7 +107,7 @@ body {
     margin-top: 10px;
 
     &:hover {
-        background: lighten($primary-color, 5%);
+        background: color.adjust($primary-color, $lightness: 5%);
     }
 
     &:active {

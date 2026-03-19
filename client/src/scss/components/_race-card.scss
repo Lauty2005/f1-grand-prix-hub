@@ -1,4 +1,5 @@
 @use '../abstracts/variables' as *;
+@use 'sass:color';
 
 .race-grid {
     display: flex;
@@ -29,7 +30,7 @@
 
     &:hover {
         transform: translateX(10px); // Efecto de movimiento lateral
-        background-color: lighten($color-surface, 5%);
+        background-color: color.adjust($color-surface, $lightness: 5%);
     }
 
     &__date {

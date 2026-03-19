@@ -1,8 +1,16 @@
+import jwt from 'jsonwebtoken';
+
 export const adminAuth = (req, res, next) => {
-    const token = req.headers['x-admin-token'];
-    
-    if (!token || token !== process.env.ADMIN_SECRET) {
+    const token = req.cookies?.jwt_token;
+
+    if (!token) {
         return res.status(401).json({ error: 'No autorizado' });
     }
-    next();
+
+    try {
+        jwt.verify(token, process.env.ADMIN_SECRET);
+        next();
+    } catch (err) {
+        return res.status(401).json({ error: 'Token inválido o expirado' });
+    }
 };

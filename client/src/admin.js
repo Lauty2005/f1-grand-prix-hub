@@ -4,17 +4,73 @@ import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar
 
 let allRacesData = [];
 
-const ADMIN_TOKEN = import.meta.env.VITE_ADMIN_TOKEN;
+const ADMIN_TOKEN = null; // Removido por seguridad, ahora usamos cookies
 
 export const adminFetch = (url, options = {}) => {
     return fetch(url, {
         ...options,
+        credentials: 'include', // Permite envío automático de cookies HttpOnly
         headers: {
-            ...options.headers,
-            'x-admin-token': ADMIN_TOKEN
+            ...options.headers
         }
     });
 };
+
+// ==========================================
+// 0. AUTH Y LOGIN FLOW
+// ==========================================
+async function checkAuth() {
+    try {
+        const res = await adminFetch(`${API}/auth/check`);
+        if (res.ok) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            return true;
+        } else {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            return false;
+        }
+    } catch (e) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return false;
+    }
+}
+
+document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = document.getElementById('adminPassword').value;
+    const btn = e.target.querySelector('button');
+    btn.innerText = 'Verificando...';
+    try {
+        const res = await fetch(`${API}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password }),
+            credentials: 'include'
+        });
+        if (res.ok) {
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('loginError').style.display = 'none';
+            // Cargar estado inicial
+            loadInitialData();
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    } catch (err) {
+        alert('Error contactando al servidor');
+    } finally {
+        btn.innerText = 'INGRESAR';
+    }
+});
+
+function loadInitialData() {
+    loadRaces(document.getElementById('seasonSelect').value || 2025);
+    loadRacesForDelete();
+    loadDrivers();
+    loadDriversForDelete();
+    loadTeams();
+    loadCountryOptions();
+    loadServerImages();
+}
 
 // ==========================================
 // 1. CARGA PARA EL PANEL SUPERIOR (Control)
@@ -534,14 +590,11 @@ async function handleDeleteSpecificResult() {
     } catch (e) { console.error(e); alert('Error de conexión'); }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    loadRaces(2025);
-    loadRacesForDelete();
-    loadDrivers();
-    loadDriversForDelete();
-    loadTeams();
-    loadCountryOptions();
-    loadServerImages();
+document.addEventListener('DOMContentLoaded', async () => {
+    const isAuthenticated = await checkAuth();
+    if (isAuthenticated) {
+        loadInitialData();
+    }
 
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete); document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
