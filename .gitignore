@@ -14,3 +14,11 @@ build/
 
 # Archivos de sistema
 .DS_Store
+
+# Archivos de los MCP y Agentes IA
+.mcp/
+mcp.json
+.cursor/mcp.json
+.cline_mcp_settings.json
+stitch-skills/
+mcp-servers/
