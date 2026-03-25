@@ -4,13 +4,13 @@ const EXPIRATION = 24 * 60 * 60 * 1000;
 
 export const login = (req, res) => {
     const { password } = req.body;
-    if (!password || password !== process.env.ADMIN_SECRET) {
+    if (!password || password !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Credenciales inválidas' });
     }
 
     const token = jwt.sign(
         { role: 'admin' }, 
-        process.env.ADMIN_SECRET, 
+        process.env.JWT_SECRET, 
         { expiresIn: '24h' }
     );
 
@@ -38,7 +38,7 @@ export const checkAuth = (req, res) => {
     if (!token) return res.status(401).json({ authenticated: false });
 
     try {
-        jwt.verify(token, process.env.ADMIN_SECRET);
+        jwt.verify(token, process.env.JWT_SECRET);
         return res.json({ authenticated: true });
     } catch (err) {
         return res.status(401).json({ authenticated: false });

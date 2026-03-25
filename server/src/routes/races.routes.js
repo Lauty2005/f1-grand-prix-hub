@@ -3,7 +3,7 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 import { adminAuth } from '../middleware/auth.middleware.js';
-import { validateResult } from '../middleware/validate.middleware.js';
+import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 import * as racesController from '../controllers/races.controller.js';
 import { fileURLToPath } from 'url';
 
@@ -18,10 +18,24 @@ const storage = multer.diskStorage({
         if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
         cb(null, uploadPath);
     },
-    filename: (req, file, cb) => cb(null, file.originalname.toLowerCase().replace(/\s+/g, '-'))
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+        cb(null, safeName);
+    }
 });
 
-const uploadFields = multer({ storage }).fields([
+const ALLOWED_MIME = ['image/jpeg','image/png','image/webp','image/avif','image/gif'];
+
+const fileFilter = (req, file, cb) => {
+    if (ALLOWED_MIME.includes(file.mimetype)) {
+       cb(null, true);
+    } else {
+        cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`), false);
+    }
+};
+
+const uploadFields = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }).fields([
     { name: 'map_image', maxCount: 1 },
     { name: 'circuit_image', maxCount: 1 }
 ]);
@@ -39,7 +53,7 @@ router.get('/:id/sprint', racesController.getRaceSession('sprint'));
 router.get('/:id/sprint-qualifying', racesController.getRaceSession('sprint-qualifying'));
 
 // 3. POSTEO DE DATOS PRINCIPALES
-router.post('/', uploadFields, adminAuth, validateResult, racesController.postRace);
+router.post('/', uploadFields, adminAuth, validateRace, racesController.postRace);
 router.delete('/:id', adminAuth, racesController.deleteRace);
 
 // 4. POSTEO DE RESULTADOS DE SESIÓN

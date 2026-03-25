@@ -9,18 +9,33 @@ import driversRoutes from './src/routes/drivers.routes.js';
 import racesRoutes from './src/routes/races.routes.js';
 import standingsRoutes from './src/routes/standings.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
+import teamsRoutes from './src/routes/teams.routes.js';
 
 dotenv.config();
+
+const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
+? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+: ['http://localhost:5173'];
 
 const app = express();
 const port = process.env.PORT || 3000;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+}
+
 // --- MIDDLEWARES (SIEMPRE PRIMERO) ---
 app.use(cors({
-    origin: true,
-    credentials: true // Permite que las cookies pasen (fundamental para auth frontend)
+    origin: (origin, callback) => {
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS bloqueado: ${origin}`));
+        }
+    },
+    credentials: true
 }));
 app.use(express.json());
 app.use(cookieParser());
@@ -31,6 +46,7 @@ app.use('/api/drivers', driversRoutes);
 app.use('/api/races', racesRoutes);
 app.use('/api', standingsRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/teams', teamsRoutes);
 
 // --- GLOBAL ERROR HANDLER ---
 import { errorHandler } from './src/middleware/error.middleware.js';

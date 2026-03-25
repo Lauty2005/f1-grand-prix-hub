@@ -10,18 +10,35 @@
 <body>
 
     <!-- OVERLAY DE LOGIN -->
-    <div id="loginOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#15151e; z-index:9999; display:flex; justify-content:center; align-items:center;">
-        <div style="background:#1f1f27; padding:40px; border-radius:12px; border:2px solid #e10600; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.8); min-width: 320px;">
+    <div id="loginOverlay"
+        style="position:fixed; top:0; left:0; width:100%; height:100%; background:#15151e; z-index:9999; display:flex; justify-content:center; align-items:center;">
+        <div
+            style="background:#1f1f27; padding:40px; border-radius:12px; border:2px solid #e10600; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.8); min-width: 320px;">
             <h2 style="color:white; margin-bottom:20px;">🔒 Acceso Restringido</h2>
             <form id="loginForm">
-                <input type="password" id="adminPassword" placeholder="Contraseña de Admin" style="padding:10px; width:100%; margin-bottom:15px; border-radius:6px; border:1px solid #444; background:#111; color:white; box-sizing: border-box;">
-                <button type="submit" style="width:100%; padding:12px; background:#e10600; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">INGRESAR</button>
+                <input type="password" id="adminPassword" placeholder="Contraseña de Admin"
+                    style="padding:10px; width:100%; margin-bottom:15px; border-radius:6px; border:1px solid #444; background:#111; color:white; box-sizing: border-box;">
+                <button type="submit"
+                    style="width:100%; padding:12px; background:#e10600; color:white; border:none; border-radius:6px; font-weight:bold; cursor:pointer;">INGRESAR</button>
             </form>
-            <p id="loginError" style="color:#ff4444; margin-top:10px; display:none; font-weight:bold;">Contraseña incorrecta</p>
+            <p id="loginError" style="color:#ff4444; margin-top:10px; display:none; font-weight:bold;">Contraseña
+                incorrecta</p>
         </div>
     </div>
 
     <div class="admin-layout">
+        <div style="position:absolute; top:15px; right:20px; z-index:100;">
+            <button id="btnLogout" style="
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #aaa;
+            padding: 6px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        ">Cerrar sesión</button>
+        </div>
 
         <div class="danger-sidebar">
             <h3 class="danger-header">⚠️ ZONA DE PELIGRO</h3>
@@ -172,7 +189,7 @@
                         🗑️
                     </button>
                 </div>
-                <p id="msg" class="success-msg">✅ ¡Operación exitosa!</p>
+
             </form>
         </div>
 
@@ -263,7 +280,7 @@
 
                         <button type="submit" class="btn-create span-full">AGREGAR GP</button>
                         <div id="errorMsgRace" class="error-msg span-full">❌ <span id="errorTextRace"></span></div>
-<p id="msgRace" class="success-msg span-full">✅ ¡Carrera creada!</p>
+                        <p id="msgRace" class="success-msg span-full">✅ ¡Carrera creada!</p>
                     </form>
                 </div>
 
@@ -300,7 +317,7 @@
                         <button type="submit" class="btn-create span-full" style="margin-top:15px;">AGREGAR
                             PILOTO</button>
                         <div id="errorMsgDriver" class="error-msg span-full">❌ <span id="errorTextDriver"></span></div>
-<p id="msgDriver" class="success-msg span-full">✅ ¡Piloto creado!</p>
+                        <p id="msgDriver" class="success-msg span-full">✅ ¡Piloto creado!</p>
                     </form>
                 </div>
 

@@ -4,8 +4,6 @@ import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar
 
 let allRacesData = [];
 
-const ADMIN_TOKEN = null; // Removido por seguridad, ahora usamos cookies
-
 export const adminFetch = (url, options = {}) => {
     return fetch(url, {
         ...options,
@@ -421,7 +419,7 @@ async function handleDeleteDriver() {
 
 async function loadTeams() {
     try {
-        const res = await fetch(`${API}/drivers/teams/list`);
+        const res = await adminFetch(`${API}/drivers/teams/list`);
         const json = await res.json();
         const select = document.getElementById('newDriverTeam');
         select.innerHTML = '<option value="">Elegir Equipo...</option>' +
@@ -494,13 +492,13 @@ async function handleCreateRace(e) {
         });
 
         if (res.ok) {
-            alert('✅ Carrera creada con todos los datos.');
+            showSuccess('msgRace');
             loadRaces(document.getElementById('seasonSelect').value);
             e.target.reset(); // Limpia todos los inputs, incluidos los nuevos
             document.getElementById('newCountry').value = "";
         } else {
             const data = await res.json();
-            alert('❌ Error: ' + (data.error || 'Desconocido'));
+            showError(data.error || 'Error desconocido', 'errorMsgRace', 'errorTextRace');
         }
     } catch (err) {
         console.error(err);
@@ -543,7 +541,7 @@ async function handleCreateDriver(e) {
     try {
         const res = await adminFetch(`${API}/drivers`, { method: 'POST', body: formData });
         if (res.ok) {
-            alert('✅ Piloto creado.');
+            showSuccess('msgDriver');
             loadDrivers();
             loadTeams();
             e.target.reset();
@@ -551,7 +549,7 @@ async function handleCreateDriver(e) {
             document.getElementById('newDriverTeam').value = "";
         } else {
             const data = await res.json();
-            alert('❌ Error: ' + (data.error || 'Desconocido'));
+            showError(data.error || 'Error desconocido', 'errorMsgDriver', 'errorTextDriver');
         }
     } catch (err) { console.error(err); alert('Error de conexión.'); }
     finally { btn.disabled = false; btn.innerText = 'AGREGAR PILOTO'; }
@@ -596,6 +594,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadInitialData();
     }
 
+    document.getElementById('btnLogout')?.addEventListener('click', async () => {
+        try {
+            await adminFetch(`${API}/auth/logout`, { method: 'POST' });
+        } catch (e) {
+            console.warn('Logout request failed:', e);
+        } finally {
+            document.getElementById('loginOverlay').style.display = 'flex';
+            document.getElementById('adminPassword').value = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+    });
+
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete); document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -615,12 +625,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         updateFormFields();
         renderRaceOptions();
     });
-
-    // 3. LISTENERS NUEVOS DE EQUIPOS (Si los tienes)
-    const formTeam = document.getElementById('newTeamForm');
-    if (formTeam) formTeam.addEventListener('submit', handleCreateTeam);
-    const btnDelTeam = document.getElementById('btnDeleteTeam');
-    if (btnDelTeam) btnDelTeam.addEventListener('click', handleDeleteTeam);
 
     // 👇👇👇 AGREGA ESTA LÍNEA AQUÍ AL FINAL 👇👇👇
     // Esto fuerza a que se muestren los campos correctos apenas entras

@@ -7,6 +7,7 @@ import { loadStandingsView } from './modules/standings.js';
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
+let countdownInterval = null;
 
 // --- INIT ---
 function init() {
@@ -37,7 +38,7 @@ function init() {
     document.getElementById('globalSeasonSelect').addEventListener('change', (e) => {
         state.currentYear = e.target.value;
         refreshActiveView();
-        initCountdown(); 
+        initCountdown();
     });
 
     document.getElementById('btn-drivers').addEventListener('click', () => {
@@ -92,10 +93,16 @@ function createModalHTML() {
 
 async function initCountdown() {
     const container = document.getElementById('countdown-display');
+
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+
     try {
         const res = await fetch(`${API}/races?year=${state.currentYear}`);
         const json = await res.json();
-        
+
         const now = new Date();
         const nextRace = json.data.find(race => new Date(race.date) > now);
 
@@ -118,7 +125,7 @@ async function initCountdown() {
                 </div>`;
         };
         updateTimer();
-        setInterval(updateTimer, 60000); 
+        countdownInterval = setInterval(updateTimer, 60000);
     } catch (error) { console.error("Error countdown:", error); }
 }
 
@@ -190,8 +197,8 @@ async function openRaceModal(raceId) {
 
             <div class="tabs-container" style="text-align:center; border-top: 1px solid #333; padding-top: 20px;">
                 <div style="margin-bottom: 15px;">
-                    <button id="btnRace" class="nav-btn active-btn" onclick="loadSession('race')">CARRERA</button>
-                    <button id="btnQualy" class="nav-btn" onclick="loadSession('qualifying')">CLASIFICACIÓN</button>
+                    <button id="btnRace" class="nav-btn active-btn">CARRERA</button>
+                    <button id="btnQualy" class="nav-btn">CLASIFICACIÓN</button>
                 </div>
                 
                 <div id="resultsTableContainer">
@@ -199,6 +206,18 @@ async function openRaceModal(raceId) {
                 </div>
             </div>
         `;
+
+        // Agregar listeners DESPUÉS de inyectar el HTML
+        document.getElementById('btnRace')?.addEventListener('click', () => {
+            document.getElementById('btnRace').classList.add('active-btn');
+            document.getElementById('btnQualy').classList.remove('active-btn');
+            loadSession('race');
+        });
+        document.getElementById('btnQualy')?.addEventListener('click', () => {
+            document.getElementById('btnQualy').classList.add('active-btn');
+            document.getElementById('btnRace').classList.remove('active-btn');
+            loadSession('qualifying');
+        });
 
         loadSession('race');
 
@@ -211,10 +230,10 @@ async function openRaceModal(raceId) {
 // 2. FUNCIÓN DE TABLA (Sigue igual que antes)
 async function loadSession(type) {
     const container = document.getElementById('resultsTableContainer');
-    
+
     document.querySelectorAll('.tabs-container .nav-btn').forEach(b => b.classList.remove('active-btn'));
-    if(type === 'race') document.getElementById('btnRace').classList.add('active-btn');
-    if(type === 'qualifying') document.getElementById('btnQualy').classList.add('active-btn');
+    if (type === 'race') document.getElementById('btnRace').classList.add('active-btn');
+    if (type === 'qualifying') document.getElementById('btnQualy').classList.add('active-btn');
 
     container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Cargando...</div>';
 

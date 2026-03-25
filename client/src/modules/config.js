@@ -1,8 +1,3 @@
-// Detecta si estamos en local o en producción automáticamente
-const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-export const SERVER_URL = isLocal 
-    ? 'http://localhost:3000' 
-    : 'https://f1-grand-prix-hub.onrender.com'; // 👈 Esto lo actualizaremos luego
+export const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const API = `${SERVER_URL}/api`;

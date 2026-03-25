@@ -40,6 +40,14 @@ export const insertRaceResult = async (data) => {
     const sql = `
         INSERT INTO results (race_id, driver_id, position, points, fastest_lap, dnf, dsq, dns, dnq)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ON CONFLICT (race_id, driver_id) DO UPDATE SET
+            position    = EXCLUDED.position,
+            points      = EXCLUDED.points,
+            fastest_lap = EXCLUDED.fastest_lap,
+            dnf         = EXCLUDED.dnf,
+            dsq         = EXCLUDED.dsq,
+            dns         = EXCLUDED.dns,
+            dnq         = EXCLUDED.dnq
     `;
     await query(sql, [race_id, driver_id, position, calculatedPoints, fastest_lap, dnf, dsq, dns, dnq]);
     return calculatedPoints;
@@ -72,7 +80,12 @@ export const insertSprintResult = async (data) => {
     if (!dnf && position <= 8) points = SPRINT_POINTS_SYSTEM[position] || 0;
 
     await query(
-        `INSERT INTO sprint_results (race_id, driver_id, position, points, dnf, time_gap) VALUES ($1, $2, $3, $4, $5, $6)`,
+        `INSERT INTO sprint_results (race_id, driver_id, position, points, dnf, time_gap) 
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (race_id, driver_id) DO UPDATE SET
+            position = EXCLUDED.position, points = EXCLUDED.points,
+            dnf = EXCLUDED.dnf, time_gap = EXCLUDED.time_gap
+        `,
         [race_id, driver_id, position, points, dnf, time_gap]
     );
     return points;
@@ -80,7 +93,13 @@ export const insertSprintResult = async (data) => {
 
 export const insertQualifying = async (data) => {
     const { race_id, driver_id, position, q1, q2, q3 } = data;
-    await query(`INSERT INTO qualifying (race_id, driver_id, position, q1, q2, q3) VALUES ($1, $2, $3, $4, $5, $6)`, [race_id, driver_id, position, q1, q2, q3]);
+    await query(`
+        INSERT INTO qualifying (race_id, driver_id, position, q1, q2, q3) 
+        VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT (race_id, driver_id) DO UPDATE SET
+            position = EXCLUDED.position, q1 = EXCLUDED.q1, q2 = EXCLUDED.q2, q3 = EXCLUDED.q3
+        `, 
+        [race_id, driver_id, position, q1, q2, q3]);
 };
 
 export const insertSprintQualifying = async (data) => {
@@ -90,7 +109,13 @@ export const insertSprintQualifying = async (data) => {
 
 export const insertPractices = async (data) => {
     const { race_id, driver_id, p1, p2, p3 } = data;
-    await query(`INSERT INTO practices (race_id, driver_id, p1, p2, p3) VALUES ($1, $2, $3, $4, $5)`, [race_id, driver_id, p1, p2, p3]);
+    await query(`
+        INSERT INTO practices (race_id, driver_id, p1, p2, p3) 
+        VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT (race_id, driver_id) DO UPDATE SET
+            p1 = EXCLUDED.p1, p2 = EXCLUDED.p2, p3 = EXCLUDED.p3
+        `, 
+        [race_id, driver_id, p1, p2, p3]);
 };
 
 export const insertRace = async (data) => {
