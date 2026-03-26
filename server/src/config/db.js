@@ -24,7 +24,7 @@ const pool = new pg.Pool({
     ...connectionConfig,
     max: parseInt(process.env.PG_POOL_MAX) || 5,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 3000,
+    connectionTimeoutMillis: 10000,
     allowExitOnIdle: true
 });
 
