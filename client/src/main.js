@@ -15,7 +15,7 @@ function init() {
 
     // Inyectar HTML Base del Navbar
     document.body.insertAdjacentHTML('afterbegin', `
-        <div id="countdown-display" style="background: #15151e; padding: 15px; border-bottom: 1px solid #333; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+        <div id="countdown-display" class="countdown-display">
             <span style="color:#666;">Cargando próxima carrera...</span>
         </div>
         <nav class="main-navbar">
@@ -36,7 +36,7 @@ function init() {
 
     // Listeners del Navbar
     document.getElementById('globalSeasonSelect').addEventListener('change', (e) => {
-        state.currentYear = e.target.value;
+        state.currentYear = String(e.target.value);
         refreshActiveView();
         initCountdown();
     });
@@ -118,10 +118,10 @@ async function initCountdown() {
             const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             container.innerHTML = `
-                <div style="text-align:center;">
-                    <span style="display:block; font-size: 0.8rem; color: #e10600; font-weight: bold; letter-spacing: 2px;">PRÓXIMA CARRERA: ${nextRace.country_code}</span>
-                    <span style="font-size: 1.5rem; font-weight: bold; color: white;">${d}d ${h}h ${m}m</span>
-                    <span style="display:block; font-size: 0.8rem; color: #666;">${nextRace.name}</span>
+                <div class="countdown-inner">
+                    <span class="countdown-label">Próxima carrera: ${nextRace.country_code}</span>
+                    <span class="countdown-time">${d}d ${h}h ${m}m</span>
+                    <span class="countdown-race-name">${nextRace.name}</span>
                 </div>`;
         };
         updateTimer();

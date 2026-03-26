@@ -35,57 +35,28 @@ export async function loadCalendarView() {
             }
 
             return `
-                <div class="race-card-wide" data-id="${race.id}" data-sprint="${race.has_sprint || false}" style="
-                    display: flex; 
-                    align-items: center; 
-                    background: #1e1e24; 
-                    border-radius: 8px; 
-                    overflow: hidden; 
-                    cursor: pointer; 
-                    border-left: 4px solid #e10600; 
-                    min-height: 90px;
-                    transition: transform 0.2s, background 0.2s;
-                    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                "
-                onmouseover="this.style.background='#25252d'; this.style.transform='scale(1.01)'"
-                onmouseout="this.style.background='#1e1e24'; this.style.transform='scale(1)'"
-                >
-                    <div style="padding: 0 25px; text-align: center; border-right: 1px solid rgba(255,255,255,0.1); min-width: 80px; display: flex; flex-direction: column; justify-content: center;">
-                        <span style="font-size: 0.8rem; color: #aaa; font-weight: bold; text-transform: uppercase;">${month}</span>
-                        <span style="font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1;">${day}</span>
+                <div class="race-card-wide" data-id="${race.id}" data-sprint="${race.has_sprint || false}">
+                    <div class="race-card-wide__date">
+                        <span class="race-card-wide__date-month">${month}</span>
+                        <span class="race-card-wide__date-day">${day}</span>
                     </div>
-
-                    <div style="flex-grow: 1; padding: 15px 20px; display: flex; flex-direction: column; justify-content: center;">
-                        <h3 style="margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; color: #fff; letter-spacing: 0.5px;">
-                            Round ${race.round}: ${race.name}
-                        </h3>
-                        <p style="margin: 0; color: #888; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;">
-                            <span style="font-size: 1.2rem;">${getFlagEmoji(race.country_code)}</span> 
-                            ${race.circuit_name}
-                        </p>
+                    <div class="race-card-wide__info">
+                        <h3>Round ${race.round}: ${race.name}</h3>
+                        <p><span>${getFlagEmoji(race.country_code)}</span> ${race.circuit_name}</p>
                     </div>
-
-                    <div style="padding: 10px 30px; display: flex; align-items: center; justify-content: center;">
-                        <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy" style="
-                            height: 50px; 
-                            width: auto; 
-                            opacity: 0.7; 
-                            filter: invert(1);
-                        ">
+                    <div class="race-card-wide__map-col">
+                        <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy">
                     </div>
                 </div>
             `;
         }).join('');
 
         app.innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:center; margin-bottom: 30px;">
-                <h1 style="text-align:center; color:white; margin-bottom:10px; font-size: 2rem;">CALENDARIO ${state.currentYear}</h1>
+            <div class="calendar-header">
+                <h1>CALENDARIO ${state.currentYear}</h1>
             </div>
-            
-            <div class="race-list" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));  flex-direction: column; gap: 15px; max-width: 1000px; margin: 0 auto; padding-bottom: 50px;">
-                ${cardsHtml}
-            </div>
-        `;
+            <div class="race-list">${cardsHtml}</div>
+         `;
 
         document.querySelectorAll('.race-card-wide').forEach(card => {
             card.addEventListener('click', () => {
@@ -136,44 +107,35 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
             tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')}`;
         }
 
-        const statBoxStyle = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 8px; display: flex; flex-direction: column; text-align: center; justify-content: center;";
-        const labelStyle = "font-size: 0.65rem; color: #aaa; text-transform: uppercase; font-weight: bold; margin-bottom: 3px;";
-        const valueStyle = "font-size: 1rem; font-weight: 800; color: #fff;";
-
         modalBody.innerHTML = `
             <div style="text-align:center; margin-bottom:15px;">
                 <h2 style="color:#e10600; text-transform:uppercase; margin:0;">${race.name}</h2>
             </div>
 
             <div class="circuit_info">
-                
-                <div style="flex: 3; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 10px; padding: 10px;">
-                    <img src="${displayImage}" style="width: 100%; height: auto; filter: drop-shadow(0 0 8px rgba(255,255,255,0.1));">
+                <div class="modal-circuit-image">
+                    <img src="${displayImage}" alt="${race.circuit_name}">
                 </div>
-
-                <div style="flex: 2; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
-                    <div style="${statBoxStyle}">
-                        <span style="${labelStyle}">Circuit</span>
-                        <div>
-                            <span style="font-size: 1.2rem;">${getFlagEmoji(race.country_code)}</span> 
-                            <span style="${valueStyle}">${race.circuit_name || '-'}</span>
-                        </div>
+                <div class="modal-circuit-stats">
+                    <div class="circuit-stat">
+                        <span class="circuit-stat__label">Circuit</span>
+                        <div><span style="font-size:1.2rem">${getFlagEmoji(race.country_code)}</span> <span class="circuit-stat__value">${race.circuit_name || '-'}</span></div>
                     </div>
-                    <div style="${statBoxStyle}">
-                        <span style="${labelStyle}">Circuit Length</span>
-                        <span style="${valueStyle}">${race.circuit_length || '-'}</span>
+                    <div class="circuit-stat">
+                        <span class="circuit-stat__label">Circuit Length</span>
+                        <span class="circuit-stat__value">${race.circuit_length || '-'}</span>
                     </div>
-                    <div style="${statBoxStyle}">
-                        <span style="${labelStyle}">Laps</span>
-                        <span style="${valueStyle}">${race.total_laps || '-'}</span>
+                    <div class="circuit-stat">
+                        <span class="circuit-stat__label">Laps</span>
+                        <span class="circuit-stat__value">${race.total_laps || '-'}</span>
                     </div>
-                    <div style="${statBoxStyle}">
-                        <span style="${labelStyle}">Distance</span>
-                        <span style="${valueStyle}">${race.race_distance || '-'}</span>
+                    <div class="circuit-stat">
+                        <span class="circuit-stat__label">Distance</span>
+                        <span class="circuit-stat__value">${race.race_distance || '-'}</span>
                     </div>
-                    <div style="${statBoxStyle}">
-                        <span style="${labelStyle}">Fastest Lap</span>
-                        <span style="${valueStyle}" style="font-size:0.8rem;">${race.lap_record || '-'}</span>
+                    <div class="circuit-stat">
+                        <span class="circuit-stat__label">Fastest Lap</span>
+                        <span class="circuit-stat__value">${race.lap_record || '-'}</span>
                     </div>
                 </div>
             </div>

@@ -96,3 +96,71 @@
         flex-direction: column;
     }
 }
+
+.race-card-wide {
+    display: flex;
+    align-items: center;
+    background: #1e1e24;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    border-left: 4px solid $color-primary;
+    min-height: 90px;
+    transition: transform 0.2s, background 0.2s;
+
+    &:hover {
+        background: #25252d;
+        transform: scale(1.01);
+    }
+
+    &__date-col {
+        padding: 0 25px;
+        text-align: center;
+        border-right: 1px solid rgba(255,255,255,0.1);
+        min-width: 80px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        &-month { font-size: 0.8rem; color: #aaa; font-weight: bold; text-transform: uppercase; }
+
+        &-day   { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+    }
+
+    &__info {
+        flex-grow: 1;
+        padding: 15px 20px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+
+        h3 { margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; color: #fff; letter-spacing: 0.5px; }
+
+        p  { margin: 0; color: #888; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+    }
+
+    &__map-col {
+        padding: 10px 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+}
+
+.race-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 15px;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding-bottom: 50px;
+}
+
+.calendar-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+    
+    h1 { text-align: center; color: white; margin-bottom: 10px; font-size: 2rem; }
+}

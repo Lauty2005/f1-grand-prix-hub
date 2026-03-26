@@ -208,6 +208,45 @@
     }
 }
 
+.driver-modal-stats {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 15px;
+    width: 100%;
+}
+
+.driver-modal-stat {
+    text-align: center;
+
+    &__value {
+        display: block;
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: white;
+
+        &--points { color: $color-primary; }
+    }
+
+    &__label {
+        display: block;
+        font-size: 0.6rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+}
+
+.driver-modal-history-title {
+    color: white;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
 .driver-info-col {
     flex: 1; /* Ocupa 1 parte del espacio (Izquierda) */
     display: flex;
@@ -230,4 +269,62 @@
     flex-direction: column;
     justify-content: center;
     min-height: 300px;
+}
+
+.circuit-stat {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    justify-content: center;
+
+    &__label {
+        font-size: 0.65rem;
+        color: #aaa;
+        text-transform: uppercase;
+        font-weight: bold;
+        margin-bottom: 3px;
+    }
+
+    &__value {
+        font-size: 1rem;
+        font-weight: 800;
+        color: white;
+    }
+}
+
+.modal-circuit-info {
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.modal-circuit-image {
+    flex: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 10px;
+    min-width: 200px;
+
+    img {
+        width: 100%;
+        height: auto;
+    }
+}
+
+.modal-circuit-stats {
+    flex: 2;
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
 }

@@ -125,14 +125,23 @@ async function openDriverModal(id) {
                     <img src="${driver.logo_url.startsWith('http') ? driver.logo_url : SERVER_URL + driver.logo_url}" style="width: 20px;"> ${driver.team_name} | ${getFlagEmoji(driver.country_code)}
                 </p>
 
-                <div style="display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; width: 100%;">
-                    <div style="text-align:center;"><span style="font-size: 1.2rem; font-weight:bold; color:white;">${driver.permanent_number}</span><br><span style="font-size:0.6rem; color:#666;">NÚMERO</span></div>
-                    <div style="text-align:center;"><span style="font-size: 1.2rem; font-weight:bold; color:white;">${driver.podiums}</span><br><span style="font-size:0.6rem; color:#666;">PODIOS</span></div>
-                    <div style="text-align:center;"><span style="font-size: 1.2rem; font-weight:bold; color:#e10600;">${driver.points}</span><br><span style="font-size:0.6rem; color:#666;">PUNTOS</span></div>
+                <div class="driver-modal-stats">
+                    <div class="driver-modal-stat">
+                        <span class="driver-modal-stat__value">${driver.permanent_number}</span>
+                        <span class="driver-modal-stat__label">Número</span>
+                    </div>
+                    <div class="driver-modal-stat">
+                        <span class="driver-modal-stat__value">${driver.podiums}</span>
+                        <span class="driver-modal-stat__label">Podios</span>
+                    </div>
+                    <div class="driver-modal-stat">
+                        <span class="driver-modal-stat__value driver-modal-stat__value--points">${driver.points}</span>
+                        <span class="driver-modal-stat__label">Puntos</span>
+                    </div>
                 </div>
 
                 <div style="width: 100%;">
-                    <h4 style="color:white; margin-bottom:10px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;">Historial de Carreras</h4>
+                    <h4 class="driver-modal-history-title">Historial de Carreras</h4>
                     ${historyHTML}
                 </div>
             </div>

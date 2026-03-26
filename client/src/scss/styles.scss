@@ -42,6 +42,41 @@
     }
 }
 
+.countdown-display {
+    background: $color-bg;
+    padding: 15px;
+    border-bottom: 1px solid #333;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.countdown-inner {
+    text-align: center;
+}
+
+.countdown-label {
+    display: block;
+    font-size: 0.8rem;
+    color: $color-primary;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.countdown-time {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: white;
+}
+
+.countdown-race-name {
+    display: block;
+    font-size: 0.8rem;
+    color: #666;
+}
+
 /* --- SELECTOR DE TEMPORADA --- */
 .season-selector-container {
     display: flex;
