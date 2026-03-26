@@ -79,7 +79,7 @@ function createModalHTML() {
     if (document.getElementById('driverModal')) return;
     const modalHTML = `
         <div id="driverModal" class="modal-overlay">
-            <div class="modal-content" style="background-color: inherit; max-width: 900px; width: 95%;">
+            <div class="modal-content" style="max-width: 900px; width: 95%;">
                 <button class="modal-close">&times;</button>
                 <div class="modal-body"></div>
             </div>
@@ -137,6 +137,9 @@ async function openRaceModal(raceId) {
     currentRaceId = raceId;
     const modal = document.getElementById('driverModal');
     const modalBody = modal.querySelector('.modal-body');
+    const modalContent = modal.querySelector('.modal-content');
+    // Reseto el team-color al rojo F1 para el modal de carrera
+    if (modalContent) modalContent.style.setProperty('--team-color', '#e10600');
 
     modalBody.innerHTML = '<div style="padding:50px; text-align:center; color:white;">Cargando circuito...</div>';
     modal.classList.add('is-visible');

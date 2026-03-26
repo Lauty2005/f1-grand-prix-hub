@@ -28,7 +28,23 @@ export async function loadCalendarView() {
             const month = adjustedDate.toLocaleString('es-ES', { month: 'short' }).toUpperCase().replace('.', '');
             const day = adjustedDate.getDate();
 
-            // 👇 2. ARREGLO DE IMAGEN (LISTA): Si es relativa, pegamos SERVER_URL
+            // Rango del fin de semana (Sprint: -3 días, Normal: -2 días)
+            const weekendDaysBack = race.has_sprint ? 3 : 2;
+            const weekendStart = new Date(adjustedDate);
+            weekendStart.setDate(weekendStart.getDate() - weekendDaysBack);
+            const monthLong = adjustedDate.toLocaleString('es-ES', { month: 'long' });
+            const monthCap = monthLong.charAt(0).toUpperCase() + monthLong.slice(1);
+            const dateRange = `${weekendStart.getDate()} - ${day} ${monthCap}`;
+
+            // Badge de estado
+            const now = new Date();
+            const diffDays = (adjustedDate - now) / (1000 * 60 * 60 * 24);
+            let statusKey, statusLabel;
+            if (diffDays < -1)      { statusKey = 'done'; statusLabel = 'Finalizado'; }
+            else if (diffDays <= 4) { statusKey = 'live'; statusLabel = '● En vivo'; }
+            else                    { statusKey = 'soon'; statusLabel = 'Próximamente'; }
+
+            // Imagen de mapa
             let mapSrc = race.map_image_url;
             if (mapSrc && !mapSrc.startsWith('http')) {
                 mapSrc = `${SERVER_URL}${mapSrc}`;
@@ -36,17 +52,28 @@ export async function loadCalendarView() {
 
             return `
                 <div class="race-card-wide" data-id="${race.id}" data-sprint="${race.has_sprint || false}">
-                    <div class="race-card-wide__date">
-                        <span class="race-card-wide__date-month">${month}</span>
-                        <span class="race-card-wide__date-day">${day}</span>
+                    <div class="race-card-wide__date-col">
+                        <span class="race-card-wide__date-col-month">${month}</span>
+                        <span class="race-card-wide__date-col-day">${day}</span>
                     </div>
                     <div class="race-card-wide__info">
-                        <h3>Round ${race.round}: ${race.name}</h3>
-                        <p><span>${getFlagEmoji(race.country_code)}</span> ${race.circuit_name}</p>
+                        <div class="race-card-wide__info-header">
+                            <h3>R${race.round} &mdash; ${race.name}</h3>
+                            <span class="race-status-badge race-status-badge--${statusKey}">${statusLabel}</span>
+                        </div>
+                        <p>
+                            <span class="race-circuit-name">
+                                <span class="race-circuit-name__flag">${getFlagEmoji(race.country_code)}</span>
+                                <span>${race.circuit_name}</span>
+                            </span>
+                            <span class="race-dates">${dateRange}</span>
+                            ${race.has_sprint ? '<span class="sprint-badge">SPRINT</span>' : ''}
+                        </p>
                     </div>
                     <div class="race-card-wide__map-col">
                         <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy">
                     </div>
+                    <div class="race-card-wide__cta">›</div>
                 </div>
             `;
         }).join('');

@@ -25,16 +25,40 @@
 
 /* --- BARRA DE NAVEGACIÓN (NAVBAR) --- */
 .main-navbar {
-    background: #15151e; /* Fondo oscuro */
+    // Gradiente oscuro con ligero tono azulado (coherente con #15151e)
+    background:
+        linear-gradient(180deg, #1c1c28 0%, #15151e 100%);
+
     padding: 1rem 2rem;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 30px;
-    border-bottom: 3px solid #e10600; /* La línea roja característica */
-    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+
+    // Borde inferior F1 con glow
+    border-bottom: 2px solid #e10600;
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.55),
+        0 2px 0 rgba(225, 6, 0, 0.0),
+        0 5px 25px rgba(225, 6, 0, 0.12); // glow rojo difuso hacia abajo
+
     margin-bottom: 20px;
     flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    // Inner top highlight
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 5%;
+        right: 5%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+        pointer-events: none;
+    }
 
     @include mobile {
         padding: 1rem;
@@ -43,9 +67,11 @@
 }
 
 .countdown-display {
-    background: $color-bg;
+    background:
+        radial-gradient(ellipse 60% 100% at 50% 50%, rgba(225, 6, 0, 0.06) 0%, transparent 70%),
+        $color-bg;
     padding: 15px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     min-height: 80px;
     display: flex;
     align-items: center;
@@ -58,23 +84,28 @@
 
 .countdown-label {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: $color-primary;
-    font-weight: bold;
-    letter-spacing: 2px;
+    font-weight: 700;
+    letter-spacing: 3px;
     text-transform: uppercase;
+    margin-bottom: 4px;
 }
 
 .countdown-time {
-    font-size: 1.5rem;
-    font-weight: bold;
+    font-size: 1.6rem;
+    font-weight: 900;
     color: white;
+    text-shadow: 0 0 20px rgba(225, 6, 0, 0.25);
+    letter-spacing: 1px;
 }
 
 .countdown-race-name {
     display: block;
-    font-size: 0.8rem;
-    color: #666;
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 2px;
+    letter-spacing: 0.5px;
 }
 
 /* --- SELECTOR DE TEMPORADA --- */
@@ -152,28 +183,34 @@
 }
 
 .nav-btn {
-    background: transparent;
-    color: #fff;
-    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 10px 20px;
-    border-radius: 8px; /* Bordes redondeados modernos */
+    border-radius: 8px;
     font-weight: 700;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 
     &:hover {
-        border-color: white;
-        transform: translateY(-2px); /* Pequeña elevación */
+        background: rgba(255, 255, 255, 0.09);
+        border-color: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
-    /* ESTADO ACTIVO (Cuando estás en esa sección) */
     &.active-btn {
-        background: #e10600; /* Rojo F1 */
-        border-color: #e10600;
-        box-shadow: 0 4px 10px rgba(225, 6, 0, 0.4);
+        // Gradiente F1 en el botón activo (no plano)
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        border-color: transparent;
+        color: white;
+        box-shadow:
+            0 4px 14px rgba(225, 6, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.15);
         transform: translateY(0);
     }
 }
@@ -181,33 +218,42 @@
 /* --- BOTONES DE PESTAÑA (Pilotos/Constructores) --- */
 .tab-container {
     display: inline-flex;
-    background: #1f1f27;
+    // Glassmorphism suave
+    background: rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(8px);
     padding: 5px;
-    border-radius: 50px; /* Forma de píldora */
-    border: 1px solid #333;
+    border-radius: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
     gap: 5px;
+    box-shadow:
+        0 4px 16px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .tab-btn {
     background: transparent;
-    color: #888;
+    color: rgba(255, 255, 255, 0.45);
     border: none;
     padding: 8px 24px;
     border-radius: 40px;
-    font-weight: bold;
+    font-weight: 700;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: color 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
     text-transform: uppercase;
+    letter-spacing: 0.3px;
 
     &:hover {
-        color: white;
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.06);
     }
 
     &.active-tab {
-        background: #e10600;
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
         color: white;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        box-shadow:
+            0 3px 10px rgba(225, 6, 0, 0.45),
+            inset 0 1px 0 rgba(255, 255, 255, 0.18);
     }
 }
 

@@ -1,20 +1,23 @@
 @use '../abstracts/variables' as *;
 
+// ─────────────────────────────────────────────
+//  OVERLAY
+// ─────────────────────────────────────────────
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7); // Fondo oscuro semitransparente
-    backdrop-filter: blur(5px); // Efecto borroso de fondo (Glassmorphism)
+    background-color: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(6px);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    transition: all 0.3s ease;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 
     &.is-visible {
         opacity: 1;
@@ -22,70 +25,108 @@
 
         .modal-content {
             transform: translateY(0);
+            opacity: 1;
         }
     }
 }
 
+// ─────────────────────────────────────────────
+//  MODAL CONTENT — Fondo con capas y team color
+// ─────────────────────────────────────────────
 .modal-content {
-    background-color: $color-surface;
-    // width: 35%;  <-- BORRA O COMENTA ESTA LÍNEA ORIGINAL
-    
-    // NUEVO: Ancho dinámico
-    width: 90%; // Por defecto en PC
-    min-width: 1000px; // Para que no sea ridículamente pequeño
+    // Capa 1: ambient glow del equipo (reactivo al --team-color)
+    // Capa 2: highlight blanco sutil en el tope
+    // Capa 3: gradiente base oscuro
+    background:
+        radial-gradient(
+            ellipse 120% 35% at 50% 0%,
+            color-mix(in srgb, var(--team-color, #e10600) 10%, transparent) 0%,
+            transparent 65%
+        ),
+        radial-gradient(
+            ellipse 80% 25% at 50% 0%,
+            rgba(255, 255, 255, 0.03) 0%,
+            transparent 70%
+        ),
+        linear-gradient(175deg, #1e1e2b 0%, #17171f 55%, #131319 100%);
 
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    width: 90%;
+    min-width: 1000px;
+    border-radius: 18px;
+
+    // Borde: team color en el tope, sutil en los lados
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 2px solid color-mix(in srgb, var(--team-color, #e10600) 70%, transparent);
+
+    box-shadow:
+        0 30px 60px rgba(0, 0, 0, 0.6),
+        0 10px 20px rgba(0, 0, 0, 0.4),
+        0 0 40px color-mix(in srgb, var(--team-color, #e10600) 8%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
     overflow: hidden;
-    transform: translateY(20px);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateY(24px);
+    opacity: 0;
+    transition:
+        transform 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        opacity 0.3s ease;
     position: relative;
 
-    // --- VERSIÓN MÓVIL ---
     @include mobile {
-        width: 95%;       // Ocupa casi toda la pantalla
-        min-width: auto;  // Quitamos el mínimo
-        max-height: 90vh; // Evitamos que se salga por alto
+        width: 95%;
+        min-width: auto;
+        max-height: 90vh;
+        border-radius: 14px;
     }
 }
 
+// ─────────────────────────────────────────────
+//  CLOSE BUTTON
+// ─────────────────────────────────────────────
 .modal-close {
     position: absolute;
     top: 1rem;
     right: 1rem;
-    background: rgba(0,0,0,0.5);
-    border: none;
-    color: white;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
     width: 32px;
     height: 32px;
     border-radius: 50%;
     cursor: pointer;
     z-index: 10;
-    font-size: 1.2rem;
-    
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+
     &:hover {
         background: $color-primary;
+        border-color: $color-primary;
+        color: white;
+        box-shadow: 0 0 12px rgba(225, 6, 0, 0.4);
     }
 }
 
+// ─────────────────────────────────────────────
+//  MODAL BODY
+// ─────────────────────────────────────────────
 .modal-body {
     text-align: center;
     max-height: 85vh;
     overflow-y: auto;
     padding-right: 10px;
-    
+
     img {
-        // --- CÓDIGO NUEVO ---
-        width: 100%;         // Ocupa todo el ancho disponible
-        height: auto;        // ¡IMPORTANTE! La altura se ajusta a la imagen real
-        max-height: 60vh;    // Límite de seguridad: no más del 60% de la altura de la pantalla
-        object-fit: contain; // Si es muy alta, se ajusta para verse completa sin recortes
-        display: block;      // Elimina espacios fantasma debajo de la imagen
-        // --------------------
+        width: 100%;
+        height: auto;
+        max-height: 60vh;
+        object-fit: contain;
+        display: block;
 
         @include mobile {
-            max-height: 30vh; // Imagen más pequeña en celular para ver la info
+            max-height: 30vh;
         }
     }
 
@@ -93,31 +134,28 @@
         padding: 2rem;
 
         @include mobile {
-            padding: 1rem; // Menos relleno en celular
+            padding: 1rem;
         }
-        
+
         h2 {
             font-size: 2rem;
             margin-bottom: 0.5rem;
             color: $color-text;
         }
-        
+
         p {
             color: $color-text-dim;
             margin-bottom: 1.5rem;
-            
-            // NUEVO: Centramos y alineamos el texto y la bandera
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px; // Espacio entre el texto y la bandera
+            gap: 10px;
 
-            // NUEVO: Estilo específico para la bandera DENTRO del modal
             .flag-icon {
-                width: 40px;  // ¡Esto es la clave! Tamaño fijo.
-                height: auto; // Mantiene la proporción correcta.
+                width: 40px;
+                height: auto;
                 border-radius: 4px;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
             }
         }
 
@@ -128,27 +166,28 @@
         .stats-row {
             display: flex;
             justify-content: space-around;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 1rem;
-            
+
             div {
                 display: flex;
                 flex-direction: column;
-                
+
                 span:first-child { font-size: 1.5rem; font-weight: bold; color: white; }
-                span:last-child { font-size: 0.8rem; text-transform: uppercase; color: $color-text-dim; }
+                span:last-child  { font-size: 0.8rem; text-transform: uppercase; color: $color-text-dim; }
             }
 
             @include mobile {
-                gap: 10px; // Menos espacio entre estadísticas
-                
-                span:first-child { font-size: 1.2rem; } // Números un poco más chicos
+                gap: 10px;
+                span:first-child { font-size: 1.2rem; }
             }
         }
     }
 }
 
-// Contenedor de las pestañas
+// ─────────────────────────────────────────────
+//  TAB BUTTONS (modal interno)
+// ─────────────────────────────────────────────
 .tabs-container {
     display: flex;
     justify-content: center;
@@ -159,35 +198,35 @@
     }
 }
 
-// Botones de las pestañas
 .tab-btn {
     background: transparent;
     border: none;
-    color: #666;
+    color: rgba(255, 255, 255, 0.4);
     font-weight: bold;
     font-size: 1rem;
     cursor: pointer;
     padding: 5px 15px;
-    transition: all 0.3s ease;
+    transition: color 0.25s ease, border-color 0.25s ease;
     border-bottom: 3px solid transparent;
 
     &:hover {
-        color: white;
+        color: rgba(255, 255, 255, 0.8);
     }
 
-    // Estado Activo (La pestaña seleccionada)
     &.active {
         color: white;
-        border-bottom: 3px solid #e10600; // Rojo F1
+        border-bottom-color: $color-primary;
     }
 }
 
-// Estilo general para las tablas
+// ─────────────────────────────────────────────
+//  RESULTS TABLE
+// ─────────────────────────────────────────────
 .results-table {
     width: 100%;
     border-collapse: collapse;
     color: #aeb4bb;
-    
+
     th {
         padding: 10px;
         text-transform: uppercase;
@@ -195,25 +234,29 @@
     }
 }
 
-/* --- ESTRUCTURA DE 2 COLUMNAS PARA EL MODAL --- */
+// ─────────────────────────────────────────────
+//  DRIVER MODAL — Layout de dos columnas
+// ─────────────────────────────────────────────
 .driver-modal-layout {
     display: flex;
     gap: 30px;
     padding: 20px;
     text-align: left;
 
-    // En celular se pone uno debajo del otro automáticamente
     @media (max-width: 768px) {
         flex-direction: column;
     }
 }
 
+// ─────────────────────────────────────────────
+//  DRIVER STATS
+// ─────────────────────────────────────────────
 .driver-modal-stats {
     display: flex;
     justify-content: center;
     gap: 20px;
     margin-bottom: 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     padding-bottom: 15px;
     width: 100%;
 }
@@ -223,70 +266,104 @@
 
     &__value {
         display: block;
-        font-size: 1.2rem;
-        font-weight: bold;
+        font-size: 1.4rem;
+        font-weight: 900;
         color: white;
 
-        &--points { color: $color-primary; }
+        // Números con glow del equipo
+        text-shadow:
+            0 0 18px color-mix(in srgb, var(--team-color, #e10600) 35%, transparent),
+            0 1px 3px rgba(0, 0, 0, 0.5);
+
+        &--points {
+            color: $color-primary;
+            text-shadow:
+                0 0 18px rgba(225, 6, 0, 0.5),
+                0 1px 3px rgba(0, 0, 0, 0.5);
+        }
     }
 
     &__label {
         display: block;
         font-size: 0.6rem;
-        color: #666;
+        color: rgba(255, 255, 255, 0.35);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 1px;
+        margin-top: 2px;
     }
 }
 
 .driver-modal-history-title {
-    color: white;
+    color: rgba(255, 255, 255, 0.7);
     margin-bottom: 10px;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
 }
 
+// ─────────────────────────────────────────────
+//  COLUMNAS DEL MODAL
+// ─────────────────────────────────────────────
 .driver-info-col {
-    flex: 1; /* Ocupa 1 parte del espacio (Izquierda) */
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    border-right: 1px solid rgba(255,255,255,0.1);
+
+    // Separador con team color sutil
+    border-right: 1px solid rgba(255, 255, 255, 0.07);
     padding-right: 20px;
+
+    // Ambient glow del equipo en el fondo de la columna
+    background: radial-gradient(
+        ellipse 100% 40% at 50% 0%,
+        color-mix(in srgb, var(--team-color, transparent) 8%, transparent) 0%,
+        transparent 70%
+    );
+    border-radius: 10px;
 
     @media (max-width: 768px) {
         border-right: none;
         padding-right: 0;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
         padding-bottom: 20px;
     }
 }
 
 .driver-chart-col {
-    flex: 2; /* Ocupa 2 partes del espacio (Derecha - Más ancho para el gráfico) */
+    flex: 2;
     display: flex;
     flex-direction: column;
     justify-content: center;
     min-height: 300px;
 }
 
+// ─────────────────────────────────────────────
+//  CIRCUIT STATS
+// ─────────────────────────────────────────────
 .circuit-stat {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 8px;
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 8px;
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
     text-align: center;
     justify-content: center;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+        border-color: rgba(255, 255, 255, 0.18);
+    }
 
     &__label {
-        font-size: 0.65rem;
-        color: #aaa;
+        font-size: 0.62rem;
+        color: rgba(255, 255, 255, 0.45);
         text-transform: uppercase;
-        font-weight: bold;
-        margin-bottom: 3px;
+        font-weight: 700;
+        letter-spacing: 0.8px;
+        margin-bottom: 4px;
     }
 
     &__value {
@@ -309,7 +386,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 10px;
     padding: 10px;
     min-width: 200px;
