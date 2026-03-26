@@ -20,7 +20,7 @@ export async function loadDriversView() {
         state.driversList = result.data;
 
         const html = result.data.map(d => `
-            <article class="driver-card" data-id="${d.id}" style="border-top: 4px solid ${d.primary_color}; cursor: pointer;">
+            <article class="driver-card" data-id="${d.id}" style="--team-color: ${d.primary_color}; cursor: pointer;">
                 <div class="driver-card__image-container">
                     <img src="${d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url}" class="driver-card__image" alt="${d.last_name}" loading="lazy">
                 </div>
@@ -33,8 +33,8 @@ export async function loadDriversView() {
                             </span>
                             ${d.team_name}
                         </p>
-                        <span style="font-size: 2.5rem; font-weight: 900; color: ${d.primary_color}; line-height: 1;">
-                                ${d.permanent_number /* El backend ya trae la suma total aquí */} 
+                        <span class="driver-number-display" style="color: ${d.primary_color};">
+                                ${d.permanent_number /* El backend ya trae la suma total aquí */}
                         </span>
                     </div>
                 </div>
@@ -59,6 +59,8 @@ async function openDriverModal(id) {
 
     const modal = document.getElementById('driverModal');
     const modalBody = modal.querySelector('.modal-body');
+    const modalContent = modal.querySelector('.modal-content');
+    if (modalContent) modalContent.style.setProperty('--team-color', driver.primary_color);
     modal.classList.add('is-visible');
 
     let historyHTML = '';

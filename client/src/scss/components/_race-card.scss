@@ -1,55 +1,120 @@
 @use '../abstracts/variables' as *;
 @use 'sass:color';
 
+// ─────────────────────────────────────────────
+//  RACE GRID
+// ─────────────────────────────────────────────
 .race-grid {
     display: flex;
-    flex-direction: column; // Lista vertical en lugar de cuadrícula
+    flex-direction: column;
     gap: 1.5rem;
     max-width: 800px;
     margin: 0 auto;
     padding: 2rem;
 }
 
+// ─────────────────────────────────────────────
+//  RACE CARD — Profundidad con acento lateral
+// ─────────────────────────────────────────────
 .race-card {
     display: flex;
     align-items: center;
-    background-color: $color-surface;
+    position: relative;
+
+    // Gradiente base: oscuro con glow rojo desde la izquierda
+    background:
+        radial-gradient(
+            ellipse 60% 100% at -8% 50%,
+            rgba(225, 6, 0, 0.13) 0%,
+            transparent 58%
+        ),
+        linear-gradient(
+            100deg,
+            #1d1d2a 0%,
+            #191924 45%,
+            #141420 100%
+        );
+
     border-radius: 12px;
     padding: 1.5rem;
-    border-left: 5px solid $color-primary; // Borde rojo F1 a la izquierda
-    transition: transform 0.2s;
 
-    // --- VERSIÓN MÓVIL ---
+    // Borde: acento F1 a la izquierda + sutil en los demás lados
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 3px solid $color-primary;
+
+    // Sombra base + glow izquierdo
+    box-shadow:
+        0 3px 10px rgba(0, 0, 0, 0.4),
+        -3px 0 18px rgba(225, 6, 0, 0.07),
+        inset 0 1px 0 rgba(255, 255, 255, 0.04);
+
+    transition:
+        transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+        box-shadow 0.28s ease,
+        border-color 0.28s ease;
+
     @include mobile {
-        flex-direction: column; // Apilar verticalmente
-        align-items: flex-start; // Alinear a la izquierda
-        gap: 15px; // Espacio entre elementos
-        text-align: center; // Texto centrado (opcional, prueba si te gusta)
-        align-items: center; // Centrar todo en columna
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+        text-align: center;
     }
 
     &:hover {
-        transform: translateX(10px); // Efecto de movimiento lateral
-        background-color: color.adjust($color-surface, $lightness: 5%);
+        transform: translateX(8px);
+
+        background:
+            radial-gradient(
+                ellipse 65% 100% at -8% 50%,
+                rgba(225, 6, 0, 0.20) 0%,
+                transparent 58%
+            ),
+            linear-gradient(
+                100deg,
+                #20202e 0%,
+                #1c1c28 45%,
+                #171722 100%
+            );
+
+        box-shadow:
+            0 8px 24px rgba(0, 0, 0, 0.5),
+            -4px 0 28px rgba(225, 6, 0, 0.18),
+            inset 0 1px 0 rgba(255, 255, 255, 0.07);
+
+        border-left-color: color.adjust($color-primary, $lightness: 8%);
     }
 
+    // ── FECHA ──
     &__date {
         display: flex;
         flex-direction: column;
         align-items: center;
         padding-right: 1.5rem;
-        border-right: 1px solid rgba(255,255,255,0.1);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
         min-width: 80px;
 
-        span:first-child { font-size: 0.9rem; color: $color-text-dim; } // Mes
-        span:last-child { font-size: 1.8rem; font-weight: bold; color: white; } // Día
+        // Mes: color F1 para darle identidad
+        span:first-child {
+            font-size: 0.75rem;
+            color: $color-primary;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        // Día: grande y bold
+        span:last-child {
+            font-size: 1.9rem;
+            font-weight: 900;
+            color: white;
+            line-height: 1.1;
+        }
 
         @include mobile {
-            flex-direction: row; // Poner MES y DÍA lado a lado
+            flex-direction: row;
             gap: 10px;
             align-items: baseline;
-            border-right: none; // Quitar la línea divisoria vertical
-            border-bottom: 1px solid rgba(255,255,255,0.1); // Poner línea horizontal
+            border-right: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             width: 100%;
             justify-content: center;
             padding-right: 0;
@@ -58,95 +123,256 @@
         }
     }
 
+    // ── INFO ──
     &__info {
-        flex: 1; // Ocupa el espacio del medio
+        flex: 1;
         padding: 0 1.5rem;
-        
-        h3 { font-size: 1.4rem; color: white; margin-bottom: 0.25rem; }
-        p { color: $color-text-dim; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;}
-    
+
+        h3 {
+            font-size: 1.4rem;
+            color: white;
+            margin-bottom: 0.25rem;
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+        }
+        p {
+            color: $color-text-dim;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
         @include mobile {
             padding: 0;
             margin-bottom: 10px;
-            
-            p { justify-content: center; } // Centrar la bandera y nombre
+            p { justify-content: center; }
         }
     }
 
+    // ── MAPA ──
     &__map {
         width: 120px;
-        filter: invert(1); // Invierte colores para que el mapa negro se vea blanco
-        opacity: 0.8;
+        filter: invert(1);
+        opacity: 0.55;
+        transition: opacity 0.28s ease;
 
         @include mobile {
-            width: 100%; // Mapa ancho completo
-            max-width: 200px; // Pero no gigante
+            width: 100%;
+            max-width: 200px;
             height: auto;
         }
     }
-}
 
-.circuit_info {
-    display: flex; 
-    gap: 15px; 
-    align-items: stretch; 
-    margin-bottom: 20px;
-
-    @include mobile {
-        flex-direction: column;
+    &:hover &__map {
+        opacity: 0.85;
     }
 }
 
+// ─────────────────────────────────────────────
+//  RACE CARD WIDE — Lista en modal/calendario
+// ─────────────────────────────────────────────
 .race-card-wide {
     display: flex;
     align-items: center;
-    background: #1e1e24;
+
+    background:
+        radial-gradient(
+            ellipse 50% 100% at -8% 50%,
+            rgba(225, 6, 0, 0.10) 0%,
+            transparent 55%
+        ),
+        linear-gradient(90deg, #1c1c28 0%, #161620 100%);
+
     border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
-    border-left: 4px solid $color-primary;
+
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 3px solid $color-primary;
+
     min-height: 90px;
-    transition: transform 0.2s, background 0.2s;
+
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.35),
+        -1px 0 12px rgba(225, 6, 0, 0.06);
+
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease,
+        background 0.22s ease;
 
     &:hover {
-        background: #25252d;
-        transform: scale(1.01);
+        background:
+            radial-gradient(
+                ellipse 55% 100% at -8% 50%,
+                rgba(225, 6, 0, 0.17) 0%,
+                transparent 55%
+            ),
+            linear-gradient(90deg, #202030 0%, #1a1a26 100%);
+
+        transform: scale(1.015);
+
+        box-shadow:
+            0 6px 20px rgba(0, 0, 0, 0.5),
+            -2px 0 18px rgba(225, 6, 0, 0.14);
     }
 
     &__date-col {
         padding: 0 25px;
         text-align: center;
-        border-right: 1px solid rgba(255,255,255,0.1);
+        border-right: 1px solid rgba(255, 255, 255, 0.07);
         min-width: 80px;
         display: flex;
         flex-direction: column;
+        align-self: stretch;
         justify-content: center;
 
-        &-month { font-size: 0.8rem; color: #aaa; font-weight: bold; text-transform: uppercase; }
-
-        &-day   { font-size: 1.6rem; font-weight: 800; color: #fff; line-height: 1; }
+        &-month {
+            font-size: 0.72rem;
+            color: $color-primary;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        &-day {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
     }
 
     &__info {
         flex-grow: 1;
-        padding: 15px 20px;
+        padding: 14px 20px;
         display: flex;
         flex-direction: column;
         justify-content: center;
+        min-width: 0; // evita overflow en flex
 
-        h3 { margin: 0 0 5px 0; font-size: 1.1rem; text-transform: uppercase; color: #fff; letter-spacing: 0.5px; }
+        h3 {
+            margin: 0;
+            font-size: 1rem;
+            text-transform: uppercase;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        p {
+            margin: 6px 0 0 0;
+            color: #888;
+            font-size: 0.82rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+    }
 
-        p  { margin: 0; color: #888; font-size: 0.9rem; display: flex; align-items: center; gap: 8px; }
+    &__info-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     &__map-col {
-        padding: 10px 30px;
+        padding: 10px 20px;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
+    }
+
+    &__cta {
+        padding: 0 20px 0 4px;
+        font-size: 1.5rem;
+        font-weight: 300;
+        color: rgba(255, 255, 255, 0.18);
+        flex-shrink: 0;
+        transition: color 0.22s ease, transform 0.22s ease;
+        line-height: 1;
+    }
+
+    &:hover &__cta {
+        color: $color-primary;
+        transform: translateX(4px);
     }
 }
 
+// ─────────────────────────────────────────────
+//  RACE STATUS BADGES
+// ─────────────────────────────────────────────
+.race-status-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    white-space: nowrap;
+
+    &--done {
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    &--live {
+        background: rgba(225, 6, 0, 0.18);
+        color: #ff5555;
+        border: 1px solid rgba(225, 6, 0, 0.35);
+        animation: badge-pulse 2s ease-in-out infinite;
+    }
+
+    &--soon {
+        background: rgba(255, 160, 0, 0.12);
+        color: #ffaa00;
+        border: 1px solid rgba(255, 160, 0, 0.25);
+    }
+}
+
+@keyframes badge-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.55; }
+}
+
+// ─────────────────────────────────────────────
+//  SPRINT + DATE-RANGE TAGS
+// ─────────────────────────────────────────────
+.sprint-badge {
+    padding: 2px 7px;
+    background: rgba(255, 160, 0, 0.12);
+    color: #ffaa00;
+    border: 1px solid rgba(255, 160, 0, 0.28);
+    border-radius: 4px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.race-dates {
+    font-size: 0.78rem;
+    color: rgba(255, 255, 255, 0.25);
+    margin-left: 2px;
+}
+
+// Bandera + nombre de circuito como unidad inseparable
+.race-circuit-name {
+    display: inline-flex;
+    align-items: center; // bandera centrada verticalmente si el nombre hace 2 líneas
+    gap: 6px;
+
+    &__flag {
+        flex-shrink: 0; // la bandera nunca se encoge
+        line-height: 1;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  RACE LIST + CALENDAR HEADER
+// ─────────────────────────────────────────────
 .race-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -161,6 +387,22 @@
     flex-direction: column;
     align-items: center;
     margin-bottom: 30px;
-    
-    h1 { text-align: center; color: white; margin-bottom: 10px; font-size: 2rem; }
+
+    h1 {
+        text-align: center;
+        color: white;
+        margin-bottom: 10px;
+        font-size: 2rem;
+    }
+}
+
+.circuit_info {
+    display: flex;
+    gap: 15px;
+    align-items: stretch;
+    margin-bottom: 20px;
+
+    @include mobile {
+        flex-direction: column;
+    }
 }

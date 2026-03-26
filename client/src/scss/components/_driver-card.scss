@@ -1,5 +1,8 @@
 @use '../abstracts/variables' as *;
 
+// ─────────────────────────────────────────────
+//  DRIVER GRID
+// ─────────────────────────────────────────────
 .driver-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -9,58 +12,157 @@
     margin: 0 auto;
 }
 
+// ─────────────────────────────────────────────
+//  DRIVER CARD — Sistema de capas y profundidad
+// ─────────────────────────────────────────────
 .driver-card {
-    background-color: $color-surface;
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.1);
 
+    // ── CAPA BASE: gradiente oscuro con ligero desnivel (sensación de volumen) ──
+    background:
+        radial-gradient(
+            ellipse 160% 55% at 50% -5%,
+            rgba(255, 255, 255, 0.045) 0%,
+            transparent 70%
+        ),
+        linear-gradient(
+            175deg,
+            #22222e 0%,
+            #191924 55%,
+            #131319 100%
+        );
+
+    // ── BORDE: acento del equipo arriba + borde sutil en los lados ──
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 3px solid var(--team-color, #e10600);
+
+    // ── SOMBRA BASE: exterior + inner highlight ──
+    box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.45),
+        0 1px 3px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+    // ── TRANSICIÓN con spring curve ──
+    transition:
+        transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.35s ease,
+        border-color 0.35s ease;
+
+    // ── PSEUDO ::before — Team color ambient glow (capa superior) ──
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 55%;
+        border-radius: 14px 14px 0 0;
+        background: radial-gradient(
+            ellipse 110% 85% at 50% 0%,
+            color-mix(in srgb, var(--team-color, #e10600) 20%, transparent) 0%,
+            transparent 80%
+        );
+        pointer-events: none;
+        z-index: 0;
+        transition: opacity 0.35s ease;
+        opacity: 0.75;
+    }
+
+    // ── PSEUDO ::after — Highlight lineal en borde superior (rim light) ──
+    &::after {
+        content: '';
+        position: absolute;
+        top: 3px; // Justo debajo del border-top del equipo
+        left: 8%;
+        right: 8%;
+        height: 1px;
+        background: linear-gradient(
+            90deg,
+            transparent 0%,
+            color-mix(in srgb, var(--team-color, #e10600) 55%, white) 50%,
+            transparent 100%
+        );
+        opacity: 0.5;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    // ─────────────────────── HOVER ───────────────────────
     &:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
-        border-color: $color-primary;
+        transform: translateY(-8px);
+
+        // Sombra exterior profunda + glow del equipo
+        box-shadow:
+            0 22px 45px rgba(0, 0, 0, 0.65),
+            0 8px 16px rgba(0, 0, 0, 0.4),
+            0 0 35px color-mix(in srgb, var(--team-color, #e10600) 22%, transparent),
+            inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+        border-color: color-mix(in srgb, var(--team-color, #e10600) 75%, white);
+
+        &::before {
+            opacity: 1;
+        }
     }
 
-    &__header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    &__number {
-        font-size: 2.5rem;
-        font-weight: 900;
-        font-family: 'Arial', sans-serif; // Idealmente una fuente racing
-        opacity: 0.8;
-    }
+    // ─────────────────────── SUBCOMPONENTES ───────────────────────
 
     &__image-container {
         width: 100%;
-        height: 250px; // Altura fija para uniformidad
+        height: 250px;
         overflow: hidden;
-        background-color: #1f1f27; //#2b2b36Fondo por si la imagen tarda en cargar
         position: relative;
+        z-index: 1;
+
+        // Fade inferior: la imagen se disuelve en el cuerpo de la card
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 65%;
+            background: linear-gradient(
+                to bottom,
+                transparent 0%,
+                rgba(19, 19, 25, 0.55) 60%,
+                rgba(19, 19, 25, 0.96) 100%
+            );
+            z-index: 2;
+            pointer-events: none;
+        }
     }
 
     &__image {
         width: 100%;
         height: 100%;
-        object-fit: cover; // La magia: recorta la imagen para llenar el espacio sin deformar
-        object-position: top center; // Enfocar la cara
+        object-fit: cover;
+        object-position: top center;
         transition: transform 0.5s ease;
+        position: relative;
+        z-index: 1;
+        background-color: #1a1a24;
     }
 
-    // Efecto Zoom al pasar el mouse sobre la TARJETA entera
     &:hover &__image {
-        transform: scale(1.1); // Zoom suave
+        transform: scale(1.08);
     }
 
     &__info {
         padding: 1.5rem;
+        position: relative;
+        z-index: 2;
+
+        h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: $color-text;
+            // Sutil text-shadow para que destaque sobre el glow
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+        }
     }
 
     &__name {
@@ -77,25 +179,18 @@
         color: $color-text-dim;
     }
 
-    // Estilo para la banderita
     .flag-icon {
-        width: 30px; // Tamaño controlado
+        width: 30px;
         height: auto;
-        border-radius: 4px; // Bordes redondeados suaves
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3); // Sombrita para profundidad
-        display: block; // Para que se comporte bien en flexbox
-    }
-
-    // Ajustamos el contenedor del header para que quede alineado
-    .driver-card__header {
-        // ... estilos anteriores ...
-        // Asegúrate de que tenga esto para alinear número y bandera:
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        border-radius: 4px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+        display: block;
     }
 }
 
+// ─────────────────────────────────────────────
+//  TEAM LOGO — con glow del equipo
+// ─────────────────────────────────────────────
 .teamLogo {
     width: 48px;
     height: 48px;
@@ -109,8 +204,26 @@
     border-radius: 50%;
     flex-shrink: 0;
 
+    // Glow sutil usando el color del equipo
+    box-shadow:
+        0 0 14px color-mix(in srgb, var(--team-color, #e10600) 45%, transparent),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+
     img {
         width: 36px;
         height: 36px;
     }
+}
+
+// ─────────────────────────────────────────────
+//  NÚMERO DEL PILOTO — elevado visualmente
+// ─────────────────────────────────────────────
+.driver-number-display {
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+    // Glow del número con el color del equipo
+    text-shadow:
+        0 0 20px color-mix(in srgb, var(--team-color, #e10600) 50%, transparent),
+        0 2px 4px rgba(0, 0, 0, 0.5);
 }
