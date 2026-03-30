@@ -11,7 +11,8 @@ import standingsRoutes from './src/routes/standings.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
 import teamsRoutes from './src/routes/teams.routes.js';
 import articlesRoutes from './src/routes/articles.routes.js';
-import timelineRoutes from './src/routes/timeline.routes.js';
+import timelineRoutes  from './src/routes/timeline.routes.js';
+import strategyRoutes  from './src/routes/strategy.routes.js';
 
 dotenv.config();
 
@@ -71,7 +72,8 @@ app.use('/api', standingsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamsRoutes);
 app.use('/api/articles', articlesRoutes);
-app.use('/api/timeline', timelineRoutes);
+app.use('/api/timeline',  timelineRoutes);
+app.use('/api/strategy', strategyRoutes);
 
 // --- GLOBAL ERROR HANDLER ---
 import { errorHandler } from './src/middleware/error.middleware.js';

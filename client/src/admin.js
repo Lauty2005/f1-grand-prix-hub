@@ -74,6 +74,8 @@ function loadInitialData() {
     loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
     loadMomentsForDelete();
     loadRacesForMoment(document.getElementById('momentYear').value || 2025);
+    loadRacesForStint('2025');
+    loadRacesForStintDelete('2025');
 }
 
 // ==========================================
@@ -622,6 +624,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnDeleteMoment')?.addEventListener('click', handleDeleteMoment);
     document.getElementById('newMomentForm')?.addEventListener('submit', handleAddMoment);
     document.getElementById('momentYear')?.addEventListener('change', (e) => loadRacesForMoment(e.target.value));
+    // Strategy
+    document.getElementById('newStintForm')?.addEventListener('submit', handleAddStint);
+    document.getElementById('btnDeleteStints')?.addEventListener('click', handleDeleteStints);
+    document.getElementById('stintYear')?.addEventListener('change', (e) => { loadRacesForStint(e.target.value); loadDriversForStint(); });
+    document.getElementById('stintRaceSelect')?.addEventListener('change', loadDriversForStint);
+    document.getElementById('deleteStintYearSelect')?.addEventListener('change', (e) => loadRacesForStintDelete(e.target.value));
+    document.getElementById('deleteStintRaceSelect')?.addEventListener('change', (e) => loadDriversForStintDelete(e.target.value));
     document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -646,6 +655,142 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Esto fuerza a que se muestren los campos correctos apenas entras
     updateFormFields();
 });
+
+// ==========================================
+// ESTRATEGIA DE CARRERA
+// ==========================================
+async function loadRacesForStint(year) {
+    const select = document.getElementById('stintRaceSelect');
+    if (!select) return;
+    try {
+        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="">Selecciona carrera...</option>' +
+            races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function loadDriversForStint() {
+    const year   = document.getElementById('stintYear').value || '2025';
+    const select = document.getElementById('stintDriverSelect');
+    if (!select) return;
+    try {
+        const res  = await adminFetch(`${API}/drivers?year=${year}`);
+        const json = await res.json();
+        const drivers = (json.data || []).sort((a,b) => a.last_name.localeCompare(b.last_name));
+        select.innerHTML = '<option value="">Selecciona piloto...</option>' +
+            drivers.map(d => `<option value="${d.id}">#${d.permanent_number} ${d.last_name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function loadRacesForStintDelete(year) {
+    const select = document.getElementById('deleteStintRaceSelect');
+    if (!select) return;
+    try {
+        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="">Carrera...</option>' +
+            races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function loadDriversForStintDelete(raceId) {
+    const select = document.getElementById('deleteStintDriverSelect');
+    if (!select) return;
+    if (!raceId) { select.innerHTML = '<option value="">Piloto...</option>'; return; }
+    try {
+        const res  = await adminFetch(`${API}/strategy/admin/stints?race_id=${raceId}`);
+        const json = await res.json();
+        const stints = json.data || [];
+        // Unique drivers that have stints for this race
+        const seen = {};
+        stints.forEach(s => {
+            if (!seen[s.driver_id || s.first_name]) {
+                seen[`${s.first_name} ${s.last_name}`] = true;
+            }
+        });
+        // Reuse stints to build driver options
+        const uniqueDrivers = [...new Map(stints.map(s => [s.driver_id, s])).values()];
+        if (uniqueDrivers.length === 0) {
+            select.innerHTML = '<option value="">Sin datos para esta carrera</option>';
+        } else {
+            select.innerHTML = '<option value="">Piloto...</option>' +
+                uniqueDrivers.map(s => `<option value="${s.driver_id}">${s.last_name}, ${s.first_name}</option>`).join('');
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function handleDeleteStints() {
+    const raceId   = document.getElementById('deleteStintRaceSelect').value;
+    const driverId = document.getElementById('deleteStintDriverSelect').value;
+    if (!raceId || !driverId) return alert('Selecciona carrera y piloto.');
+
+    const driverText = document.getElementById('deleteStintDriverSelect').options[document.getElementById('deleteStintDriverSelect').selectedIndex]?.text || '';
+    if (!confirm(`¿Eliminar TODOS los stints de ${driverText} en esta carrera?`)) return;
+
+    try {
+        const res = await adminFetch(`${API}/strategy/${raceId}/driver/${driverId}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Stints eliminados.');
+            loadDriversForStintDelete(raceId);
+        } else {
+            alert('No se pudo eliminar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión'); }
+}
+
+async function handleAddStint(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const body = {
+        race_id:      document.getElementById('stintRaceSelect').value,
+        driver_id:    document.getElementById('stintDriverSelect').value,
+        stint_number: document.getElementById('stintNumber').value,
+        tire_compound:document.getElementById('stintCompound').value,
+        start_lap:    document.getElementById('stintStartLap').value,
+        end_lap:      document.getElementById('stintEndLap').value,
+        pit_duration: document.getElementById('stintPitDuration').value || null,
+        notes:        document.getElementById('stintNotes').value || null,
+    };
+
+    if (!body.race_id || !body.driver_id) {
+        alert('Selecciona carrera y piloto.');
+        btn.disabled = false;
+        btn.innerText = 'GUARDAR STINT';
+        return;
+    }
+
+    try {
+        const res = await adminFetch(`${API}/strategy`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgStint');
+            // Keep race/driver selected for rapid multi-stint entry; only clear stint fields
+            document.getElementById('stintNumber').value    = '';
+            document.getElementById('stintStartLap').value  = '';
+            document.getElementById('stintEndLap').value    = '';
+            document.getElementById('stintPitDuration').value = '';
+            document.getElementById('stintNotes').value     = '';
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgStint', 'errorTextStint');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'GUARDAR STINT';
+    }
+}
 
 // ==========================================
 // TIMELINE MOMENTS

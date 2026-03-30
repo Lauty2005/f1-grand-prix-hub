@@ -5,7 +5,8 @@ import fs from 'fs';
 import { adminAuth } from '../middleware/auth.middleware.js';
 import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 import * as racesController from '../controllers/races.controller.js';
-import * as circuitController from '../controllers/circuit.controller.js';
+import * as circuitController  from '../controllers/circuit.controller.js';
+import * as strategyController from '../controllers/strategy.controller.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,7 @@ router.get('/:id/practices', racesController.getRaceSession('practices'));
 router.get('/:id/sprint', racesController.getRaceSession('sprint'));
 router.get('/:id/sprint-qualifying', racesController.getRaceSession('sprint-qualifying'));
 router.get('/:id/circuit-analysis', circuitController.getCircuitAnalysis);
+router.get('/:id/strategy',         strategyController.getRaceStrategy);
 
 // 3. POSTEO DE DATOS PRINCIPALES
 router.post('/', uploadFields, adminAuth, validateRace, racesController.postRace);
