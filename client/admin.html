@@ -68,6 +68,16 @@
             </div>
 
             <div class="danger-item">
+                <label>Eliminar Momento Timeline</label>
+                <div class="danger-row">
+                    <select id="deleteMomentSelect" class="form-control danger-select">
+                        <option>Cargando...</option>
+                    </select>
+                    <button id="btnDeleteMoment" class="btn-delete">🗑️</button>
+                </div>
+            </div>
+
+            <div class="danger-item">
                 <label>Eliminar Ganador de Circuito</label>
                 <div class="danger-row">
                     <select id="deleteCircuitWinnerSelect" class="form-control danger-select">
@@ -330,6 +340,33 @@
                         <button type="submit" class="btn-create span-full">PUBLICAR ARTÍCULO</button>
                         <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span></div>
                         <p id="msgArticle" class="success-msg span-full">✅ ¡Artículo creado!</p>
+                    </form>
+                </div>
+
+                <div class="creation-item">
+                    <label>Momento Timeline</label>
+                    <form id="newMomentForm" class="creation-form-grid">
+                        <select id="momentYear" class="form-control">
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="momentRaceSelect" class="form-control">
+                            <option value="">Sin carrera (global)</option>
+                        </select>
+                        <select id="momentType" class="form-control span-full">
+                            <option value="milestone">🏆 Hito</option>
+                            <option value="leader_change">🔄 Cambio de Líder</option>
+                            <option value="incident">💥 Incidente</option>
+                            <option value="regulation">📋 Reglamento</option>
+                        </select>
+                        <input type="text" id="momentIcon" class="form-control" placeholder="Emoji (ej: 🔥)">
+                        <input type="text" id="momentTitle" class="form-control" placeholder="Título" required>
+                        <input type="text" id="momentDriver" class="form-control" placeholder="Piloto (opcional)">
+                        <input type="text" id="momentTeam" class="form-control" placeholder="Equipo (opcional)">
+                        <textarea id="momentDesc" class="form-control span-full" placeholder="Descripción del momento..." rows="3" style="resize:vertical;"></textarea>
+                        <button type="submit" class="btn-create span-full">AGREGAR MOMENTO</button>
+                        <div id="errorMsgMoment" class="error-msg span-full">❌ <span id="errorTextMoment"></span></div>
+                        <p id="msgMoment" class="success-msg span-full">✅ ¡Momento creado!</p>
                     </form>
                 </div>
 

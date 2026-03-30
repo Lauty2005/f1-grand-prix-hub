@@ -6,6 +6,7 @@ import { loadCalendarView } from './modules/calendar.js';
 import { loadStandingsView } from './modules/standings.js';
 import { loadNoticiasView } from './modules/noticias.js';
 import { loadCompararView } from './modules/comparar.js';
+import { loadTimelineView } from './modules/timeline.js';
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
@@ -34,6 +35,7 @@ function init() {
                 <button id="btn-standings" class="nav-btn">CAMPEONATO</button>
                 <button id="btn-noticias" class="nav-btn">NOTICIAS</button>
                 <button id="btn-comparar" class="nav-btn">COMPARAR</button>
+                <button id="btn-timeline" class="nav-btn">TIMELINE</button>
             </div>
         </nav>
     `);
@@ -70,6 +72,11 @@ function init() {
         loadCompararView();
     });
 
+    document.getElementById('btn-timeline').addEventListener('click', () => {
+        updateButtons('timeline');
+        loadTimelineView();
+    });
+
     // Carga inicial
     updateButtons('drivers');
     loadDriversView();
@@ -82,6 +89,7 @@ function refreshActiveView() {
     if (document.getElementById('btn-standings').classList.contains('active-btn')) loadStandingsView();
     if (document.getElementById('btn-noticias').classList.contains('active-btn')) loadNoticiasView();
     if (document.getElementById('btn-comparar').classList.contains('active-btn')) loadCompararView();
+    if (document.getElementById('btn-timeline').classList.contains('active-btn'))  loadTimelineView();
 }
 
 function updateButtons(activeId) {

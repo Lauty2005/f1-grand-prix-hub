@@ -61,7 +61,8 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 });
 
 function loadInitialData() {
-    loadRaces(document.getElementById('seasonSelect').value || 2025);
+    const year = document.getElementById('seasonSelect').value || 2025;
+    loadRaces(year);
     loadRacesForDelete();
     loadDrivers();
     loadDriversForDelete();
@@ -71,6 +72,8 @@ function loadInitialData() {
     loadArticlesForDelete();
     loadCircuitWinnersForDelete();
     loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
+    loadMomentsForDelete();
+    loadRacesForMoment(document.getElementById('momentYear').value || 2025);
 }
 
 // ==========================================
@@ -616,6 +619,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('circuitInfoForm')?.addEventListener('submit', handleUpdateCircuitInfo);
     document.getElementById('newCircuitWinnerForm')?.addEventListener('submit', handleAddCircuitWinner);
     document.getElementById('circuitInfoYear')?.addEventListener('change', (e) => loadRacesForCircuitInfo(e.target.value));
+    document.getElementById('btnDeleteMoment')?.addEventListener('click', handleDeleteMoment);
+    document.getElementById('newMomentForm')?.addEventListener('submit', handleAddMoment);
+    document.getElementById('momentYear')?.addEventListener('change', (e) => loadRacesForMoment(e.target.value));
     document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -640,6 +646,103 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Esto fuerza a que se muestren los campos correctos apenas entras
     updateFormFields();
 });
+
+// ==========================================
+// TIMELINE MOMENTS
+// ==========================================
+async function loadMomentsForDelete() {
+    const select = document.getElementById('deleteMomentSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res = await adminFetch(`${API}/timeline/admin/all`);
+        const json = await res.json();
+        const moments = json.data || [];
+        if (moments.length === 0) {
+            select.innerHTML = '<option value="" disabled>Sin momentos registrados</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Selecciona momento...</option>' +
+                moments.map(m => {
+                    const race = m.race_name ? ` · ${m.race_name}` : '';
+                    return `<option value="${m.id}">[${m.year}${race}] ${m.title}</option>`;
+                }).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handleDeleteMoment() {
+    const select = document.getElementById('deleteMomentSelect');
+    const id = select.value;
+    if (!id) return alert('Selecciona un momento para eliminar.');
+    const label = select.options[select.selectedIndex].text;
+    if (!confirm(`¿Eliminar momento?\n\n${label}`)) return;
+    try {
+        const res = await adminFetch(`${API}/timeline/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Momento eliminado.');
+            loadMomentsForDelete();
+        } else {
+            alert('No se pudo eliminar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión'); }
+}
+
+async function loadRacesForMoment(year) {
+    const select = document.getElementById('momentRaceSelect');
+    if (!select) return;
+    try {
+        const res = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="">Sin carrera (global)</option>' +
+            races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function handleAddMoment(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const body = {
+        year:        document.getElementById('momentYear').value,
+        race_id:     document.getElementById('momentRaceSelect').value || null,
+        type:        document.getElementById('momentType').value,
+        icon:        document.getElementById('momentIcon').value || null,
+        title:       document.getElementById('momentTitle').value,
+        description: document.getElementById('momentDesc').value || null,
+        driver_name: document.getElementById('momentDriver').value || null,
+        team_name:   document.getElementById('momentTeam').value || null,
+    };
+
+    try {
+        const res = await adminFetch(`${API}/timeline`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgMoment');
+            e.target.reset();
+            document.getElementById('momentYear').value = '2025';
+            loadRacesForMoment('2025');
+            loadMomentsForDelete();
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgMoment', 'errorTextMoment');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'AGREGAR MOMENTO';
+    }
+}
 
 // ==========================================
 // CIRCUITOS
