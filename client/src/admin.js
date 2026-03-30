@@ -69,6 +69,8 @@ function loadInitialData() {
     loadCountryOptions();
     loadServerImages();
     loadArticlesForDelete();
+    loadCircuitWinnersForDelete();
+    loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
 }
 
 // ==========================================
@@ -610,6 +612,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
     document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
     document.getElementById('newArticleForm')?.addEventListener('submit', handleCreateArticle);
+    document.getElementById('btnDeleteCircuitWinner')?.addEventListener('click', handleDeleteCircuitWinner);
+    document.getElementById('circuitInfoForm')?.addEventListener('submit', handleUpdateCircuitInfo);
+    document.getElementById('newCircuitWinnerForm')?.addEventListener('submit', handleAddCircuitWinner);
+    document.getElementById('circuitInfoYear')?.addEventListener('change', (e) => loadRacesForCircuitInfo(e.target.value));
     document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -634,6 +640,144 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Esto fuerza a que se muestren los campos correctos apenas entras
     updateFormFields();
 });
+
+// ==========================================
+// CIRCUITOS
+// ==========================================
+async function loadCircuitWinnersForDelete() {
+    const select = document.getElementById('deleteCircuitWinnerSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res = await adminFetch(`${API}/races/circuit-winners/all`);
+        const json = await res.json();
+        const winners = json.data || [];
+        if (winners.length === 0) {
+            select.innerHTML = '<option value="" disabled>Sin ganadores registrados</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Selecciona ganador...</option>' +
+                winners.map(w => `<option value="${w.id}">${w.year} — ${w.circuit_name}: ${w.winner_name}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handleDeleteCircuitWinner() {
+    const select = document.getElementById('deleteCircuitWinnerSelect');
+    const id = select.value;
+    if (!id) return alert('Selecciona un registro para eliminar.');
+    const label = select.options[select.selectedIndex].text;
+    if (!confirm(`¿Eliminar registro?\n\n${label}`)) return;
+    try {
+        const res = await adminFetch(`${API}/races/circuit-winners/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Registro eliminado.');
+            loadCircuitWinnersForDelete();
+        } else {
+            alert('No se pudo eliminar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión'); }
+}
+
+async function loadRacesForCircuitInfo(year) {
+    const select = document.getElementById('circuitInfoRaceSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        if (races.length === 0) {
+            select.innerHTML = '<option value="" disabled>Sin carreras</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Selecciona carrera...</option>' +
+                races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handleUpdateCircuitInfo(e) {
+    e.preventDefault();
+    const raceId = document.getElementById('circuitInfoRaceSelect').value;
+    if (!raceId) return alert('Selecciona una carrera primero.');
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const body = {
+        first_gp_year:  document.getElementById('circuitFirstGpYear').value || null,
+        drs_zones:      document.getElementById('circuitDrsZones').value || null,
+        circuit_notes:  document.getElementById('circuitNotes').value || null,
+    };
+
+    try {
+        const res = await adminFetch(`${API}/races/${raceId}/circuit-info`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgCircuitInfo');
+            e.target.reset();
+            document.getElementById('circuitInfoYear').value = '2025';
+            loadRacesForCircuitInfo('2025');
+        } else {
+            const data = await res.json();
+            alert(data.error || 'Error desconocido');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'GUARDAR INFO';
+    }
+}
+
+async function handleAddCircuitWinner(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const body = {
+        circuit_name: document.getElementById('cwCircuitName').value,
+        year:         document.getElementById('cwYear').value,
+        winner_name:  document.getElementById('cwWinner').value,
+        team_name:    document.getElementById('cwTeam').value || null,
+        pole_name:    document.getElementById('cwPole').value || null,
+        fastest_lap:  document.getElementById('cwFastestLap').value || null,
+        notes:        document.getElementById('cwNotes').value || null,
+    };
+
+    try {
+        const res = await adminFetch(`${API}/races/circuit-winners`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgCircuitWinner');
+            e.target.reset();
+            loadCircuitWinnersForDelete();
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgCircuitWinner', 'errorTextCircuitWinner');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'AGREGAR GANADOR';
+    }
+}
 
 // ==========================================
 // ARTÍCULOS

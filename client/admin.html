@@ -68,6 +68,16 @@
             </div>
 
             <div class="danger-item">
+                <label>Eliminar Ganador de Circuito</label>
+                <div class="danger-row">
+                    <select id="deleteCircuitWinnerSelect" class="form-control danger-select">
+                        <option>Cargando...</option>
+                    </select>
+                    <button id="btnDeleteCircuitWinner" class="btn-delete">🗑️</button>
+                </div>
+            </div>
+
+            <div class="danger-item">
                 <label>Eliminar Piloto</label>
                 <div class="danger-row">
                     <select id="deleteDriverYearSelect" class="form-control danger-select"
@@ -320,6 +330,40 @@
                         <button type="submit" class="btn-create span-full">PUBLICAR ARTÍCULO</button>
                         <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span></div>
                         <p id="msgArticle" class="success-msg span-full">✅ ¡Artículo creado!</p>
+                    </form>
+                </div>
+
+                <div class="creation-item">
+                    <label>Análisis de Circuito</label>
+
+                    <form id="circuitInfoForm" class="creation-form-grid" style="margin-bottom: 20px;">
+                        <p class="span-full" style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Actualizar Info</p>
+                        <select id="circuitInfoYear" class="form-control" style="width:80px;">
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="circuitInfoRaceSelect" class="form-control">
+                            <option>Cargando...</option>
+                        </select>
+                        <input type="number" id="circuitFirstGpYear" class="form-control" placeholder="1er GP (año)">
+                        <input type="number" id="circuitDrsZones" class="form-control" placeholder="Zonas DRS">
+                        <textarea id="circuitNotes" class="form-control span-full" placeholder="Notas del circuito (descripción, características...)" rows="3" style="resize:vertical;"></textarea>
+                        <button type="submit" class="btn-create span-full">GUARDAR INFO</button>
+                        <p id="msgCircuitInfo" class="success-msg span-full">✅ ¡Info actualizada!</p>
+                    </form>
+
+                    <form id="newCircuitWinnerForm" class="creation-form-grid">
+                        <p class="span-full" style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Agregar Ganador Histórico</p>
+                        <input type="text" id="cwCircuitName" class="form-control span-full" placeholder="Nombre del circuito (exacto)" required>
+                        <input type="number" id="cwYear" class="form-control" placeholder="Año" required>
+                        <input type="text" id="cwWinner" class="form-control" placeholder="Ganador" required>
+                        <input type="text" id="cwTeam" class="form-control" placeholder="Equipo">
+                        <input type="text" id="cwPole" class="form-control" placeholder="Pole position">
+                        <input type="text" id="cwFastestLap" class="form-control span-full" placeholder="Vuelta rápida (ej: 1:19.813 - Leclerc)">
+                        <textarea id="cwNotes" class="form-control span-full" placeholder="Notas opcionales" rows="2" style="resize:vertical;"></textarea>
+                        <button type="submit" class="btn-create span-full">AGREGAR GANADOR</button>
+                        <div id="errorMsgCircuitWinner" class="error-msg span-full">❌ <span id="errorTextCircuitWinner"></span></div>
+                        <p id="msgCircuitWinner" class="success-msg span-full">✅ ¡Ganador registrado!</p>
                     </form>
                 </div>
 

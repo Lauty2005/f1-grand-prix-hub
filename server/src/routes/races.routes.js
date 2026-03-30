@@ -5,6 +5,7 @@ import fs from 'fs';
 import { adminAuth } from '../middleware/auth.middleware.js';
 import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 import * as racesController from '../controllers/races.controller.js';
+import * as circuitController from '../controllers/circuit.controller.js';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,6 +44,7 @@ const uploadFields = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 
 // 1. LECTURAS BÁSICAS
 router.get('/', racesController.getAll);
 router.get('/images/list', racesController.getServerImages); // Antes de /:id para evitar choques
+router.get('/circuit-winners/all', adminAuth, circuitController.getAllCircuitWinners);
 router.get('/:id', racesController.getById);
 
 // 2. DETALLES DE SESIÓN
@@ -51,10 +53,16 @@ router.get('/:id/qualifying', racesController.getRaceSession('qualifying'));
 router.get('/:id/practices', racesController.getRaceSession('practices'));
 router.get('/:id/sprint', racesController.getRaceSession('sprint'));
 router.get('/:id/sprint-qualifying', racesController.getRaceSession('sprint-qualifying'));
+router.get('/:id/circuit-analysis', circuitController.getCircuitAnalysis);
 
 // 3. POSTEO DE DATOS PRINCIPALES
 router.post('/', uploadFields, adminAuth, validateRace, racesController.postRace);
 router.delete('/:id', adminAuth, racesController.deleteRace);
+
+// CIRCUIT ANALYSIS
+router.post('/circuit-winners', adminAuth, circuitController.addCircuitWinner);
+router.delete('/circuit-winners/:id', adminAuth, circuitController.deleteCircuitWinner);
+router.patch('/:id/circuit-info', adminAuth, circuitController.updateRaceCircuitInfo);
 
 // 4. POSTEO DE RESULTADOS DE SESIÓN
 router.post('/results', adminAuth, validateResult, racesController.postResult);

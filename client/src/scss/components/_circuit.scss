@@ -1,0 +1,137 @@
+@use '../abstracts/variables' as *;
+
+// ─────────────────────────────────────────────
+//  CIRCUIT ANALYSIS TAB
+// ─────────────────────────────────────────────
+
+.circuit-analysis {
+    padding: 4px 0 20px;
+}
+
+// ── Meta info grid ──
+.circuit-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 18px;
+}
+
+.circuit-meta-item {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    &__label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: $color-primary;
+    }
+
+    &__value {
+        font-size: 1.1rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1.2;
+    }
+}
+
+// ── Notes block ──
+.circuit-notes {
+    background: rgba(225, 6, 0, 0.05);
+    border-left: 3px solid rgba(225, 6, 0, 0.4);
+    border-radius: 0 6px 6px 0;
+    padding: 12px 16px;
+    margin-bottom: 22px;
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.88rem;
+    line-height: 1.65;
+}
+
+// ── Section title ──
+.circuit-section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+// ── Winners table ──
+.circuit-winners-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+
+    thead tr {
+        color: #555;
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+
+        th {
+            padding: 8px 10px;
+            text-align: left;
+            font-weight: 600;
+        }
+    }
+
+    tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        transition: background 0.18s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        td {
+            padding: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            vertical-align: middle;
+        }
+    }
+
+    // Year column — destacado
+    .cw-year {
+        font-weight: 900;
+        color: $color-primary;
+        font-size: 0.95rem;
+        white-space: nowrap;
+    }
+
+    // Winner column
+    .cw-winner {
+        font-weight: 700;
+        color: #fff;
+    }
+
+    // Dim columns
+    .cw-team,
+    .cw-pole,
+    .cw-fl {
+        color: rgba(255, 255, 255, 0.45);
+        font-size: 0.8rem;
+    }
+
+    .cw-fl {
+        font-family: 'Courier New', monospace;
+        color: #a855f7; // purple — fastest lap convention
+    }
+}
+
+// ── Empty state ──
+.circuit-empty {
+    text-align: center;
+    padding: 30px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.9rem;
+}
