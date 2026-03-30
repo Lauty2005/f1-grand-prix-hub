@@ -68,6 +68,23 @@
             </div>
 
             <div class="danger-item">
+                <label>Eliminar Stints de Piloto</label>
+                <div class="danger-row">
+                    <select id="deleteStintYearSelect" class="form-control danger-select" style="width:70px; margin-right:5px;">
+                        <option value="2025" selected>2025</option>
+                        <option value="2026">2026</option>
+                    </select>
+                    <select id="deleteStintRaceSelect" class="form-control danger-select">
+                        <option value="">Carrera...</option>
+                    </select>
+                    <select id="deleteStintDriverSelect" class="form-control danger-select">
+                        <option value="">Piloto...</option>
+                    </select>
+                    <button id="btnDeleteStints" class="btn-delete">🗑️</button>
+                </div>
+            </div>
+
+            <div class="danger-item">
                 <label>Eliminar Momento Timeline</label>
                 <div class="danger-row">
                     <select id="deleteMomentSelect" class="form-control danger-select">
@@ -340,6 +357,38 @@
                         <button type="submit" class="btn-create span-full">PUBLICAR ARTÍCULO</button>
                         <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span></div>
                         <p id="msgArticle" class="success-msg span-full">✅ ¡Artículo creado!</p>
+                    </form>
+                </div>
+
+                <div class="creation-item">
+                    <label>Estrategia de Carrera</label>
+                    <form id="newStintForm" class="creation-form-grid">
+                        <p class="span-full" style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Agregar Stint</p>
+                        <select id="stintYear" class="form-control" style="width:80px;">
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="stintRaceSelect" class="form-control">
+                            <option value="">Carrera...</option>
+                        </select>
+                        <select id="stintDriverSelect" class="form-control span-full">
+                            <option value="">Piloto...</option>
+                        </select>
+                        <input type="number" id="stintNumber" class="form-control" placeholder="N° Stint" min="1" max="6" required>
+                        <select id="stintCompound" class="form-control">
+                            <option value="SOFT">🔴 Blando</option>
+                            <option value="MEDIUM" selected>🟡 Medio</option>
+                            <option value="HARD">⚪ Duro</option>
+                            <option value="INTER">🟢 Intermedio</option>
+                            <option value="WET">🔵 Lluvia</option>
+                        </select>
+                        <input type="number" id="stintStartLap" class="form-control" placeholder="Vuelta inicio" min="1" required>
+                        <input type="number" id="stintEndLap" class="form-control" placeholder="Vuelta fin" min="1" required>
+                        <input type="text" id="stintPitDuration" class="form-control" placeholder="Tiempo pit (ej: 2.4s)">
+                        <textarea id="stintNotes" class="form-control span-full" placeholder="Notas opcionales (ej: undercut, safety car...)" rows="2" style="resize:vertical;"></textarea>
+                        <button type="submit" class="btn-create span-full">GUARDAR STINT</button>
+                        <div id="errorMsgStint" class="error-msg span-full">❌ <span id="errorTextStint"></span></div>
+                        <p id="msgStint" class="success-msg span-full">✅ ¡Stint guardado!</p>
                     </form>
                 </div>
 

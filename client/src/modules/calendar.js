@@ -129,9 +129,9 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
             `<button class="tab-btn" data-type="${type}" data-id="${raceId}" style="${btnStyle}">${label}</button>`;
 
         if (hasSprint) {
-            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')} ${createBtn('circuit', 'CIRCUITO')}`;
+            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')} ${createBtn('circuit', 'CIRCUITO')}`;
         } else {
-            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')} ${createBtn('circuit', 'CIRCUITO')}`;
+            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')} ${createBtn('circuit', 'CIRCUITO')}`;
         }
 
         modalBody.innerHTML = `
@@ -193,7 +193,8 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 if (type === 'sprint') loadSprintResults(id);
                 if (type === 'practices') loadPracticesResults(id, hasSprint);
                 if (type === 'sprint-qualy') loadSprintQualyResults(id);
-                if (type === 'circuit') loadCircuitAnalysis(id);
+                if (type === 'circuit')  loadCircuitAnalysis(id);
+                if (type === 'strategy') loadStrategyAnalysis(id);
             } catch (e) {
                 console.error('Error cargando tab:', e);
             }
@@ -601,4 +602,154 @@ async function loadSprintQualyResults(raceId) {
                 </table>
             </div>`;
     } catch (e) { console.error(e); }
+}
+
+// ─────────────────────────────────────────────
+//  STRATEGY ANALYSIS TAB
+// ─────────────────────────────────────────────
+const COMPOUND_ABBR = { SOFT:'S', MEDIUM:'M', HARD:'H', INTER:'I', WET:'W', UNKNOWN:'?' };
+
+async function loadStrategyAnalysis(raceId) {
+    const container = document.getElementById('tab-content');
+    container.innerHTML = '<div style="text-align:center; color:white; padding:30px;">Cargando estrategia...</div>';
+
+    try {
+        const res  = await fetch(`${API}/races/${raceId}/strategy`);
+        const json = await res.json();
+
+        if (!json.success || json.data.drivers.length === 0) {
+            container.innerHTML = `
+                <div class="strategy-section">
+                    <p style="text-align:center; color:rgba(255,255,255,0.3); padding:30px 20px;">
+                        No hay datos de estrategia registrados para esta carrera.<br>
+                        <span style="font-size:0.8rem;">Añádelos desde el panel de administración.</span>
+                    </p>
+                </div>`;
+            return;
+        }
+
+        const { race, drivers, stats } = json.data;
+        const totalLaps = race.total_laps || 1;
+
+        // ── Compound legend ──────────────────────────
+        const activeCmps = [...new Set(drivers.flatMap(d => d.compounds))];
+        const cmpNames   = { SOFT:'Blando', MEDIUM:'Medio', HARD:'Duro', INTER:'Intermedio', WET:'Lluvia', UNKNOWN:'Desconocido' };
+        const legendHTML = activeCmps.map(c => `
+            <div class="strategy-legend-item">
+                <span class="strategy-legend-item__dot strategy-legend-item__dot--${c}"></span>
+                ${cmpNames[c] || c}
+            </div>`).join('');
+
+        // ── Stats strip ──────────────────────────────
+        const stopDist = Object.entries(stats.stopCounts)
+            .sort((a,b) => b[1]-a[1])
+            .map(([n,cnt]) => `${n}-par: ${cnt}`)
+            .join(' · ');
+
+        const fastestHTML = stats.fastestPitStop
+            ? `<div class="strategy-stat-chip">
+                   <span class="strategy-stat-chip__label">Pit más rápido</span>
+                   <span class="strategy-stat-chip__value">${stats.fastestPitStop.time}s</span>
+                   <span class="strategy-stat-chip__sub">${stats.fastestPitStop.driver}</span>
+               </div>`
+            : '';
+
+        const statsHTML = `
+            <div class="strategy-stats">
+                ${fastestHTML}
+                <div class="strategy-stat-chip">
+                    <span class="strategy-stat-chip__label">Pilotos con datos</span>
+                    <span class="strategy-stat-chip__value">${drivers.length}</span>
+                </div>
+                ${stopDist ? `<div class="strategy-stat-chip">
+                    <span class="strategy-stat-chip__label">Distribución</span>
+                    <span class="strategy-stat-chip__value" style="font-size:0.78rem;">${stopDist}</span>
+                </div>` : ''}
+            </div>`;
+
+        // ── Gantt ────────────────────────────────────
+        const ganttRows = drivers.map(d => {
+            const stintsHTML = d.stints.map(s => {
+                const abbr    = COMPOUND_ABBR[s.tire_compound] || '?';
+                const pitAttr = s.pit_duration ? `data-pit="Pit: ${s.pit_duration}"` : '';
+                return `<div class="strategy-stint strategy-stint--${s.tire_compound}"
+                              style="flex:${s.laps};"
+                              title="${s.tire_compound} · ${s.laps} vueltas (L${s.start_lap}–L${s.end_lap})${s.pit_duration ? ' · Pit: '+s.pit_duration : ''}"
+                              ${pitAttr}>
+                            <span class="strategy-stint__label">${abbr}·${s.laps}</span>
+                        </div>`;
+            }).join('');
+
+            const pos = d.final_position ? `P${d.final_position}` : '—';
+            return `
+                <div class="strategy-row">
+                    <div class="strategy-driver-col">
+                        <div class="strategy-driver-bar" style="background:${d.primary_color};"></div>
+                        <span class="strategy-pos">${pos}</span>
+                        <span class="strategy-driver-name">${d.shortName}</span>
+                    </div>
+                    <div class="strategy-stints-col">${stintsHTML}</div>
+                    <span class="strategy-stops-badge">${d.stops}p</span>
+                </div>`;
+        }).join('');
+
+        // ── P1 vs P2 Comparison ──────────────────────
+        let comparisonHTML = '';
+        const top2 = drivers.filter(d => d.final_position <= 2).sort((a,b) => a.final_position - b.final_position);
+        if (top2.length === 2) {
+            comparisonHTML = `
+                <p class="strategy-sub-title">P1 vs P2</p>
+                <div class="strategy-comparison">
+                    ${top2.map(d => {
+                        const pillsHTML = d.compounds.map(c =>
+                            `<span class="cmp-pill cmp-pill--${c}">${COMPOUND_ABBR[c]||'?'}</span>`
+                        ).join('<span style="color:rgba(255,255,255,0.3);margin:0 2px;font-size:0.7rem;">→</span>');
+                        const pitTimeStr = d.totalPitTime > 0 ? `${d.totalPitTime}s total` : '—';
+                        return `
+                        <div class="strategy-comparison-card">
+                            <div class="strategy-comparison-card__header">
+                                <div class="strategy-comparison-card__bar" style="background:${d.primary_color};"></div>
+                                <div>
+                                    <div style="display:flex; gap:8px; align-items:baseline;">
+                                        <span class="strategy-comparison-card__pos">P${d.final_position}</span>
+                                        <span class="strategy-comparison-card__name">${d.name}</span>
+                                    </div>
+                                    <span class="strategy-comparison-card__team">${d.team_name}</span>
+                                </div>
+                            </div>
+                            <div class="strategy-comparison-row">
+                                <span class="strategy-comparison-row__label">Paradas</span>
+                                <span class="strategy-comparison-row__value">${d.stops}</span>
+                            </div>
+                            <div class="strategy-comparison-row">
+                                <span class="strategy-comparison-row__label">Estrategia</span>
+                                <span class="strategy-comparison-row__value">${pillsHTML}</span>
+                            </div>
+                            <div class="strategy-comparison-row">
+                                <span class="strategy-comparison-row__label">Tiempo en pits</span>
+                                <span class="strategy-comparison-row__value">${pitTimeStr}</span>
+                            </div>
+                            ${d.fastestPit ? `
+                            <div class="strategy-comparison-row">
+                                <span class="strategy-comparison-row__label">Mejor pit</span>
+                                <span class="strategy-comparison-row__value">${d.fastestPit}s</span>
+                            </div>` : ''}
+                        </div>`;
+                    }).join('')}
+                </div>`;
+        }
+
+        container.innerHTML = `
+            <div class="strategy-section">
+                ${statsHTML}
+                <div class="strategy-legend">${legendHTML}</div>
+                <p class="strategy-sub-title">Mapa de Estrategia · ${totalLaps} vueltas</p>
+                <div class="strategy-gantt">${ganttRows}</div>
+                ${comparisonHTML}
+            </div>`;
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Error al cargar la estrategia.</p>';
+    }
 }
