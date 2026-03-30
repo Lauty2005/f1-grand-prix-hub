@@ -3,6 +3,8 @@
 @use 'components/driver-card';
 @use 'components/modal';
 @use 'components/race-card';
+@use 'components/articles';
+@use 'components/comparar';
 
 /* --- SCROLLBAR DE ALTO CONTRASTE (PARA PRUEBAS) --- */
 
@@ -171,13 +173,34 @@
 
     @include mobile {
         width: 100%;
-        display: grid;
-        grid-template-columns: 1fr 1fr 1fr; // 3 columnas iguales
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: 5px;
-        
+
         .nav-btn {
-            padding: 8px 5px; // Botones más compactos
-            font-size: 0.75rem; // Letra más chica
+            padding: 8px 12px;
+            font-size: 0.72rem;
+            flex: 1 1 calc(33% - 10px); // 3 por fila máximo
+            min-width: 80px;
+            text-align: center;
+        }
+    }
+
+    // Pantallas muy pequeñas: scroll horizontal
+    @media (max-width: 400px) {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        justify-content: flex-start;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        &::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            flex-shrink: 0;
+            flex: none;
+            padding: 8px 10px;
+            font-size: 0.68rem;
         }
     }
 }

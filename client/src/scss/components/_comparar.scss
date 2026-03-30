@@ -1,0 +1,306 @@
+@use '../abstracts/variables' as *;
+
+/* ============================================================
+   COMPARADOR DE PILOTOS
+   ============================================================ */
+
+.cmp-page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+}
+
+/* ----- HEADER ----- */
+.cmp-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.cmp-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -1px;
+    margin: 0 0 6px;
+
+    @include mobile { font-size: 1.4rem; }
+}
+
+.cmp-subtitle {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+/* ----- SELECTOR AREA ----- */
+.cmp-selector-area {
+    background: $color-surface;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    padding: 20px;
+    margin-bottom: 28px;
+}
+
+.cmp-selectors-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+
+    .cmp-selector {
+        flex: 1;
+        min-width: 180px;
+    }
+
+    .cmp-select {
+        width: 100%;
+        font-size: 0.85rem;
+    }
+}
+
+/* ----- DRIVER CARD HEADER ----- */
+.cmp-driver-cards-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.cmp-driver-card {
+    flex: 1;
+    min-width: 160px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--team-color, rgba(255,255,255,0.1));
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.3);
+
+    &--empty {
+        color: rgba(255,255,255,0.25);
+        font-size: 0.82rem;
+        justify-content: center;
+        border-style: dashed;
+    }
+
+    &__img {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        object-position: top;
+        border: 2px solid var(--team-color, #333);
+        background: rgba(255,255,255,0.05);
+        flex-shrink: 0;
+    }
+
+    &__info {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    &__name {
+        font-size: 0.88rem;
+        color: white;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    &__team {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    &__number {
+        margin-left: auto;
+        font-size: 1.1rem;
+        font-weight: 900;
+        flex-shrink: 0;
+    }
+}
+
+/* ----- ACTIONS ----- */
+.cmp-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    button:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+}
+
+/* ----- SECTION TITLE ----- */
+.cmp-section-title {
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.3);
+    margin: 28px 0 14px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* ----- STATS GRID ----- */
+.cmp-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+
+    @include mobile {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.cmp-stat {
+    background: $color-surface;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-align: center;
+
+    &__label {
+        font-size: 0.65rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.35);
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+
+    &__value {
+        font-size: 1.4rem;
+        font-weight: 900;
+        line-height: 1;
+    }
+
+    &__sep {
+        font-size: 0.65rem;
+        color: rgba(255,255,255,0.2);
+        font-weight: 700;
+    }
+}
+
+/* ----- CHARTS ----- */
+.cmp-chart-wrap {
+    background: $color-surface;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 18px;
+    height: 280px;
+    margin-bottom: 4px;
+
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    @include mobile { height: 220px; }
+}
+
+/* ----- HEAD TO HEAD ----- */
+.cmp-h2h {
+    margin-top: 8px;
+}
+
+.cmp-h2h__scoreboard {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: $color-surface;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.cmp-h2h__score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+}
+
+.cmp-h2h__vs {
+    font-size: 1.1rem;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.15);
+    letter-spacing: 2px;
+}
+
+.cmp-h2h__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+
+    thead th {
+        padding: 10px 14px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        border-bottom: 2px solid rgba(255,255,255,0.08);
+
+        &:first-child  { text-align: right; }
+        &:nth-child(2) { text-align: center; color: rgba(255,255,255,0.3); }
+        &:last-child   { text-align: left; }
+    }
+
+    tbody tr {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        transition: background 0.15s ease;
+
+        &:hover { background: rgba(255,255,255,0.03); }
+    }
+}
+
+.cmp-h2h__pos {
+    padding: 10px 14px;
+    font-weight: 800;
+    font-size: 0.92rem;
+
+    &:first-child { text-align: right; }
+    &:last-child  { text-align: left; }
+
+    &.winner {
+        font-size: 1rem;
+    }
+}
+
+.cmp-h2h__race {
+    padding: 10px 14px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.8rem;
+}
+
+/* ----- LOADING ----- */
+.cmp-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 0.95rem;
+}

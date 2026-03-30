@@ -10,6 +10,7 @@ import racesRoutes from './src/routes/races.routes.js';
 import standingsRoutes from './src/routes/standings.routes.js';
 import authRoutes from './src/routes/auth.routes.js';
 import teamsRoutes from './src/routes/teams.routes.js';
+import articlesRoutes from './src/routes/articles.routes.js';
 
 dotenv.config();
 
@@ -68,6 +69,7 @@ app.use('/api/races', racesRoutes);
 app.use('/api', standingsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/teams', teamsRoutes);
+app.use('/api/articles', articlesRoutes);
 
 // --- GLOBAL ERROR HANDLER ---
 import { errorHandler } from './src/middleware/error.middleware.js';

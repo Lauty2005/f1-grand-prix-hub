@@ -68,6 +68,7 @@ function loadInitialData() {
     loadTeams();
     loadCountryOptions();
     loadServerImages();
+    loadArticlesForDelete();
 }
 
 // ==========================================
@@ -606,7 +607,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete); document.getElementById('resultForm').addEventListener('submit', handleSubmit);
+    document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
+    document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
+    document.getElementById('newArticleForm')?.addEventListener('submit', handleCreateArticle);
+    document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
     document.getElementById('newRaceForm').addEventListener('submit', handleCreateRace);
@@ -630,6 +634,91 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Esto fuerza a que se muestren los campos correctos apenas entras
     updateFormFields();
 });
+
+// ==========================================
+// ARTÍCULOS
+// ==========================================
+async function loadArticlesForDelete() {
+    const select = document.getElementById('deleteArticleSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res = await adminFetch(`${API}/articles/admin/all`);
+        const json = await res.json();
+        const articles = json.data || [];
+        if (articles.length === 0) {
+            select.innerHTML = '<option value="" disabled>Sin artículos</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Selecciona artículo...</option>' +
+                articles.map(a => `<option value="${a.id}">[${a.published ? '✅' : '⏸'}] ${a.title}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handleDeleteArticle() {
+    const select = document.getElementById('deleteArticleSelect');
+    const id = select.value;
+    if (!id) return alert('Selecciona un artículo.');
+    const title = select.options[select.selectedIndex].text;
+    if (!confirm(`¿Eliminar artículo?\n\n${title}`)) return;
+    try {
+        const res = await adminFetch(`${API}/articles/${id}`, { method: 'DELETE' });
+        if (res.ok) {
+            alert('Artículo eliminado.');
+            loadArticlesForDelete();
+        } else {
+            alert('No se pudo eliminar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión'); }
+}
+
+async function handleCreateArticle(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const tagsRaw = document.getElementById('artTags').value;
+    const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+    const body = {
+        title:           document.getElementById('artTitle').value,
+        excerpt:         document.getElementById('artExcerpt').value || null,
+        content:         document.getElementById('artContent').value,
+        author:          document.getElementById('artAuthor').value || 'Redacción',
+        cover_image_url: document.getElementById('artCover').value || null,
+        category:        document.getElementById('artCategory').value,
+        tags,
+        published:       document.getElementById('artPublished').checked,
+        featured:        document.getElementById('artFeatured').checked,
+    };
+
+    try {
+        const res = await adminFetch(`${API}/articles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgArticle');
+            e.target.reset();
+            document.getElementById('artAuthor').value = 'Redacción';
+            loadArticlesForDelete();
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgArticle', 'errorTextArticle');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'PUBLICAR ARTÍCULO';
+    }
+}
 
 // --- Errores ---
 

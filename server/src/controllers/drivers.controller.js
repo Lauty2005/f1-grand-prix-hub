@@ -43,6 +43,24 @@ export const listTeams = async (req, res) => {
     }
 };
 
+export const compareDrivers = async (req, res) => {
+    try {
+        const { ids, year = '2025' } = req.query;
+        if (!ids) return res.status(400).json({ error: 'Parámetro ids requerido' });
+
+        const idArray = ids.split(',').map(id => parseInt(id.trim())).filter(n => !isNaN(n));
+        if (idArray.length < 2 || idArray.length > 4) {
+            return res.status(400).json({ error: 'Se requieren entre 2 y 4 pilotos' });
+        }
+
+        const data = await driversService.compareDrivers(idArray, year);
+        res.json({ success: true, data });
+    } catch (err) {
+        console.error('ERROR compare drivers:', err.message);
+        res.status(500).json({ error: 'Error comparando pilotos' });
+    }
+};
+
 export const addDriver = async (req, res) => {
     try {
         const fileData = req.file ? {

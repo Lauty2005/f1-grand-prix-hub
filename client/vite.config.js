@@ -9,6 +9,8 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         // Página de Admin (Panel)
         admin: resolve(__dirname, 'admin.html'),
+        // Página de Artículo Individual
+        articulo: resolve(__dirname, 'articulo.html'),
       },
     },
   },

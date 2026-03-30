@@ -26,19 +26,17 @@
         </div>
     </div>
 
-    <div class="admin-layout">
-        <div style="position:absolute; top:15px; right:20px; z-index:100;">
-            <button id="btnLogout" style="
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
-            color: #aaa;
-            padding: 6px 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-        ">Cerrar sesión</button>
+    <!-- TOPBAR -->
+    <header class="admin-topbar">
+        <div class="admin-topbar__brand">
+            <span class="admin-topbar__flag">🏁</span>
+            <span class="admin-topbar__title">F1 <strong>Admin</strong></span>
+            <span class="admin-topbar__badge">Panel de Control</span>
         </div>
+        <button id="btnLogout" class="admin-topbar__logout">Cerrar sesión</button>
+    </header>
+
+    <div class="admin-layout">
 
         <div class="danger-sidebar">
             <h3 class="danger-header">⚠️ ZONA DE PELIGRO</h3>
@@ -56,6 +54,16 @@
                         <option>Cargando...</option>
                     </select>
                     <button id="btnDelete" class="btn-delete">🗑️</button>
+                </div>
+            </div>
+
+            <div class="danger-item">
+                <label>Eliminar Artículo</label>
+                <div class="danger-row">
+                    <select id="deleteArticleSelect" class="form-control danger-select">
+                        <option>Cargando...</option>
+                    </select>
+                    <button id="btnDeleteArticle" class="btn-delete">🗑️</button>
                 </div>
             </div>
 
@@ -284,7 +292,36 @@
                     </form>
                 </div>
 
-                <div style="width: 1px; background: #333; margin: 0 10px;"></div>
+                <div class="creation-item">
+                    <label>Nuevo Artículo</label>
+                    <form id="newArticleForm" class="creation-form-grid">
+                        <input type="text" id="artTitle" class="form-control span-full" placeholder="Título" required>
+                        <textarea id="artExcerpt" class="form-control span-full" placeholder="Extracto / Resumen (opcional)" rows="2" style="resize:vertical;"></textarea>
+                        <select id="artCategory" class="form-control">
+                            <option value="noticias">📰 Noticias</option>
+                            <option value="analisis">🔍 Análisis</option>
+                            <option value="preview">🏎️ Preview</option>
+                            <option value="tecnica">⚙️ Técnica</option>
+                        </select>
+                        <input type="text" id="artAuthor" class="form-control" placeholder="Autor" value="Redacción">
+                        <input type="url" id="artCover" class="form-control span-full" placeholder="URL imagen portada (opcional)">
+                        <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
+                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="8" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
+                        <div class="span-full" style="display:flex; gap:20px; align-items:center; margin: 5px 0;">
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="checkbox" id="artPublished" style="width:18px;height:18px;accent-color:#00ff88;">
+                                <label for="artPublished" style="margin:0;color:#00ff88;font-weight:bold;cursor:pointer;">Publicar</label>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <input type="checkbox" id="artFeatured" style="width:18px;height:18px;accent-color:#e10600;">
+                                <label for="artFeatured" style="margin:0;color:#e10600;font-weight:bold;cursor:pointer;">Destacado</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-create span-full">PUBLICAR ARTÍCULO</button>
+                        <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span></div>
+                        <p id="msgArticle" class="success-msg span-full">✅ ¡Artículo creado!</p>
+                    </form>
+                </div>
 
                 <div class="creation-item">
                     <label>Nuevo Piloto</label>

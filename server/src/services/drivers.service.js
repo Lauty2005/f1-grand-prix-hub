@@ -59,6 +59,115 @@ export const getTeams = async () => {
     return result.rows;
 };
 
+export const compareDrivers = async (ids, year) => {
+    const startDate = `${year}-01-01`;
+    const endDate   = `${parseInt(year) + 1}-01-01`;
+
+    // 1. Info base de cada piloto + stats agregadas
+    const statsSQL = `
+        SELECT
+            d.id, d.first_name, d.last_name, d.permanent_number, d.country_code, d.profile_image_url,
+            c.name  AS team_name,
+            c.primary_color,
+            c.logo_url,
+            (COALESCE(rp.total_points, 0) + COALESCE(sp.total_points, 0))   AS points,
+            COALESCE(rp.wins,    0)  AS wins,
+            COALESCE(rp.podiums, 0)  AS podiums,
+            COALESCE(rp.top5,    0)  AS top5,
+            COALESCE(rp.top10,   0)  AS top10,
+            COALESCE(rp.dnfs,    0)  AS dnfs,
+            COALESCE(rp.fastest_laps, 0) AS fastest_laps,
+            COALESCE(rp.races,   0)  AS races
+        FROM drivers d
+        JOIN constructors c ON d.constructor_id = c.id
+        LEFT JOIN (
+            SELECT
+                res.driver_id,
+                SUM(res.points) AS total_points,
+                COUNT(*) FILTER (WHERE res.position = 1 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS wins,
+                COUNT(*) FILTER (WHERE res.position <= 3 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS podiums,
+                COUNT(*) FILTER (WHERE res.position <= 5 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS top5,
+                COUNT(*) FILTER (WHERE res.position <= 10 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS top10,
+                COUNT(*) FILTER (WHERE res.dnf) AS dnfs,
+                COUNT(*) FILTER (WHERE res.fastest_lap) AS fastest_laps,
+                COUNT(*) AS races
+            FROM results res
+            JOIN races r ON res.race_id = r.id
+            WHERE r.date >= $2 AND r.date < $3
+            GROUP BY res.driver_id
+        ) rp ON d.id = rp.driver_id
+        LEFT JOIN (
+            SELECT s.driver_id, SUM(s.points) AS total_points
+            FROM sprint_results s
+            JOIN races r ON s.race_id = r.id
+            WHERE r.date >= $2 AND r.date < $3
+            GROUP BY s.driver_id
+        ) sp ON d.id = sp.driver_id
+        WHERE d.id = ANY($1::int[])
+        ORDER BY points DESC;
+    `;
+
+    const statsResult = await query(statsSQL, [ids, startDate, endDate]);
+
+    // 2. Puntos por carrera para cada piloto (para el gráfico acumulado)
+    const perRaceSQL = `
+        SELECT
+            res.driver_id,
+            r.round,
+            r.name AS race_name,
+            res.position,
+            (res.points + COALESCE(sp.points, 0)) AS points,
+            res.dnf, res.dsq, res.dns
+        FROM results res
+        JOIN races r ON res.race_id = r.id
+        LEFT JOIN sprint_results sp ON (sp.race_id = r.id AND sp.driver_id = res.driver_id)
+        WHERE res.driver_id = ANY($1::int[])
+          AND r.date >= $2 AND r.date < $3
+        ORDER BY r.round ASC;
+    `;
+
+    const perRaceResult = await query(perRaceSQL, [ids, startDate, endDate]);
+
+    // 3. Head-to-head: carreras donde ambos pilotos corrieron, comparar posiciones
+    // Solo funciona para exactamente 2 pilotos
+    let h2h = null;
+    if (ids.length === 2) {
+        const [idA, idB] = ids;
+        const h2hSQL = `
+            SELECT
+                r.round, r.name AS race_name,
+                a.position AS pos_a, b.position AS pos_b,
+                a.dnf AS dnf_a, b.dnf AS dnf_b,
+                a.driver_id AS id_a, b.driver_id AS id_b
+            FROM results a
+            JOIN results b ON (a.race_id = b.race_id AND b.driver_id = $2)
+            JOIN races r ON a.race_id = r.id
+            WHERE a.driver_id = $1
+              AND r.date >= $3 AND r.date < $4
+            ORDER BY r.round ASC;
+        `;
+        const h2hResult = await query(h2hSQL, [idA, idB, startDate, endDate]);
+
+        let winsA = 0, winsB = 0;
+        h2hResult.rows.forEach(row => {
+            const aFinished = !row.dnf_a && row.pos_a;
+            const bFinished = !row.dnf_b && row.pos_b;
+            if (aFinished && bFinished) {
+                if (row.pos_a < row.pos_b) winsA++;
+                else winsB++;
+            }
+        });
+
+        h2h = { races: h2hResult.rows, wins_a: winsA, wins_b: winsB };
+    }
+
+    return {
+        drivers: statsResult.rows,
+        perRace: perRaceResult.rows,
+        h2h,
+    };
+};
+
 export const createDriver = async (data, fileData) => {
     const { first_name, last_name, number, team_id, country, seasons } = data;
     

@@ -380,6 +380,13 @@
     max-width: 1000px;
     margin: 0 auto;
     padding-bottom: 50px;
+
+    // En pantallas muy pequeñas: una sola columna sin minmax fijo
+    @media (max-width: 480px) {
+        grid-template-columns: 1fr;
+        padding: 0 8px 50px;
+        gap: 10px;
+    }
 }
 
 .calendar-header {
@@ -393,6 +400,48 @@
         color: white;
         margin-bottom: 10px;
         font-size: 2rem;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  RACE CARD WIDE — Extra small screens (≤480px)
+// ─────────────────────────────────────────────
+@media (max-width: 480px) {
+    .race-card-wide {
+        min-height: 70px;
+
+        &__date-col {
+            padding: 0 10px;
+            min-width: 52px;
+
+            &-month { font-size: 0.62rem; letter-spacing: 0.5px; }
+            &-day   { font-size: 1.25rem; }
+        }
+
+        &__info {
+            padding: 10px 8px;
+
+            h3 {
+                font-size: 0.82rem;
+                letter-spacing: 0;
+                line-height: 1.3;
+            }
+
+            p {
+                font-size: 0.72rem;
+                gap: 4px;
+                flex-wrap: wrap;
+            }
+        }
+
+        // Ocultar imagen del mapa en pantallas muy pequeñas
+        &__map-col { display: none; }
+
+        // Reducir flecha CTA
+        &__cta {
+            font-size: 1.1rem;
+            padding: 0 10px 0 2px;
+        }
     }
 }
 

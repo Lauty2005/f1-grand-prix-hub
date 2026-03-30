@@ -12,6 +12,9 @@ router.get('/', driversController.getAllDrivers);
 // 2. OBTENER EQUIPOS (Debe ir ANTES del delete /:id / results por ruteo seguro)
 router.get('/teams/list', driversController.listTeams);
 
+// COMPARAR PILOTOS
+router.get('/compare', driversController.compareDrivers);
+
 // 3. HISTORIAL DE UN PILOTO
 router.get('/:id/results', driversController.getDriverHistorial);
 
