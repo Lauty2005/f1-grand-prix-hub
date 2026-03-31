@@ -70,12 +70,14 @@ function loadInitialData() {
     loadCountryOptions();
     loadServerImages();
     loadArticlesForDelete();
+    loadDraftArticles();
     loadCircuitWinnersForDelete();
     loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
     loadMomentsForDelete();
     loadRacesForMoment(document.getElementById('momentYear').value || 2025);
     loadRacesForStint('2025');
     loadRacesForStintDelete('2025');
+    loadRacesForAI('2025');
 }
 
 // ==========================================
@@ -614,8 +616,102 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ── Editor toolbar ──────────────────────────────────────────
+    document.querySelectorAll('.editor-toolbar button[data-tag]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tag      = btn.dataset.tag;
+            const textarea = document.getElementById('artContent');
+            const start    = textarea.selectionStart;
+            const end      = textarea.selectionEnd;
+            const selected = textarea.value.slice(start, end);
+
+            let inserted;
+            if (tag === 'ul') {
+                // wrap each selected line in <li> then wrap all in <ul>
+                const items = (selected || 'Ítem').split('\n').map(l => `  <li>${l.trim() || 'Ítem'}</li>`).join('\n');
+                inserted = `<ul>\n${items}\n</ul>`;
+            } else if (tag === 'li') {
+                inserted = `<li>${selected || 'Ítem'}</li>`;
+            } else if (tag === 'p') {
+                inserted = `<p>${selected || 'Párrafo...'}</p>`;
+            } else {
+                inserted = `<${tag}>${selected || '...'}</${tag}>`;
+            }
+
+            textarea.setRangeText(inserted, start, end, 'end');
+            textarea.focus();
+        });
+    });
+
+    document.getElementById('btnTogglePreview')?.addEventListener('click', () => {
+        const preview  = document.getElementById('artContentPreview');
+        const textarea = document.getElementById('artContent');
+        const btn      = document.getElementById('btnTogglePreview');
+        const showing  = preview.style.display !== 'none';
+        if (showing) {
+            preview.style.display = 'none';
+            textarea.style.display = '';
+            btn.textContent = '👁 Preview';
+        } else {
+            preview.innerHTML = textarea.value || '<p style="color:#888">Sin contenido</p>';
+            preview.style.display = 'block';
+            textarea.style.display = 'none';
+            btn.textContent = '✏️ Editar';
+        }
+    });
+
+    // ── Insert image modal ──────────────────────────────────────
+    let _imgTarget = null; // textarea reference when modal opens
+
+    document.getElementById('btnInsertImage')?.addEventListener('click', () => {
+        _imgTarget = document.getElementById('artContent');
+        document.getElementById('imgModalUrl').value = '';
+        document.getElementById('imgModalAlt').value = '';
+        document.getElementById('imgModalPreviewWrap').style.display = 'none';
+        const modal = document.getElementById('imgModal');
+        modal.style.display = 'flex';
+        document.getElementById('imgModalUrl').focus();
+    });
+
+    document.getElementById('imgModalUrl')?.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        const wrap = document.getElementById('imgModalPreviewWrap');
+        const img  = document.getElementById('imgModalPreviewImg');
+        if (url) {
+            img.src = url;
+            img.onerror = () => { wrap.style.display = 'none'; };
+            img.onload  = () => { wrap.style.display = 'block'; };
+        } else {
+            wrap.style.display = 'none';
+        }
+    });
+
+    document.getElementById('imgModalCancel')?.addEventListener('click', () => {
+        document.getElementById('imgModal').style.display = 'none';
+    });
+
+    document.getElementById('imgModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('imgModal'))
+            document.getElementById('imgModal').style.display = 'none';
+    });
+
+    document.getElementById('imgModalInsert')?.addEventListener('click', () => {
+        const url = document.getElementById('imgModalUrl').value.trim();
+        if (!url) return alert('Ingresá la URL de la imagen.');
+        const alt  = document.getElementById('imgModalAlt').value.trim() || '';
+        const tag  = `<img src="${url}" alt="${alt}" style="max-width:100%; border-radius:6px; margin:12px 0;">`;
+        if (_imgTarget) {
+            const start = _imgTarget.selectionStart;
+            const end   = _imgTarget.selectionEnd;
+            _imgTarget.setRangeText(tag, start, end, 'end');
+            _imgTarget.focus();
+        }
+        document.getElementById('imgModal').style.display = 'none';
+    });
+
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
     document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
+    document.getElementById('btnPublishDraft')?.addEventListener('click', handlePublishDraft);
     document.getElementById('newArticleForm')?.addEventListener('submit', handleCreateArticle);
     document.getElementById('btnDeleteCircuitWinner')?.addEventListener('click', handleDeleteCircuitWinner);
     document.getElementById('circuitInfoForm')?.addEventListener('submit', handleUpdateCircuitInfo);
@@ -631,6 +727,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('stintRaceSelect')?.addEventListener('change', loadDriversForStint);
     document.getElementById('deleteStintYearSelect')?.addEventListener('change', (e) => loadRacesForStintDelete(e.target.value));
     document.getElementById('deleteStintRaceSelect')?.addEventListener('change', (e) => loadDriversForStintDelete(e.target.value));
+    // AI Generator
+    document.getElementById('btnGenerateArticle')?.addEventListener('click', handleGenerateArticle);
+    document.getElementById('aiYear')?.addEventListener('change', (e) => loadRacesForAI(e.target.value));
     document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -1127,3 +1226,116 @@ const showSuccess = (id = 'msg') => {
     msg.classList.add('visible');
     setTimeout(() => msg.classList.remove('visible'), 3000);
 };
+// ==========================================
+// AI ARTICLE GENERATOR
+// ==========================================
+async function loadRacesForAI(year) {
+    const select = document.getElementById('aiRaceSelect');
+    if (!select) return;
+    try {
+        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="">Seleccionar carrera...</option>' +
+            races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function handleGenerateArticle() {
+    const raceId = document.getElementById('aiRaceSelect').value;
+    const type   = document.getElementById('aiArticleType').value;
+    const status = document.getElementById('aiGenerateStatus');
+    const btn    = document.getElementById('btnGenerateArticle');
+
+    if (!raceId) return alert('Seleccioná una carrera primero.');
+
+    const typeLabels = {
+        race_report: 'Crónica de Carrera',
+        strategy:    'Análisis de Estrategia',
+        standings:   'Actualización del Campeonato',
+    };
+
+    btn.disabled = true;
+    btn.innerText = '✨ Generando...';
+    status.style.display = 'block';
+    status.className = 'ai-status--loading';
+    status.innerHTML = `⏳ Generando <strong>${typeLabels[type]}</strong>... esto puede tardar unos segundos.`;
+
+    try {
+        const res  = await adminFetch(`${API}/articles/admin/generate`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ race_id: raceId, type }),
+        });
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+            status.className = 'ai-status--success';
+            status.innerHTML = `
+                ✅ <strong>¡Borrador creado!</strong><br>
+                ${json.message}<br>
+                <span style="font-size:0.75rem; opacity:0.7; margin-top:4px; display:block;">
+                    Tokens usados: ${json.tokens_used?.input_tokens ?? '—'} entrada · ${json.tokens_used?.output_tokens ?? '—'} salida
+                </span>`;
+            // Refresh selectors so the new draft appears
+            loadArticlesForDelete();
+            loadDraftArticles();
+        } else {
+            status.className = 'ai-status--error';
+            status.innerHTML = `❌ ${json.error || 'Error desconocido. Intentá de nuevo.'}`;
+        }
+    } catch (e) {
+        console.error(e);
+        status.className = 'ai-status--error';
+        status.innerHTML = '❌ Error de conexión con el servidor.';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '✨ GENERAR BORRADOR';
+    }
+}
+
+// ── Publicar borrador IA ──────────────────────────────────────
+async function loadDraftArticles() {
+    const select = document.getElementById('draftArticleSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res  = await adminFetch(`${API}/articles/admin/all`);
+        const json = await res.json();
+        const drafts = (json.data || []).filter(a => !a.published);
+        if (!drafts.length) {
+            select.innerHTML = '<option value="" disabled>Sin borradores</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Seleccionar borrador...</option>' +
+                drafts.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handlePublishDraft() {
+    const select = document.getElementById('draftArticleSelect');
+    const msg    = document.getElementById('msgPublishDraft');
+    const id     = select.value;
+    if (!id) return alert('Seleccioná un borrador.');
+
+    try {
+        const res = await adminFetch(`${API}/articles/${id}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ published: true }),
+        });
+        if (res.ok) {
+            msg.style.display = 'block';
+            msg.textContent   = '✅ Artículo publicado correctamente.';
+            loadDraftArticles();
+            loadArticlesForDelete();
+            setTimeout(() => { msg.style.display = 'none'; }, 4000);
+        } else {
+            const json = await res.json();
+            alert(json.error || 'No se pudo publicar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión.'); }
+}

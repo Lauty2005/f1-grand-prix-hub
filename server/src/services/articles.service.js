@@ -90,6 +90,13 @@ export const updateArticle = async (id, data) => {
     );
 };
 
+export const publishArticle = async (id, published) => {
+    await query(
+        `UPDATE articles SET published = $1, updated_at = NOW() WHERE id = $2`,
+        [published, id]
+    );
+};
+
 export const deleteArticle = async (id) => {
     await query('DELETE FROM articles WHERE id = $1', [id]);
 };

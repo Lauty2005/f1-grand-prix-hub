@@ -57,6 +57,17 @@
                 </div>
             </div>
 
+            <div class="danger-item" style="border-color:#7c3aed; background:rgba(124,58,237,0.08);">
+                <label style="color:#a855f7;">Publicar Borrador IA</label>
+                <div class="danger-row">
+                    <select id="draftArticleSelect" class="form-control danger-select">
+                        <option>Cargando...</option>
+                    </select>
+                    <button id="btnPublishDraft" style="background:#7c3aed; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap;">✅ Publicar</button>
+                </div>
+                <p id="msgPublishDraft" style="display:none; margin:4px 0 0; font-size:0.78rem; color:#a855f7;"></p>
+            </div>
+
             <div class="danger-item">
                 <label>Eliminar Artículo</label>
                 <div class="danger-row">
@@ -343,7 +354,21 @@
                         <input type="text" id="artAuthor" class="form-control" placeholder="Autor" value="Redacción">
                         <input type="url" id="artCover" class="form-control span-full" placeholder="URL imagen portada (opcional)">
                         <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
-                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="8" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
+                        <div class="span-full editor-toolbar">
+                            <button type="button" data-tag="strong" title="Negrita"><b>B</b></button>
+                            <button type="button" data-tag="em" title="Cursiva"><i>I</i></button>
+                            <button type="button" data-tag="h2" title="Título H2">H2</button>
+                            <button type="button" data-tag="h3" title="Título H3">H3</button>
+                            <button type="button" data-tag="p" title="Párrafo">¶</button>
+                            <button type="button" data-tag="li" title="Ítem de lista">• Li</button>
+                            <button type="button" data-tag="ul" title="Lista">UL</button>
+                            <span class="editor-toolbar__sep"></span>
+                            <button type="button" id="btnInsertImage" title="Insertar imagen">🖼 IMG</button>
+                            <span class="editor-toolbar__sep"></span>
+                            <button type="button" id="btnTogglePreview" title="Vista previa del contenido">👁 Preview</button>
+                        </div>
+                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="10" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
+                        <div id="artContentPreview" class="span-full article-preview" style="display:none;"></div>
                         <div class="span-full" style="display:flex; gap:20px; align-items:center; margin: 5px 0;">
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <input type="checkbox" id="artPublished" style="width:18px;height:18px;accent-color:#00ff88;">
@@ -390,6 +415,31 @@
                         <div id="errorMsgStint" class="error-msg span-full">❌ <span id="errorTextStint"></span></div>
                         <p id="msgStint" class="success-msg span-full">✅ ¡Stint guardado!</p>
                     </form>
+                </div>
+
+                <div class="creation-item creation-item--ai">
+                    <label>✨ Generar Artículo con IA</label>
+                    <div class="creation-form-grid">
+                        <p class="span-full" style="color:rgba(168,85,247,0.8); font-size:0.75rem; margin:0 0 8px; line-height:1.5;">
+                            Recopila resultados, estrategia y momentos clave de la carrera y genera un borrador listo para publicar.
+                        </p>
+                        <select id="aiYear" class="form-control">
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="aiRaceSelect" class="form-control">
+                            <option value="">Seleccionar carrera...</option>
+                        </select>
+                        <select id="aiArticleType" class="form-control span-full">
+                            <option value="race_report">🏁 Crónica de Carrera</option>
+                            <option value="strategy">⚙️ Análisis de Estrategia</option>
+                            <option value="standings">📊 Actualización del Campeonato</option>
+                        </select>
+                        <button id="btnGenerateArticle" type="button" class="btn-ai span-full">
+                            ✨ GENERAR BORRADOR
+                        </button>
+                        <div id="aiGenerateStatus" class="span-full" style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:0.82rem; line-height:1.5;"></div>
+                    </div>
                 </div>
 
                 <div class="creation-item">
@@ -491,6 +541,25 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Modal: Insertar imagen -->
+    <div id="imgModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:28px 24px; width:420px; max-width:90vw;">
+            <h3 style="margin:0 0 16px; color:#fff; font-size:1rem;">🖼 Insertar Imagen</h3>
+            <label style="font-size:0.78rem; color:#aaa; display:block; margin-bottom:4px;">URL de la imagen</label>
+            <input id="imgModalUrl" type="text" class="form-control" placeholder="/images/articles/mi-imagen.png" style="margin-bottom:8px; width:100%; box-sizing:border-box;">
+            <p style="font-size:0.72rem; color:#666; margin:0 0 12px;">Guardá tus imágenes en <code style="color:#e10600;">server/public/images/articles/</code> y referencialas como <code style="color:#e10600;">/images/articles/nombre.png</code></p>
+            <label style="font-size:0.78rem; color:#aaa; display:block; margin-bottom:4px;">Texto alternativo (alt)</label>
+            <input id="imgModalAlt" type="text" class="form-control" placeholder="Descripción de la imagen" style="margin-bottom:16px; width:100%; box-sizing:border-box;">
+            <div id="imgModalPreviewWrap" style="display:none; margin-bottom:14px; text-align:center;">
+                <img id="imgModalPreviewImg" src="" alt="" style="max-width:100%; max-height:180px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
+            </div>
+            <div style="display:flex; gap:10px; justify-content:flex-end;">
+                <button id="imgModalCancel" type="button" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#aaa; padding:7px 18px; border-radius:6px; cursor:pointer;">Cancelar</button>
+                <button id="imgModalInsert" type="button" style="background:#e10600; border:none; color:#fff; font-weight:700; padding:7px 18px; border-radius:6px; cursor:pointer;">Insertar</button>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="./src/admin.js"></script>
