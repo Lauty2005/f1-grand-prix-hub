@@ -520,6 +520,39 @@ async function handleCreateRace(e) {
 }
 
 // --- CREAR PILOTO ---
+async function handleCreateTeam(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const formData = new FormData();
+    formData.append('name',          document.getElementById('newTeamName').value.trim());
+    formData.append('primary_color', document.getElementById('newTeamColor').value);
+
+    const logoInput = document.getElementById('newTeamLogo');
+    if (logoInput.files[0]) formData.append('logo_image', logoInput.files[0]);
+
+    const seasons = ['2024','2025','2026']
+        .filter(y => document.getElementById(`teamSeason${y}`)?.checked)
+        .map(Number);
+    formData.append('active_seasons', JSON.stringify(seasons));
+
+    try {
+        const res = await adminFetch(`${API}/teams`, { method: 'POST', body: formData });
+        if (res.ok) {
+            showSuccess('msgTeam');
+            loadTeams();
+            e.target.reset();
+            document.getElementById('newTeamColor').value = '#e10600';
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgTeam', 'errorTextTeam');
+        }
+    } catch (err) { console.error(err); alert('Error de conexión.'); }
+    finally { btn.disabled = false; btn.innerText = 'AGREGAR ESCUDERÍA'; }
+}
+
 async function handleCreateDriver(e) {
     e.preventDefault();
     if (!confirm("¿Crear nuevo piloto?")) return;
@@ -734,6 +767,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
     document.getElementById('newRaceForm').addEventListener('submit', handleCreateRace);
+    document.getElementById('newTeamForm')?.addEventListener('submit', handleCreateTeam);
     document.getElementById('newDriverForm').addEventListener('submit', handleCreateDriver);
     document.getElementById('btnDeleteResult').addEventListener('click', handleDeleteSpecificResult);
     document.getElementById('deleteDriverYearSelect').addEventListener('change', loadDriversForDelete);

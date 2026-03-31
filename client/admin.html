@@ -504,6 +504,35 @@
                 </div>
 
                 <div class="creation-item">
+                    <label>Nueva Escudería</label>
+                    <form id="newTeamForm" class="creation-form-grid">
+                        <input type="text" id="newTeamName" class="form-control span-full" placeholder="Nombre (ej: Cadillac)" required>
+                        <input type="color" id="newTeamColor" class="form-control" value="#e10600" title="Color principal" style="height:40px; cursor:pointer;">
+                        <input type="file" id="newTeamLogo" class="form-control" accept="image/*">
+                        <div class="span-full" style="margin-top:8px;">
+                            <label style="color:#aaa; font-size:0.9rem;">Activa en:</label>
+                            <div style="display:flex; gap:15px; margin-top:5px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <input type="checkbox" id="teamSeason2024" value="2024">
+                                    <label for="teamSeason2024" style="color:white; margin:0;">2024</label>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <input type="checkbox" id="teamSeason2025" value="2025">
+                                    <label for="teamSeason2025" style="color:white; margin:0;">2025</label>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:5px;">
+                                    <input type="checkbox" id="teamSeason2026" value="2026" checked>
+                                    <label for="teamSeason2026" style="color:white; margin:0;">2026</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-create span-full" style="margin-top:12px;">AGREGAR ESCUDERÍA</button>
+                        <div id="errorMsgTeam" class="error-msg span-full">❌ <span id="errorTextTeam"></span></div>
+                        <p id="msgTeam" class="success-msg span-full">✅ ¡Escudería creada!</p>
+                    </form>
+                </div>
+
+                <div class="creation-item">
                     <label>Nuevo Piloto</label>
                     <form id="newDriverForm" class="creation-form-grid">
                         <input type="text" id="newDriverName" class="form-control" placeholder="Nombre" required>

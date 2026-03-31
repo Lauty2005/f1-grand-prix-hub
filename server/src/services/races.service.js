@@ -65,7 +65,7 @@ export const getSessionResults = async (raceId, sessionType) => {
     const alias = cfg.select.split('.')[0];
     const sql = `
         SELECT ${cfg.select}, d.first_name, d.last_name,
-               COALESCE(c.name_history->>(EXTRACT(YEAR FROM r.date)::text), c.name) AS team_name,
+               c.name AS team_name,
                c.primary_color
         FROM ${cfg.table}
         JOIN drivers d ON ${alias}.driver_id = d.id

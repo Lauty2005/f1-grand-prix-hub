@@ -4,7 +4,7 @@ export const getDrivers = async (year) => {
     const sql = `
         SELECT 
             d.id, d.first_name, d.last_name, d.permanent_number, d.country_code, d.profile_image_url,
-            COALESCE(c.name_history->>$4::text, c.name) AS team_name, c.primary_color, c.logo_url,
+            c.name AS team_name, c.primary_color, c.logo_url,
             (COALESCE(race_stats.total_points, 0) + COALESCE(sprint_stats.total_points, 0)) as points,
             COALESCE(race_stats.podiums, 0) as podiums
         FROM drivers d

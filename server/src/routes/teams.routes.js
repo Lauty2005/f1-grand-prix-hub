@@ -21,22 +21,24 @@ router.get('/', async (req, res) => {
 // 2. CREAR EQUIPO
 router.post('/', adminAuth, upload.single('logo_image'), async (req, res) => {
     try {
-        const { name, primary_color } = req.body;
-        
-        // Construir URL de la imagen si se subió
+        const { name, primary_color, active_seasons } = req.body;
+
         let logo_url = null;
         if (req.file) {
-            // Nota: multer guarda el nombre del archivo en req.file.filename
             logo_url = `/images/teams/${req.file.filename}`;
         }
 
-        const sql = `
-            INSERT INTO constructors (name, primary_color, logo_url)
-            VALUES ($1, $2, $3)
-            RETURNING id
-        `;
-        
-        await query(sql, [name, primary_color, logo_url]);
+        // active_seasons viene como JSON string o array
+        let seasons = [];
+        if (active_seasons) {
+            seasons = typeof active_seasons === 'string' ? JSON.parse(active_seasons) : active_seasons;
+        }
+
+        await query(
+            `INSERT INTO constructors (name, primary_color, logo_url, active_seasons)
+             VALUES ($1, $2, $3, $4) RETURNING id`,
+            [name, primary_color, logo_url, seasons]
+        );
         res.json({ success: true, message: 'Escudería creada exitosamente' });
 
     } catch (e) {
