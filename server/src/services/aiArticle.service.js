@@ -196,16 +196,16 @@ function buildPrompt(ctx, type) {
     const instructions = {
         race_report: `Escribí una CRÓNICA DE CARRERA completa y emocionante.
 Cubrí: la largada, los momentos decisivos, el desenlace, actuaciones destacadas y análisis del resultado.
-Extensión: ~700-900 palabras. Incluí mínimo 3 secciones con <h2>.`,
+Extensión: ~500 palabras. Incluí mínimo 3 secciones con <h2>.`,
 
-        strategy: `Escribí un ANÁLISIS DE ESTRATEGIA profundo centrado en las decisiones tácticas de neumáticos y pit stops.
+        strategy: `Escribí un ANÁLISIS DE ESTRATEGIA centrado en las decisiones tácticas de neumáticos y pit stops.
 Explicá qué estrategias se usaron, cuál fue la más efectiva, qué role jugaron los undercuts/overcuts.
-Si no hay datos de estrategia, hacé un análisis táctico general de la carrera basándote en los resultados.
-Extensión: ~600-800 palabras. Incluí mínimo 2 secciones con <h2>.`,
+Si no hay datos de estrategia, hacé un análisis táctico general basándote en los resultados.
+Extensión: ~400 palabras. Incluí mínimo 2 secciones con <h2>.`,
 
         standings: `Escribí un ANÁLISIS DEL CAMPEONATO enfocado en cómo este resultado impacta la lucha por los títulos.
 Analizá la situación de los líderes, los que ganaron/perdieron posiciones y qué se viene.
-Extensión: ~500-700 palabras. Incluí mínimo 2 secciones con <h2>.`,
+Extensión: ~350 palabras. Incluí mínimo 2 secciones con <h2>.`,
     };
 
     return `${instructions[type] || instructions.race_report}
@@ -227,7 +227,7 @@ async function callAnthropic(userPrompt) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const message = await client.messages.create({
         model:      ANTHROPIC_MODEL,
-        max_tokens: 4096,
+        max_tokens: 8192,
         system:     SYSTEM_PROMPT,
         messages:   [{ role: 'user', content: userPrompt }],
     });
@@ -247,7 +247,7 @@ async function callGemini(userPrompt) {
         systemInstruction: SYSTEM_PROMPT,
         generationConfig: {
             responseMimeType: 'application/json',
-            maxOutputTokens:  4096,
+            maxOutputTokens:  8192,
         },
     });
     const result = await model.generateContent(userPrompt);
