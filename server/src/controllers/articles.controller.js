@@ -44,7 +44,13 @@ export const createArticle = async (req, res) => {
 export const updateArticle = async (req, res) => {
     try {
         const { id } = req.params;
-        await articlesService.updateArticle(id, req.body);
+        // Partial update: only published/featured flag
+        const keys = Object.keys(req.body);
+        if (keys.length === 1 && keys[0] === 'published') {
+            await articlesService.publishArticle(id, req.body.published);
+        } else {
+            await articlesService.updateArticle(id, req.body);
+        }
         res.json({ success: true, message: 'Artículo actualizado' });
     } catch (err) {
         console.error('ERROR updating article:', err.message);
