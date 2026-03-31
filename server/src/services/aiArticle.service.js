@@ -18,10 +18,11 @@ Siempre respondés con un JSON válido (sin markdown, sin bloques de código) co
 {
   "title": "Título atractivo y SEO-friendly (máx 80 caracteres)",
   "excerpt": "Resumen de 1-2 oraciones para preview de la nota (máx 200 caracteres)",
-  "content": "Contenido HTML completo usando solo <p>, <h2>, <h3>, <strong>, <em>, <ul>, <li>",
+  "content": "Contenido HTML completo usando solo <p>, <h2>, <h3>, <strong>, <em>, <ul>, <li>. IMPORTANTE: el HTML debe estar en una sola línea, sin saltos de línea reales dentro del string.",
   "category": "noticias|analisis|tecnica",
   "tags": ["tag1", "tag2", "tag3"]
-}`;
+}
+CRÍTICO: El valor de "content" debe ser un string JSON válido en UNA SOLA LÍNEA. No uses saltos de línea reales (\\n literal está bien, pero Enter/newline real no).`;
 
 // ── Recopilar contexto de la carrera desde la DB ─────────────
 async function collectRaceContext(raceId) {
@@ -283,9 +284,24 @@ export const generateArticle = async (raceId, type = 'race_report', authorName =
     // 4. Parsear JSON
     let parsed;
     try {
-        const clean = rawText.replace(/^```json?\n?/m, '').replace(/```$/m, '').trim();
-        parsed = JSON.parse(clean);
-    } catch {
+        // Strip accidental markdown fences
+        let clean = rawText.replace(/^```json?\s*/m, '').replace(/```\s*$/m, '').trim();
+
+        // Attempt 1: direct parse
+        try {
+            parsed = JSON.parse(clean);
+        } catch {
+            // Attempt 2: extract outermost {...} block (handles extra text before/after)
+            const match = clean.match(/\{[\s\S]*\}/);
+            if (!match) throw new Error('no JSON object found');
+            // Attempt 3: inside the block, collapse literal newlines inside JSON string values
+            // This handles models that put real \n inside the "content" field
+            const sanitized = match[0].replace(/(?<=":[\s]*"[^"\\]*)(\r?\n)(?=[^"]*")/g, '\\n');
+            parsed = JSON.parse(sanitized);
+        }
+    } catch (parseErr) {
+        console.error('[AI Article] Parse error:', parseErr.message);
+        console.error('[AI Article] Raw response:', rawText.slice(0, 1000));
         throw new Error(`La IA devolvió una respuesta inesperada. Intentá de nuevo.\n\nRespuesta: ${rawText.slice(0, 300)}`);
     }
 
