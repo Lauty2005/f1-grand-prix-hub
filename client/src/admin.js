@@ -660,6 +660,55 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ── Insert image modal ──────────────────────────────────────
+    let _imgTarget = null; // textarea reference when modal opens
+
+    document.getElementById('btnInsertImage')?.addEventListener('click', () => {
+        _imgTarget = document.getElementById('artContent');
+        document.getElementById('imgModalUrl').value = '';
+        document.getElementById('imgModalAlt').value = '';
+        document.getElementById('imgModalPreviewWrap').style.display = 'none';
+        const modal = document.getElementById('imgModal');
+        modal.style.display = 'flex';
+        document.getElementById('imgModalUrl').focus();
+    });
+
+    document.getElementById('imgModalUrl')?.addEventListener('input', (e) => {
+        const url = e.target.value.trim();
+        const wrap = document.getElementById('imgModalPreviewWrap');
+        const img  = document.getElementById('imgModalPreviewImg');
+        if (url) {
+            img.src = url;
+            img.onerror = () => { wrap.style.display = 'none'; };
+            img.onload  = () => { wrap.style.display = 'block'; };
+        } else {
+            wrap.style.display = 'none';
+        }
+    });
+
+    document.getElementById('imgModalCancel')?.addEventListener('click', () => {
+        document.getElementById('imgModal').style.display = 'none';
+    });
+
+    document.getElementById('imgModal')?.addEventListener('click', (e) => {
+        if (e.target === document.getElementById('imgModal'))
+            document.getElementById('imgModal').style.display = 'none';
+    });
+
+    document.getElementById('imgModalInsert')?.addEventListener('click', () => {
+        const url = document.getElementById('imgModalUrl').value.trim();
+        if (!url) return alert('Ingresá la URL de la imagen.');
+        const alt  = document.getElementById('imgModalAlt').value.trim() || '';
+        const tag  = `<img src="${url}" alt="${alt}" style="max-width:100%; border-radius:6px; margin:12px 0;">`;
+        if (_imgTarget) {
+            const start = _imgTarget.selectionStart;
+            const end   = _imgTarget.selectionEnd;
+            _imgTarget.setRangeText(tag, start, end, 'end');
+            _imgTarget.focus();
+        }
+        document.getElementById('imgModal').style.display = 'none';
+    });
+
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
     document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
     document.getElementById('btnPublishDraft')?.addEventListener('click', handlePublishDraft);
