@@ -54,12 +54,12 @@ async function collectRaceContext(raceId) {
 
     // Top 5 clasificación
     const qualyRes = await query(`
-        SELECT qr.position, d.last_name, c.name AS team, qr.q3, qr.q1
-        FROM qualifying_results qr
-        JOIN drivers d ON qr.driver_id = d.id
+        SELECT q.position, d.last_name, c.name AS team, q.q3, q.q1
+        FROM qualifying q
+        JOIN drivers d ON q.driver_id = d.id
         JOIN constructors c ON d.constructor_id = c.id
-        WHERE qr.race_id = $1
-        ORDER BY qr.position ASC
+        WHERE q.race_id = $1
+        ORDER BY q.position ASC
         LIMIT 5
     `, [raceId]);
     ctx.qualifying = qualyRes.rows;
