@@ -1,7 +1,12 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { query } from '../config/db.js';
 
-const MODEL = process.env.AI_MODEL || 'claude-3-5-haiku-20241022';
+// ── Provider config ───────────────────────────────────────────
+const PROVIDER = (process.env.AI_PROVIDER || 'anthropic').toLowerCase();
+
+const ANTHROPIC_MODEL = process.env.AI_MODEL || 'claude-3-5-haiku-20241022';
+const GEMINI_MODEL    = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
 
 // ── System prompt: voz editorial ─────────────────────────────
 const SYSTEM_PROMPT = `Sos un periodista especializado en Fórmula 1 que escribe para un sitio web en español rioplatense (Argentina).
@@ -117,11 +122,10 @@ async function collectRaceContext(raceId) {
 }
 
 // ── Formateadores de contexto por tipo de artículo ────────────
-function formatContext(ctx, type) {
+function formatContext(ctx) {
     const { race, results, qualifying, strategy, moments, standings, sprint } = ctx;
     const parts = [];
 
-    // Siempre incluimos la info base
     parts.push(`## GRAN PREMIO: ${race.name}`);
     parts.push(`Circuito: ${race.circuit_name} | País: ${race.country_code} | Ronda: ${race.round}`);
     parts.push(`Vueltas: ${race.total_laps || 'N/D'} | Distancia: ${race.race_distance || 'N/D'} | Longitud: ${race.circuit_length || 'N/D'}`);
@@ -186,7 +190,7 @@ function formatContext(ctx, type) {
 
 // ── Prompts por tipo ──────────────────────────────────────────
 function buildPrompt(ctx, type) {
-    const context = formatContext(ctx, type);
+    const context = formatContext(ctx);
 
     const instructions = {
         race_report: `Escribí una CRÓNICA DE CARRERA completa y emocionante.
@@ -214,14 +218,56 @@ IMPORTANTE:
 - Los "tags" deben incluir el nombre del GP, pilotos destacados y el equipo ganador`;
 }
 
-// ── Entry point principal ─────────────────────────────────────
-export const generateArticle = async (raceId, type = 'race_report', authorName = 'IA Redacción') => {
+// ── Llamadas a cada proveedor ─────────────────────────────────
+async function callAnthropic(userPrompt) {
     if (!process.env.ANTHROPIC_API_KEY) {
         throw new Error('ANTHROPIC_API_KEY no está configurada en el servidor.');
     }
-
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const message = await client.messages.create({
+        model:      ANTHROPIC_MODEL,
+        max_tokens: 2048,
+        system:     SYSTEM_PROMPT,
+        messages:   [{ role: 'user', content: userPrompt }],
+    });
+    return {
+        text:   message.content[0]?.text || '',
+        usage:  message.usage,
+    };
+}
 
+async function callGemini(userPrompt) {
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY no está configurada en el servidor.');
+    }
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+        model:          GEMINI_MODEL,
+        systemInstruction: SYSTEM_PROMPT,
+        generationConfig: {
+            responseMimeType: 'application/json',
+            maxOutputTokens:  2048,
+        },
+    });
+    const result = await model.generateContent(userPrompt);
+    const text   = result.response.text();
+    const meta   = result.response.usageMetadata;
+    return {
+        text,
+        usage: {
+            input_tokens:  meta?.promptTokenCount  || 0,
+            output_tokens: meta?.candidatesTokenCount || 0,
+        },
+    };
+}
+
+async function callAI(userPrompt) {
+    if (PROVIDER === 'gemini') return callGemini(userPrompt);
+    return callAnthropic(userPrompt);
+}
+
+// ── Entry point principal ─────────────────────────────────────
+export const generateArticle = async (raceId, type = 'race_report', authorName = 'IA Redacción') => {
     // 1. Recopilar datos
     const ctx = await collectRaceContext(raceId);
     if (!ctx.results.length && !ctx.standings.length) {
@@ -231,20 +277,12 @@ export const generateArticle = async (raceId, type = 'race_report', authorName =
     // 2. Construir prompt
     const userPrompt = buildPrompt(ctx, type);
 
-    // 3. Llamar a la API
-    const message = await client.messages.create({
-        model:      MODEL,
-        max_tokens: 2048,
-        system:     SYSTEM_PROMPT,
-        messages:   [{ role: 'user', content: userPrompt }],
-    });
-
-    const rawText = message.content[0]?.text || '';
+    // 3. Llamar al proveedor activo
+    const { text: rawText, usage } = await callAI(userPrompt);
 
     // 4. Parsear JSON
     let parsed;
     try {
-        // Strip any accidental markdown fences
         const clean = rawText.replace(/^```json?\n?/m, '').replace(/```$/m, '').trim();
         parsed = JSON.parse(clean);
     } catch {
@@ -278,7 +316,8 @@ export const generateArticle = async (raceId, type = 'race_report', authorName =
 
     return {
         article:   insertRes.rows[0],
-        usage:     message.usage,
+        usage,
         race_name: ctx.race.name,
+        provider:  PROVIDER,
     };
 };

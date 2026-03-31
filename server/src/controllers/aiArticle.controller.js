@@ -18,16 +18,16 @@ export const generateArticleHandler = async (req, res) => {
         );
 
         res.json({
-            success:   true,
-            message:   `Borrador generado para "${result.race_name}". Publicalo desde la sección de artículos.`,
-            article:   result.article,
+            success:     true,
+            message:     `Borrador generado para "${result.race_name}". Publicalo desde la sección de artículos.`,
+            article:     result.article,
             tokens_used: result.usage,
+            provider:    result.provider,
         });
     } catch (e) {
         console.error('[AI Article] Error:', e.message);
 
-        // Distinguir errores de configuración vs. errores de API
-        if (e.message.includes('ANTHROPIC_API_KEY')) {
+        if (e.message.includes('API_KEY')) {
             return res.status(503).json({ error: e.message });
         }
         if (e.message.includes('No hay suficientes datos')) {
