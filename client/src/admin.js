@@ -616,6 +616,50 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ── Editor toolbar ──────────────────────────────────────────
+    document.querySelectorAll('.editor-toolbar button[data-tag]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tag      = btn.dataset.tag;
+            const textarea = document.getElementById('artContent');
+            const start    = textarea.selectionStart;
+            const end      = textarea.selectionEnd;
+            const selected = textarea.value.slice(start, end);
+
+            let inserted;
+            if (tag === 'ul') {
+                // wrap each selected line in <li> then wrap all in <ul>
+                const items = (selected || 'Ítem').split('\n').map(l => `  <li>${l.trim() || 'Ítem'}</li>`).join('\n');
+                inserted = `<ul>\n${items}\n</ul>`;
+            } else if (tag === 'li') {
+                inserted = `<li>${selected || 'Ítem'}</li>`;
+            } else if (tag === 'p') {
+                inserted = `<p>${selected || 'Párrafo...'}</p>`;
+            } else {
+                inserted = `<${tag}>${selected || '...'}</${tag}>`;
+            }
+
+            textarea.setRangeText(inserted, start, end, 'end');
+            textarea.focus();
+        });
+    });
+
+    document.getElementById('btnTogglePreview')?.addEventListener('click', () => {
+        const preview  = document.getElementById('artContentPreview');
+        const textarea = document.getElementById('artContent');
+        const btn      = document.getElementById('btnTogglePreview');
+        const showing  = preview.style.display !== 'none';
+        if (showing) {
+            preview.style.display = 'none';
+            textarea.style.display = '';
+            btn.textContent = '👁 Preview';
+        } else {
+            preview.innerHTML = textarea.value || '<p style="color:#888">Sin contenido</p>';
+            preview.style.display = 'block';
+            textarea.style.display = 'none';
+            btn.textContent = '✏️ Editar';
+        }
+    });
+
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
     document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
     document.getElementById('btnPublishDraft')?.addEventListener('click', handlePublishDraft);

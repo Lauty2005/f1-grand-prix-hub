@@ -354,7 +354,19 @@
                         <input type="text" id="artAuthor" class="form-control" placeholder="Autor" value="Redacción">
                         <input type="url" id="artCover" class="form-control span-full" placeholder="URL imagen portada (opcional)">
                         <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
-                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="8" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
+                        <div class="span-full editor-toolbar">
+                            <button type="button" data-tag="strong" title="Negrita"><b>B</b></button>
+                            <button type="button" data-tag="em" title="Cursiva"><i>I</i></button>
+                            <button type="button" data-tag="h2" title="Título H2">H2</button>
+                            <button type="button" data-tag="h3" title="Título H3">H3</button>
+                            <button type="button" data-tag="p" title="Párrafo">¶</button>
+                            <button type="button" data-tag="li" title="Ítem de lista">• Li</button>
+                            <button type="button" data-tag="ul" title="Lista">UL</button>
+                            <span class="editor-toolbar__sep"></span>
+                            <button type="button" id="btnTogglePreview" title="Vista previa del contenido">👁 Preview</button>
+                        </div>
+                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="10" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
+                        <div id="artContentPreview" class="span-full article-preview" style="display:none;"></div>
                         <div class="span-full" style="display:flex; gap:20px; align-items:center; margin: 5px 0;">
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <input type="checkbox" id="artPublished" style="width:18px;height:18px;accent-color:#00ff88;">
