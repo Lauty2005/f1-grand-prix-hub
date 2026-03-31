@@ -22,12 +22,12 @@ export const getDrivers = async (year) => {
             GROUP BY s_res.driver_id
         ) sprint_stats ON d.id = sprint_stats.driver_id
         WHERE d.active_seasons::text LIKE $3
-          AND d.active = true
+          AND (d.active = true OR $4::int < EXTRACT(YEAR FROM NOW())::int)
         ORDER BY points DESC, d.last_name ASC;
     `;
     const startDate = `${year}-01-01`;
     const endDate = `${parseInt(year) + 1}-01-01`;
-    const result = await query(sql, [startDate, endDate, '%' + year + '%']);
+    const result = await query(sql, [startDate, endDate, '%' + year + '%', year]);
     return result.rows;
 };
 
