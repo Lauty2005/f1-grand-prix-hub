@@ -702,3 +702,85 @@ select.form-control {
         animation: fadeIn 0.5s;
     }
 }
+/* =========================================
+   AI ARTICLE GENERATOR
+========================================= */
+.creation-item--ai {
+    border: 1px solid rgba(168, 85, 247, 0.3);
+    background: linear-gradient(135deg, rgba(168,85,247,0.05) 0%, rgba(15,15,25,0.8) 100%);
+    position: relative;
+
+    &::before {
+        content: 'IA';
+        position: absolute;
+        top: -1px;
+        right: 16px;
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        color: white;
+        font-size: 0.55rem;
+        font-weight: 900;
+        letter-spacing: 2px;
+        padding: 2px 8px;
+        border-radius: 0 0 6px 6px;
+    }
+
+    label {
+        color: #a855f7 !important;
+    }
+}
+
+.btn-ai {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #7c3aed 100%);
+    background-size: 200% auto;
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background-position 0.4s ease, opacity 0.2s ease, transform 0.15s ease;
+    width: 100%;
+
+    &:hover {
+        background-position: right center;
+        transform: translateY(-1px);
+    }
+
+    &:active {
+        transform: translateY(0);
+    }
+
+    &:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+    }
+}
+
+.ai-status {
+    &--loading {
+        background: rgba(168,85,247,0.1);
+        border: 1px solid rgba(168,85,247,0.25);
+        color: #a855f7;
+        border-radius: 6px;
+        padding: 10px 14px;
+    }
+
+    &--success {
+        background: rgba(16,185,129,0.1);
+        border: 1px solid rgba(16,185,129,0.3);
+        color: #10b981;
+        border-radius: 6px;
+        padding: 10px 14px;
+    }
+
+    &--error {
+        background: rgba(255,68,68,0.08);
+        border: 1px solid rgba(255,68,68,0.3);
+        color: #ff6b6b;
+        border-radius: 6px;
+        padding: 10px 14px;
+    }
+}

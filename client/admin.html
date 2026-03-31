@@ -392,6 +392,31 @@
                     </form>
                 </div>
 
+                <div class="creation-item creation-item--ai">
+                    <label>✨ Generar Artículo con IA</label>
+                    <div class="creation-form-grid">
+                        <p class="span-full" style="color:rgba(168,85,247,0.8); font-size:0.75rem; margin:0 0 8px; line-height:1.5;">
+                            Recopila resultados, estrategia y momentos clave de la carrera y genera un borrador listo para publicar.
+                        </p>
+                        <select id="aiYear" class="form-control">
+                            <option value="2025" selected>2025</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="aiRaceSelect" class="form-control">
+                            <option value="">Seleccionar carrera...</option>
+                        </select>
+                        <select id="aiArticleType" class="form-control span-full">
+                            <option value="race_report">🏁 Crónica de Carrera</option>
+                            <option value="strategy">⚙️ Análisis de Estrategia</option>
+                            <option value="standings">📊 Actualización del Campeonato</option>
+                        </select>
+                        <button id="btnGenerateArticle" type="button" class="btn-ai span-full">
+                            ✨ GENERAR BORRADOR
+                        </button>
+                        <div id="aiGenerateStatus" class="span-full" style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:0.82rem; line-height:1.5;"></div>
+                    </div>
+                </div>
+
                 <div class="creation-item">
                     <label>Momento Timeline</label>
                     <form id="newMomentForm" class="creation-form-grid">

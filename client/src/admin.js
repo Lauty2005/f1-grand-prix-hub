@@ -76,6 +76,7 @@ function loadInitialData() {
     loadRacesForMoment(document.getElementById('momentYear').value || 2025);
     loadRacesForStint('2025');
     loadRacesForStintDelete('2025');
+    loadRacesForAI('2025');
 }
 
 // ==========================================
@@ -631,6 +632,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('stintRaceSelect')?.addEventListener('change', loadDriversForStint);
     document.getElementById('deleteStintYearSelect')?.addEventListener('change', (e) => loadRacesForStintDelete(e.target.value));
     document.getElementById('deleteStintRaceSelect')?.addEventListener('change', (e) => loadDriversForStintDelete(e.target.value));
+    // AI Generator
+    document.getElementById('btnGenerateArticle')?.addEventListener('click', handleGenerateArticle);
+    document.getElementById('aiYear')?.addEventListener('change', (e) => loadRacesForAI(e.target.value));
     document.getElementById('resultForm').addEventListener('submit', handleSubmit);
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
@@ -1127,3 +1131,69 @@ const showSuccess = (id = 'msg') => {
     msg.classList.add('visible');
     setTimeout(() => msg.classList.remove('visible'), 3000);
 };
+// ==========================================
+// AI ARTICLE GENERATOR
+// ==========================================
+async function loadRacesForAI(year) {
+    const select = document.getElementById('aiRaceSelect');
+    if (!select) return;
+    try {
+        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="">Seleccionar carrera...</option>' +
+            races.map(r => `<option value="${r.id}">R${r.round}: ${r.name}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function handleGenerateArticle() {
+    const raceId = document.getElementById('aiRaceSelect').value;
+    const type   = document.getElementById('aiArticleType').value;
+    const status = document.getElementById('aiGenerateStatus');
+    const btn    = document.getElementById('btnGenerateArticle');
+
+    if (!raceId) return alert('Seleccioná una carrera primero.');
+
+    const typeLabels = {
+        race_report: 'Crónica de Carrera',
+        strategy:    'Análisis de Estrategia',
+        standings:   'Actualización del Campeonato',
+    };
+
+    btn.disabled = true;
+    btn.innerText = '✨ Generando...';
+    status.style.display = 'block';
+    status.className = 'ai-status--loading';
+    status.innerHTML = `⏳ Generando <strong>${typeLabels[type]}</strong>... esto puede tardar unos segundos.`;
+
+    try {
+        const res  = await adminFetch(`${API}/articles/admin/generate`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ race_id: raceId, type }),
+        });
+        const json = await res.json();
+
+        if (res.ok && json.success) {
+            status.className = 'ai-status--success';
+            status.innerHTML = `
+                ✅ <strong>¡Borrador creado!</strong><br>
+                ${json.message}<br>
+                <span style="font-size:0.75rem; opacity:0.7; margin-top:4px; display:block;">
+                    Tokens usados: ${json.tokens_used?.input_tokens ?? '—'} entrada · ${json.tokens_used?.output_tokens ?? '—'} salida
+                </span>`;
+            // Refresh the articles delete selector so the new draft appears
+            loadArticlesForDelete();
+        } else {
+            status.className = 'ai-status--error';
+            status.innerHTML = `❌ ${json.error || 'Error desconocido. Intentá de nuevo.'}`;
+        }
+    } catch (e) {
+        console.error(e);
+        status.className = 'ai-status--error';
+        status.innerHTML = '❌ Error de conexión con el servidor.';
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '✨ GENERAR BORRADOR';
+    }
+}
