@@ -62,11 +62,15 @@ export const getSessionResults = async (raceId, sessionType) => {
         'sprint-qualifying': { table: 'sprint_qualifying sq', select: 'sq.*', cond: 'sq.race_id', order: 'sq.position ASC' }
     };
     const cfg = config[sessionType];
+    const alias = cfg.select.split('.')[0];
     const sql = `
-        SELECT ${cfg.select}, d.first_name, d.last_name, c.name as team_name, c.primary_color
+        SELECT ${cfg.select}, d.first_name, d.last_name,
+               COALESCE(c.name_history->>(EXTRACT(YEAR FROM r.date)::text), c.name) AS team_name,
+               c.primary_color
         FROM ${cfg.table}
-        JOIN drivers d ON ${cfg.select.split('.')[0]}.driver_id = d.id
+        JOIN drivers d ON ${alias}.driver_id = d.id
         JOIN constructors c ON d.constructor_id = c.id
+        JOIN races r ON ${cfg.cond} = r.id
         WHERE ${cfg.cond} = $1
         ORDER BY ${cfg.order};
     `;

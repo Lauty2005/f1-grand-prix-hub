@@ -6,7 +6,7 @@ export const getConstructorsStandings = async (year) => {
     const sql = `
         SELECT
             c.id,
-            c.name,
+            COALESCE(c.name_history->>$4::text, c.name) AS name,
             c.primary_color,
             c.logo_url,
             COALESCE(SUM(r.points), 0) + COALESCE(SUM(s.points), 0) AS points
@@ -21,9 +21,9 @@ export const getConstructorsStandings = async (year) => {
             AND s.race_id IN (
                 SELECT id FROM races WHERE date >= $1 AND date < $2
             )
-        GROUP BY c.id, c.name, c.primary_color, c.logo_url
+        GROUP BY c.id, c.name, c.name_history, c.primary_color, c.logo_url
         ORDER BY points DESC, c.name ASC;
     `;
-    const result = await query(sql, [startDate, endDate, `%${year}%`]);
+    const result = await query(sql, [startDate, endDate, `%${year}%`, year]);
     return result.rows;
 };
