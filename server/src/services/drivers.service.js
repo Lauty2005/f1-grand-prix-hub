@@ -22,6 +22,7 @@ export const getDrivers = async (year) => {
             GROUP BY s_res.driver_id
         ) sprint_stats ON d.id = sprint_stats.driver_id
         WHERE d.active_seasons::text LIKE $3
+          AND d.active = true
         ORDER BY points DESC, d.last_name ASC;
     `;
     const startDate = `${year}-01-01`;
