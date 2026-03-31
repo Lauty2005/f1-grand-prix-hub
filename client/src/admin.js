@@ -70,6 +70,7 @@ function loadInitialData() {
     loadCountryOptions();
     loadServerImages();
     loadArticlesForDelete();
+    loadDraftArticles();
     loadCircuitWinnersForDelete();
     loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
     loadMomentsForDelete();
@@ -617,6 +618,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
     document.getElementById('btnDeleteArticle')?.addEventListener('click', handleDeleteArticle);
+    document.getElementById('btnPublishDraft')?.addEventListener('click', handlePublishDraft);
     document.getElementById('newArticleForm')?.addEventListener('submit', handleCreateArticle);
     document.getElementById('btnDeleteCircuitWinner')?.addEventListener('click', handleDeleteCircuitWinner);
     document.getElementById('circuitInfoForm')?.addEventListener('submit', handleUpdateCircuitInfo);
@@ -1182,8 +1184,9 @@ async function handleGenerateArticle() {
                 <span style="font-size:0.75rem; opacity:0.7; margin-top:4px; display:block;">
                     Tokens usados: ${json.tokens_used?.input_tokens ?? '—'} entrada · ${json.tokens_used?.output_tokens ?? '—'} salida
                 </span>`;
-            // Refresh the articles delete selector so the new draft appears
+            // Refresh selectors so the new draft appears
             loadArticlesForDelete();
+            loadDraftArticles();
         } else {
             status.className = 'ai-status--error';
             status.innerHTML = `❌ ${json.error || 'Error desconocido. Intentá de nuevo.'}`;
@@ -1196,4 +1199,50 @@ async function handleGenerateArticle() {
         btn.disabled = false;
         btn.innerText = '✨ GENERAR BORRADOR';
     }
+}
+
+// ── Publicar borrador IA ──────────────────────────────────────
+async function loadDraftArticles() {
+    const select = document.getElementById('draftArticleSelect');
+    if (!select) return;
+    select.innerHTML = '<option>Cargando...</option>';
+    try {
+        const res  = await adminFetch(`${API}/articles/admin/all`);
+        const json = await res.json();
+        const drafts = (json.data || []).filter(a => !a.published);
+        if (!drafts.length) {
+            select.innerHTML = '<option value="" disabled>Sin borradores</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Seleccionar borrador...</option>' +
+                drafts.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
+async function handlePublishDraft() {
+    const select = document.getElementById('draftArticleSelect');
+    const msg    = document.getElementById('msgPublishDraft');
+    const id     = select.value;
+    if (!id) return alert('Seleccioná un borrador.');
+
+    try {
+        const res = await adminFetch(`${API}/articles/${id}`, {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ published: true }),
+        });
+        if (res.ok) {
+            msg.style.display = 'block';
+            msg.textContent   = '✅ Artículo publicado correctamente.';
+            loadDraftArticles();
+            loadArticlesForDelete();
+            setTimeout(() => { msg.style.display = 'none'; }, 4000);
+        } else {
+            const json = await res.json();
+            alert(json.error || 'No se pudo publicar.');
+        }
+    } catch (e) { console.error(e); alert('Error de conexión.'); }
 }
