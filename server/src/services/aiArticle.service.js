@@ -227,7 +227,7 @@ async function callAnthropic(userPrompt) {
     const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
     const message = await client.messages.create({
         model:      ANTHROPIC_MODEL,
-        max_tokens: 2048,
+        max_tokens: 4096,
         system:     SYSTEM_PROMPT,
         messages:   [{ role: 'user', content: userPrompt }],
     });
@@ -247,7 +247,7 @@ async function callGemini(userPrompt) {
         systemInstruction: SYSTEM_PROMPT,
         generationConfig: {
             responseMimeType: 'application/json',
-            maxOutputTokens:  2048,
+            maxOutputTokens:  4096,
         },
     });
     const result = await model.generateContent(userPrompt);
