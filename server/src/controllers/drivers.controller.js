@@ -71,8 +71,30 @@ export const addDriver = async (req, res) => {
 
         await driversService.createDriver(req.body, fileData);
         res.json({ success: true, message: 'Piloto creado' });
-    } catch (e) { 
+    } catch (e) {
         console.error(e);
-        res.status(500).json({ error: 'Error al crear piloto: ' + e.message }); 
+        res.status(500).json({ error: 'Error al crear piloto: ' + e.message });
+    }
+};
+
+export const assignDriverSeason = async (req, res) => {
+    try {
+        const { driver_id, constructor_id, year } = req.body;
+        if (!driver_id || !constructor_id || !year)
+            return res.status(400).json({ error: 'Faltan campos requeridos.' });
+        await driversService.assignDriverSeason({ driver_id, constructor_id, year });
+        res.json({ success: true, message: 'Asignación guardada correctamente.' });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ error: 'Error al asignar: ' + e.message });
+    }
+};
+
+export const listDriverSeasons = async (req, res) => {
+    try {
+        const data = await driversService.getDriverSeasons();
+        res.json({ success: true, data });
+    } catch (e) {
+        res.status(500).json({ error: 'Error cargando asignaciones.' });
     }
 };

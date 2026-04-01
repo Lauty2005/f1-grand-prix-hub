@@ -67,6 +67,7 @@ function loadInitialData() {
     loadDrivers();
     loadDriversForDelete();
     loadTeams();
+    loadDriversForAssign();
     loadCountryOptions();
     loadServerImages();
     loadArticlesForDelete();
@@ -431,9 +432,28 @@ async function loadTeams() {
     try {
         const res = await adminFetch(`${API}/drivers/teams/list`);
         const json = await res.json();
-        const select = document.getElementById('newDriverTeam');
-        select.innerHTML = '<option value="">Elegir Equipo...</option>' +
-            json.data.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        const opts = json.data.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        const driverTeam = document.getElementById('newDriverTeam');
+        if (driverTeam) driverTeam.innerHTML = '<option value="">Elegir Equipo...</option>' + opts;
+        const assignTeam = document.getElementById('assignTeamSelect');
+        if (assignTeam) assignTeam.innerHTML = '<option value="">Seleccionar equipo...</option>' + opts;
+    } catch (e) { console.error(e); }
+}
+
+async function loadDriversForAssign() {
+    try {
+        const res  = await adminFetch(`${API}/drivers?year=2026`);
+        const json = await res.json();
+        const all  = await adminFetch(`${API}/drivers?year=2025`);
+        const all2 = await all.json();
+        // Merge both years deduped by id
+        const map = {};
+        [...(json.data || []), ...(all2.data || [])].forEach(d => { map[d.id] = d; });
+        const opts = Object.values(map)
+            .sort((a,b) => a.last_name.localeCompare(b.last_name))
+            .map(d => `<option value="${d.id}">${d.first_name} ${d.last_name}</option>`).join('');
+        const sel = document.getElementById('assignDriverSelect');
+        if (sel) sel.innerHTML = '<option value="">Seleccionar piloto...</option>' + opts;
     } catch (e) { console.error(e); }
 }
 
@@ -520,6 +540,33 @@ async function handleCreateRace(e) {
 }
 
 // --- CREAR PILOTO ---
+async function handleAssignDriverSeason(e) {
+    e.preventDefault();
+    const driver_id      = parseInt(document.getElementById('assignDriverSelect').value);
+    const year           = parseInt(document.getElementById('assignSeasonYear').value);
+    const constructor_id = parseInt(document.getElementById('assignTeamSelect').value);
+
+    if (!driver_id || !year || !constructor_id) {
+        showError('Completá todos los campos.', 'errorMsgAssign', 'errorTextAssign');
+        return;
+    }
+    try {
+        const res = await adminFetch(`${API}/drivers/seasons`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ driver_id, constructor_id, year }),
+        });
+        if (res.ok) {
+            showSuccess('msgAssign');
+            e.target.reset();
+            document.getElementById('assignSeasonYear').value = '2026';
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido.', 'errorMsgAssign', 'errorTextAssign');
+        }
+    } catch (err) { console.error(err); alert('Error de conexión.'); }
+}
+
 async function handleCreateTeam(e) {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -767,6 +814,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
     document.getElementById('newRaceForm').addEventListener('submit', handleCreateRace);
+    document.getElementById('assignDriverSeasonForm')?.addEventListener('submit', handleAssignDriverSeason);
     document.getElementById('newTeamForm')?.addEventListener('submit', handleCreateTeam);
     document.getElementById('newDriverForm').addEventListener('submit', handleCreateDriver);
     document.getElementById('btnDeleteResult').addEventListener('click', handleDeleteSpecificResult);

@@ -533,6 +533,26 @@
                 </div>
 
                 <div class="creation-item">
+                    <label>Asignar Piloto a Temporada / Equipo</label>
+                    <form id="assignDriverSeasonForm" class="creation-form-grid">
+                        <select id="assignDriverSelect" class="form-control span-full" required>
+                            <option value="">Seleccionar piloto...</option>
+                        </select>
+                        <select id="assignSeasonYear" class="form-control" required>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                            <option value="2026" selected>2026</option>
+                        </select>
+                        <select id="assignTeamSelect" class="form-control" required>
+                            <option value="">Seleccionar equipo...</option>
+                        </select>
+                        <button type="submit" class="btn-create span-full" style="margin-top:10px;">GUARDAR ASIGNACIÓN</button>
+                        <div id="errorMsgAssign" class="error-msg span-full">❌ <span id="errorTextAssign"></span></div>
+                        <p id="msgAssign" class="success-msg span-full">✅ ¡Asignación guardada!</p>
+                    </form>
+                </div>
+
+                <div class="creation-item">
                     <label>Nuevo Piloto</label>
                     <form id="newDriverForm" class="creation-form-grid">
                         <input type="text" id="newDriverName" class="form-control" placeholder="Nombre" required>

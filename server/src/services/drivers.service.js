@@ -8,7 +8,8 @@ export const getDrivers = async (year) => {
             (COALESCE(race_stats.total_points, 0) + COALESCE(sprint_stats.total_points, 0)) as points,
             COALESCE(race_stats.podiums, 0) as podiums
         FROM drivers d
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $4::int
+        JOIN constructors c    ON c.id = ds.constructor_id
         LEFT JOIN (
             SELECT r_res.driver_id, SUM(r_res.points) as total_points, COUNT(CASE WHEN r_res.position BETWEEN 1 AND 3 THEN 1 END) as podiums
             FROM results r_res JOIN races r ON r_res.race_id = r.id
@@ -80,7 +81,8 @@ export const compareDrivers = async (ids, year) => {
             COALESCE(rp.fastest_laps, 0) AS fastest_laps,
             COALESCE(rp.races,   0)  AS races
         FROM drivers d
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $4::int
+        JOIN constructors c    ON c.id = ds.constructor_id
         LEFT JOIN (
             SELECT
                 res.driver_id,
@@ -108,7 +110,7 @@ export const compareDrivers = async (ids, year) => {
         ORDER BY points DESC;
     `;
 
-    const statsResult = await query(statsSQL, [ids, startDate, endDate]);
+    const statsResult = await query(statsSQL, [ids, startDate, endDate, parseInt(year)]);
 
     // 2. Puntos por carrera para cada piloto (para el gráfico acumulado)
     const perRaceSQL = `
@@ -180,11 +182,48 @@ export const createDriver = async (data, fileData) => {
         profile_image_url = 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/unknown.jpg.img.jpg';
     }
 
-    const seasonsToSave = seasons ? seasons.split(',') : ['2025', '2026'];
+    const seasonsToSave = seasons ? seasons.split(',').map(s => s.trim()) : ['2026'];
 
-    await query(
-        `INSERT INTO drivers (first_name, last_name, permanent_number, constructor_id, country_code, profile_image_url, active_seasons) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    const driverRes = await query(
+        `INSERT INTO drivers (first_name, last_name, permanent_number, constructor_id, country_code, profile_image_url, active_seasons)
+         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [first_name, last_name, number, team_id, country, profile_image_url, seasonsToSave]
     );
+    const newDriverId = driverRes.rows[0].id;
+
+    for (const year of seasonsToSave) {
+        await query(
+            `INSERT INTO driver_seasons (driver_id, constructor_id, year)
+             VALUES ($1, $2, $3) ON CONFLICT (driver_id, year) DO NOTHING`,
+            [newDriverId, team_id, parseInt(year)]
+        );
+    }
+};
+
+// ── Asignar piloto a temporada/equipo ────────────────────────
+export const assignDriverSeason = async ({ driver_id, constructor_id, year }) => {
+    await query(
+        `INSERT INTO driver_seasons (driver_id, constructor_id, year)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (driver_id, year) DO UPDATE SET constructor_id = EXCLUDED.constructor_id`,
+        [driver_id, constructor_id, year]
+    );
+    // Sync constructor_id for current year
+    const currentYear = new Date().getFullYear();
+    if (parseInt(year) === currentYear) {
+        await query(`UPDATE drivers SET constructor_id = $1 WHERE id = $2`, [constructor_id, driver_id]);
+    }
+};
+
+export const getDriverSeasons = async () => {
+    const result = await query(`
+        SELECT ds.id, ds.year, ds.driver_id,
+               d.first_name || ' ' || d.last_name AS driver_name,
+               c.name AS team_name, c.primary_color
+        FROM driver_seasons ds
+        JOIN drivers d      ON ds.driver_id = d.id
+        JOIN constructors c ON ds.constructor_id = c.id
+        ORDER BY ds.year DESC, d.last_name ASC
+    `);
+    return result.rows;
 };

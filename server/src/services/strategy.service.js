@@ -34,8 +34,10 @@ export const getRaceStrategy = async (raceId) => {
             c.primary_color,
             res.position    AS final_position
         FROM race_strategies rs
-        JOIN drivers d      ON rs.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN drivers d         ON rs.driver_id = d.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id
+            AND ds.year = (SELECT EXTRACT(YEAR FROM date)::int FROM races WHERE id = $1)
+        JOIN constructors c    ON c.id = ds.constructor_id
         LEFT JOIN results res ON (res.race_id = rs.race_id AND res.driver_id = rs.driver_id)
         WHERE rs.race_id = $1
         ORDER BY res.position ASC NULLS LAST, rs.driver_id, rs.stint_number ASC
@@ -122,13 +124,14 @@ export const getTeamStrategyHistory = async (year) => {
             (COUNT(rs.id) - 1) AS stops,
             STRING_AGG(rs.tire_compound ORDER BY rs.stint_number, '→') AS strategy_string
         FROM race_strategies rs
-        JOIN drivers d      ON rs.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
-        JOIN races r        ON rs.race_id = r.id
+        JOIN drivers d         ON rs.driver_id = d.id
+        JOIN races r           ON rs.race_id = r.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $3::int
+        JOIN constructors c    ON c.id = ds.constructor_id
         WHERE r.date >= $1 AND r.date < $2
         GROUP BY c.id, c.name, c.primary_color, r.id, r.name, r.round, rs.driver_id, d.last_name
         ORDER BY c.name, r.round, d.last_name
-    `, [startDate, endDate]);
+    `, [startDate, endDate, parseInt(year)]);
 
     // Group by team
     const teamMap = {};

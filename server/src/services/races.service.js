@@ -68,9 +68,10 @@ export const getSessionResults = async (raceId, sessionType) => {
                c.name AS team_name,
                c.primary_color
         FROM ${cfg.table}
-        JOIN drivers d ON ${alias}.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
-        JOIN races r ON ${cfg.cond} = r.id
+        JOIN drivers d         ON ${alias}.driver_id = d.id
+        JOIN races r           ON ${cfg.cond} = r.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM r.date)::int
+        JOIN constructors c    ON c.id = ds.constructor_id
         WHERE ${cfg.cond} = $1
         ORDER BY ${cfg.order};
     `;

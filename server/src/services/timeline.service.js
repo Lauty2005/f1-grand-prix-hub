@@ -54,10 +54,11 @@ export const getStandingsEvolution = async (year) => {
             con.primary_color,
             con.name AS team_name
         FROM cum c
-        JOIN drivers d    ON c.driver_id = d.id
-        JOIN constructors con ON d.constructor_id = con.id
+        JOIN drivers d         ON c.driver_id = d.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $3::int
+        JOIN constructors con  ON con.id = ds.constructor_id
         ORDER BY c.round ASC, c.cumulative DESC
-    `, [startDate, endDate]);
+    `, [startDate, endDate, parseInt(year)]);
 
     // 3. Reshape para Chart.js
     const raceRounds = racesRes.rows.map(r => ({ round: r.round, name: r.name }));

@@ -46,7 +46,8 @@ async function collectRaceContext(raceId) {
                c.name AS team
         FROM results res
         JOIN drivers d ON res.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM (SELECT date FROM races WHERE id = $1))::int
+        JOIN constructors c ON c.id = ds.constructor_id
         WHERE res.race_id = $1
         ORDER BY res.position ASC NULLS LAST
         LIMIT 15
@@ -58,7 +59,8 @@ async function collectRaceContext(raceId) {
         SELECT q.position, d.last_name, c.name AS team, q.q3, q.q1
         FROM qualifying q
         JOIN drivers d ON q.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM (SELECT date FROM races WHERE id = $1))::int
+        JOIN constructors c ON c.id = ds.constructor_id
         WHERE q.race_id = $1
         ORDER BY q.position ASC
         LIMIT 5
@@ -96,13 +98,14 @@ async function collectRaceContext(raceId) {
         FROM results res
         JOIN races r ON res.race_id = r.id
         JOIN drivers d ON res.driver_id = d.id
-        JOIN constructors c ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $3::int
+        JOIN constructors c ON c.id = ds.constructor_id
         LEFT JOIN sprint_results sp ON (sp.race_id = res.race_id AND sp.driver_id = res.driver_id)
         WHERE r.date >= $1 AND r.date <= $2
         GROUP BY d.id, d.first_name, d.last_name, c.name
         ORDER BY total_points DESC
         LIMIT 5
-    `, [`${year}-01-01`, ctx.race.date]);
+    `, [`${year}-01-01`, ctx.race.date, year]);
     ctx.standings = standingsRes.rows;
 
     // Sprint (si aplica)
@@ -111,7 +114,8 @@ async function collectRaceContext(raceId) {
             SELECT sp.position, sp.points, d.last_name, c.name AS team
             FROM sprint_results sp
             JOIN drivers d ON sp.driver_id = d.id
-            JOIN constructors c ON d.constructor_id = c.id
+            JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM (SELECT date FROM races WHERE id = $1))::int
+            JOIN constructors c ON c.id = ds.constructor_id
             WHERE sp.race_id = $1
             ORDER BY sp.position ASC
             LIMIT 8

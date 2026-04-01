@@ -11,7 +11,8 @@ export const getConstructorsStandings = async (year) => {
             c.logo_url,
             COALESCE(SUM(r.points), 0) + COALESCE(SUM(s.points), 0) AS points
         FROM constructors c
-        JOIN drivers d ON d.constructor_id = c.id
+        JOIN driver_seasons ds ON ds.constructor_id = c.id AND ds.year = $4::int
+        JOIN drivers d         ON d.id = ds.driver_id
             AND d.active_seasons::text LIKE $3
         LEFT JOIN results r ON r.driver_id = d.id
             AND r.race_id IN (
@@ -23,6 +24,7 @@ export const getConstructorsStandings = async (year) => {
             )
         WHERE $4 = ANY(c.active_seasons)
         GROUP BY c.id, c.name, c.primary_color, c.logo_url
+        HAVING $4::int = ANY(c.active_seasons)
         ORDER BY points DESC, c.name ASC;
     `;
     const result = await query(sql, [startDate, endDate, `%${year}%`, year]);

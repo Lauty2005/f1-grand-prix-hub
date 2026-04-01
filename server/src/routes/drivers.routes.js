@@ -15,6 +15,10 @@ router.get('/teams/list', driversController.listTeams);
 // COMPARAR PILOTOS
 router.get('/compare', driversController.compareDrivers);
 
+// ASIGNACIONES PILOTO/TEMPORADA (antes de /:id)
+router.get('/seasons/list', adminAuth, driversController.listDriverSeasons);
+router.post('/seasons', adminAuth, driversController.assignDriverSeason);
+
 // 3. HISTORIAL DE UN PILOTO
 router.get('/:id/results', driversController.getDriverHistorial);
 
