@@ -214,9 +214,14 @@ export const assignDriverSeason = async ({ driver_id, constructor_id, year }) =>
 
     // 2. Asegurar que el año está en active_seasons del driver
     const driverRow = await query(`SELECT active_seasons FROM drivers WHERE id = $1`, [driver_id]);
-    const raw = driverRow.rows[0]?.active_seasons ?? '';
-    // Normalizar: quitar llaves (formato "{2026}") y dividir por coma
-    const seasons = raw.replace(/[{}]/g, '').split(',').map(s => s.trim()).filter(Boolean);
+    const rawVal = driverRow.rows[0]?.active_seasons ?? '';
+    // pg devuelve TEXT[] como array JS; en Supabase (varchar) llega como string "2025,2026" o "{2026}"
+    let seasons;
+    if (Array.isArray(rawVal)) {
+        seasons = rawVal.map(String).filter(Boolean);
+    } else {
+        seasons = String(rawVal).replace(/[{}]/g, '').split(',').map(s => s.trim()).filter(Boolean);
+    }
     if (!seasons.includes(String(yearInt))) {
         seasons.push(String(yearInt));
         seasons.sort();
