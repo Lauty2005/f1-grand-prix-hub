@@ -202,15 +202,30 @@ export const createDriver = async (data, fileData) => {
 
 // ── Asignar piloto a temporada/equipo ────────────────────────
 export const assignDriverSeason = async ({ driver_id, constructor_id, year }) => {
+    const yearInt = parseInt(year);
+
+    // 1. Upsert en driver_seasons
     await query(
         `INSERT INTO driver_seasons (driver_id, constructor_id, year)
          VALUES ($1, $2, $3)
          ON CONFLICT (driver_id, year) DO UPDATE SET constructor_id = EXCLUDED.constructor_id`,
-        [driver_id, constructor_id, year]
+        [driver_id, constructor_id, yearInt]
     );
-    // Sync constructor_id for current year
+
+    // 2. Asegurar que el año está en active_seasons del driver
+    const driverRow = await query(`SELECT active_seasons FROM drivers WHERE id = $1`, [driver_id]);
+    const raw = driverRow.rows[0]?.active_seasons ?? '';
+    // Normalizar: quitar llaves (formato "{2026}") y dividir por coma
+    const seasons = raw.replace(/[{}]/g, '').split(',').map(s => s.trim()).filter(Boolean);
+    if (!seasons.includes(String(yearInt))) {
+        seasons.push(String(yearInt));
+        seasons.sort();
+        await query(`UPDATE drivers SET active_seasons = $1 WHERE id = $2`, [seasons.join(','), driver_id]);
+    }
+
+    // 3. Sync constructor_id si es el año actual
     const currentYear = new Date().getFullYear();
-    if (parseInt(year) === currentYear) {
+    if (yearInt === currentYear) {
         await query(`UPDATE drivers SET constructor_id = $1 WHERE id = $2`, [constructor_id, driver_id]);
     }
 };

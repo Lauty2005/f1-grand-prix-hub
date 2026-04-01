@@ -560,6 +560,10 @@ async function handleAssignDriverSeason(e) {
             showSuccess('msgAssign');
             e.target.reset();
             document.getElementById('assignSeasonYear').value = '2026';
+            // Recargar listas para reflejar el cambio
+            loadDrivers();
+            loadDriversForDelete();
+            loadDriversForAssign();
         } else {
             const data = await res.json();
             showError(data.error || 'Error desconocido.', 'errorMsgAssign', 'errorTextAssign');
