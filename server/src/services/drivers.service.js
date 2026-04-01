@@ -225,7 +225,9 @@ export const assignDriverSeason = async ({ driver_id, constructor_id, year }) =>
     if (!seasons.includes(String(yearInt))) {
         seasons.push(String(yearInt));
         seasons.sort();
-        await query(`UPDATE drivers SET active_seasons = $1 WHERE id = $2`, [seasons.join(','), driver_id]);
+        // Si el tipo de columna es TEXT[] (local), pasar array JS; si es varchar (Supabase), pasar string
+        const newVal = Array.isArray(rawVal) ? seasons : seasons.join(',');
+        await query(`UPDATE drivers SET active_seasons = $1 WHERE id = $2`, [newVal, driver_id]);
     }
 
     // 3. Sync constructor_id si es el año actual
