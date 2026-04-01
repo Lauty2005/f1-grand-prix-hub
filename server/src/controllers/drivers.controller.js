@@ -79,10 +79,10 @@ export const addDriver = async (req, res) => {
 
 export const assignDriverSeason = async (req, res) => {
     try {
-        const { driver_id, constructor_id, year } = req.body;
+        const { driver_id, constructor_id, year, number } = req.body;
         if (!driver_id || !constructor_id || !year)
             return res.status(400).json({ error: 'Faltan campos requeridos.' });
-        await driversService.assignDriverSeason({ driver_id, constructor_id, year });
+        await driversService.assignDriverSeason({ driver_id, constructor_id, year, number });
         res.json({ success: true, message: 'Asignación guardada correctamente.' });
     } catch (e) {
         console.error(e);

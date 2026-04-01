@@ -545,6 +545,8 @@ async function handleAssignDriverSeason(e) {
     const driver_id      = parseInt(document.getElementById('assignDriverSelect').value);
     const year           = parseInt(document.getElementById('assignSeasonYear').value);
     const constructor_id = parseInt(document.getElementById('assignTeamSelect').value);
+    const numberRaw      = document.getElementById('assignDriverNumber').value;
+    const number         = numberRaw ? parseInt(numberRaw) : undefined;
 
     if (!driver_id || !year || !constructor_id) {
         showError('Completá todos los campos.', 'errorMsgAssign', 'errorTextAssign');
@@ -554,7 +556,7 @@ async function handleAssignDriverSeason(e) {
         const res = await adminFetch(`${API}/drivers/seasons`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ driver_id, constructor_id, year }),
+            body:    JSON.stringify({ driver_id, constructor_id, year, number }),
         });
         if (res.ok) {
             showSuccess('msgAssign');

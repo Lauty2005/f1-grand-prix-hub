@@ -2,8 +2,10 @@ import { query, pool } from '../config/db.js';
 
 export const getDrivers = async (year) => {
     const sql = `
-        SELECT 
-            d.id, d.first_name, d.last_name, d.permanent_number, d.country_code, d.profile_image_url,
+        SELECT
+            d.id, d.first_name, d.last_name,
+            COALESCE(ds.number, d.permanent_number) AS permanent_number,
+            d.country_code, d.profile_image_url,
             c.name AS team_name, c.primary_color, c.logo_url,
             (COALESCE(race_stats.total_points, 0) + COALESCE(sprint_stats.total_points, 0)) as points,
             COALESCE(race_stats.podiums, 0) as podiums
@@ -201,15 +203,18 @@ export const createDriver = async (data, fileData) => {
 };
 
 // ── Asignar piloto a temporada/equipo ────────────────────────
-export const assignDriverSeason = async ({ driver_id, constructor_id, year }) => {
+export const assignDriverSeason = async ({ driver_id, constructor_id, year, number }) => {
     const yearInt = parseInt(year);
+    const numVal  = number ? parseInt(number) : null;
 
     // 1. Upsert en driver_seasons
     await query(
-        `INSERT INTO driver_seasons (driver_id, constructor_id, year)
-         VALUES ($1, $2, $3)
-         ON CONFLICT (driver_id, year) DO UPDATE SET constructor_id = EXCLUDED.constructor_id`,
-        [driver_id, constructor_id, yearInt]
+        `INSERT INTO driver_seasons (driver_id, constructor_id, year, number)
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (driver_id, year) DO UPDATE
+           SET constructor_id = EXCLUDED.constructor_id,
+               number = COALESCE(EXCLUDED.number, driver_seasons.number)`,
+        [driver_id, constructor_id, yearInt, numVal]
     );
 
     // 2. Asegurar que el año está en active_seasons del driver
