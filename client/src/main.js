@@ -25,8 +25,8 @@ function init() {
             <div class="season-selector-container">
                 <label>TEMPORADA</label>
                 <select id="globalSeasonSelect" class="f1-select">
-                    <option value="2025" selected>2025</option>
-                    <option value="2026">2026</option>
+                    <option value="2025" ${state.currentYear === '2025' ? 'selected' : ''}>2025</option>
+                    <option value="2026" ${state.currentYear === '2026' ? 'selected' : ''}>2026</option>
                 </select>
             </div>
             <div class="nav-buttons-group">
