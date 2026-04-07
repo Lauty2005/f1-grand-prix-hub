@@ -129,9 +129,9 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
             `<button class="tab-btn" data-type="${type}" data-id="${raceId}" style="${btnStyle}">${label}</button>`;
 
         if (hasSprint) {
-            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')} ${createBtn('circuit', 'CIRCUITO')}`;
+            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')}`;
         } else {
-            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')} ${createBtn('circuit', 'CIRCUITO')}`;
+            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')}`;
         }
 
         modalBody.innerHTML = `
