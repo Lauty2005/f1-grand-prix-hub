@@ -128,7 +128,7 @@ async function initCountdown() {
         const json = await res.json();
 
         const now = new Date();
-        const nextRace = json.data.find(race => new Date(race.date) > now);
+        const nextRace = json.data.find(race => new Date(race.date) > now && race.status !== 'suspended');
 
         if (!nextRace) {
             container.innerHTML = '<span style="color:#aaa;">No hay más carreras esta temporada.</span>';
