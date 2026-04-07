@@ -14,13 +14,14 @@ $compound-unknown:#666;
 //  STRATEGY SECTION (inside modal tab)
 // ─────────────────────────────────────────────
 .strategy-section {
-    padding: 6px 0 24px;
+    padding: 6px 6px     24px;
 }
 
 // ── Stats strip ──────────────────────────────
 .strategy-stats {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 10px;
     margin-bottom: 22px;
 }
@@ -58,6 +59,7 @@ $compound-unknown:#666;
 .strategy-legend {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
     margin-bottom: 18px;
 }
