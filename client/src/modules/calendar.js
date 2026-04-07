@@ -40,9 +40,10 @@ export async function loadCalendarView() {
             const now = new Date();
             const diffDays = (adjustedDate - now) / (1000 * 60 * 60 * 24);
             let statusKey, statusLabel;
-            if (diffDays < -1)      { statusKey = 'done'; statusLabel = 'Finalizado'; }
-            else if (diffDays <= 4) { statusKey = 'live'; statusLabel = '● En vivo'; }
-            else                    { statusKey = 'soon'; statusLabel = 'Próximamente'; }
+            if (race.status === 'suspended') { statusKey = 'suspended'; statusLabel = 'Suspendida'; }
+            else if (diffDays < -1)          { statusKey = 'done'; statusLabel = 'Finalizado'; }
+            else if (diffDays <= 4)          { statusKey = 'live'; statusLabel = '● En vivo'; }
+            else                             { statusKey = 'soon'; statusLabel = 'Próximamente'; }
 
             // Imagen de mapa
             let mapSrc = race.map_image_url;
