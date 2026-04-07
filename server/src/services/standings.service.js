@@ -9,19 +9,23 @@ export const getConstructorsStandings = async (year) => {
             c.name,
             c.primary_color,
             c.logo_url,
-            COALESCE(SUM(r.points), 0) + COALESCE(SUM(s.points), 0) AS points
+            COALESCE(SUM(rp.race_pts), 0) + COALESCE(SUM(sp.sprint_pts), 0) AS points
         FROM constructors c
         JOIN driver_seasons ds ON ds.constructor_id = c.id AND ds.year = $4::int
         JOIN drivers d         ON d.id = ds.driver_id
             AND d.active_seasons::text LIKE $3
-        LEFT JOIN results r ON r.driver_id = d.id
-            AND r.race_id IN (
-                SELECT id FROM races WHERE date >= $1 AND date < $2
-            )
-        LEFT JOIN sprint_results s ON s.driver_id = d.id
-            AND s.race_id IN (
-                SELECT id FROM races WHERE date >= $1 AND date < $2
-            )
+        LEFT JOIN (
+            SELECT driver_id, SUM(points) AS race_pts
+            FROM results
+            WHERE race_id IN (SELECT id FROM races WHERE date >= $1 AND date < $2)
+            GROUP BY driver_id
+        ) rp ON rp.driver_id = d.id
+        LEFT JOIN (
+            SELECT driver_id, SUM(points) AS sprint_pts
+            FROM sprint_results
+            WHERE race_id IN (SELECT id FROM races WHERE date >= $1 AND date < $2)
+            GROUP BY driver_id
+        ) sp ON sp.driver_id = d.id
         WHERE $4 = ANY(c.active_seasons)
         GROUP BY c.id, c.name, c.primary_color, c.logo_url
         HAVING $4::int = ANY(c.active_seasons)
