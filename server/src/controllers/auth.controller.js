@@ -16,8 +16,8 @@ export const login = (req, res) => {
 
     res.cookie('jwt_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        secure: IS_PROD,
+        sameSite: IS_PROD ? 'none' : 'strict',
         maxAge: EXPIRATION
     });
 
@@ -27,8 +27,8 @@ export const login = (req, res) => {
 export const logout = (req, res) => {
     res.clearCookie('jwt_token', {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+        secure: IS_PROD,
+        sameSite: IS_PROD ? 'none' : 'strict'
     });
     res.json({ success: true, message: 'Logout exitoso' });
 };
