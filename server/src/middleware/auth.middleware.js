@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken';
 
 export const adminAuth = (req, res, next) => {
-    const token = req.cookies?.jwt_token;
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.split(' ')[1]; // Bearer <token>
 
     if (!token) {
         return res.status(401).json({ error: 'No autorizado' });

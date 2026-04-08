@@ -4,12 +4,18 @@ import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar
 
 let allRacesData = [];
 
+// Helper para guardar/obtener token
+const getToken = () => localStorage.getItem('admin_token');
+const setToken = (t) => localStorage.setItem('admin_token', t);
+const clearToken = () => localStorage.removeItem('admin_token');
+
 export const adminFetch = (url, options = {}) => {
+    const token = getToken();
     return fetch(url, {
         ...options,
-        credentials: 'include', // Permite envío automático de cookies HttpOnly
         headers: {
-            ...options.headers
+            ...options.headers,
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
     });
 };
@@ -18,12 +24,18 @@ export const adminFetch = (url, options = {}) => {
 // 0. AUTH Y LOGIN FLOW
 // ==========================================
 async function checkAuth() {
+    const token = getToken();
+    if (!token) {
+        document.getElementById('loginOverlay').style.display = 'flex';
+        return false;
+    }
     try {
         const res = await adminFetch(`${API}/auth/check`);
         if (res.ok) {
             document.getElementById('loginOverlay').style.display = 'none';
             return true;
         } else {
+            clearToken();
             document.getElementById('loginOverlay').style.display = 'flex';
             return false;
         }
@@ -43,12 +55,12 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ password }),
-            credentials: 'include'
         });
         if (res.ok) {
+            const data = await res.json();
+            setToken(data.token); // guardar en localStorage
             document.getElementById('loginOverlay').style.display = 'none';
             document.getElementById('loginError').style.display = 'none';
-            // Cargar estado inicial
             loadInitialData();
         } else {
             document.getElementById('loginError').style.display = 'block';
@@ -442,15 +454,15 @@ async function loadTeams() {
 
 async function loadDriversForAssign() {
     try {
-        const res  = await adminFetch(`${API}/drivers?year=2026`);
+        const res = await adminFetch(`${API}/drivers?year=2026`);
         const json = await res.json();
-        const all  = await adminFetch(`${API}/drivers?year=2025`);
+        const all = await adminFetch(`${API}/drivers?year=2025`);
         const all2 = await all.json();
         // Merge both years deduped by id
         const map = {};
         [...(json.data || []), ...(all2.data || [])].forEach(d => { map[d.id] = d; });
         const opts = Object.values(map)
-            .sort((a,b) => a.last_name.localeCompare(b.last_name))
+            .sort((a, b) => a.last_name.localeCompare(b.last_name))
             .map(d => `<option value="${d.id}">${d.first_name} ${d.last_name}</option>`).join('');
         const sel = document.getElementById('assignDriverSelect');
         if (sel) sel.innerHTML = '<option value="">Seleccionar piloto...</option>' + opts;
@@ -542,11 +554,11 @@ async function handleCreateRace(e) {
 // --- CREAR PILOTO ---
 async function handleAssignDriverSeason(e) {
     e.preventDefault();
-    const driver_id      = parseInt(document.getElementById('assignDriverSelect').value);
-    const year           = parseInt(document.getElementById('assignSeasonYear').value);
+    const driver_id = parseInt(document.getElementById('assignDriverSelect').value);
+    const year = parseInt(document.getElementById('assignSeasonYear').value);
     const constructor_id = parseInt(document.getElementById('assignTeamSelect').value);
-    const numberRaw      = document.getElementById('assignDriverNumber').value;
-    const number         = numberRaw ? parseInt(numberRaw) : undefined;
+    const numberRaw = document.getElementById('assignDriverNumber').value;
+    const number = numberRaw ? parseInt(numberRaw) : undefined;
 
     if (!driver_id || !year || !constructor_id) {
         showError('Completá todos los campos.', 'errorMsgAssign', 'errorTextAssign');
@@ -554,9 +566,9 @@ async function handleAssignDriverSeason(e) {
     }
     try {
         const res = await adminFetch(`${API}/drivers/seasons`, {
-            method:  'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ driver_id, constructor_id, year, number }),
+            body: JSON.stringify({ driver_id, constructor_id, year, number }),
         });
         if (res.ok) {
             showSuccess('msgAssign');
@@ -580,13 +592,13 @@ async function handleCreateTeam(e) {
     btn.innerText = 'Guardando...';
 
     const formData = new FormData();
-    formData.append('name',          document.getElementById('newTeamName').value.trim());
+    formData.append('name', document.getElementById('newTeamName').value.trim());
     formData.append('primary_color', document.getElementById('newTeamColor').value);
 
     const logoInput = document.getElementById('newTeamLogo');
     if (logoInput.files[0]) formData.append('logo_image', logoInput.files[0]);
 
-    const seasons = ['2024','2025','2026']
+    const seasons = ['2024', '2025', '2026']
         .filter(y => document.getElementById(`teamSeason${y}`)?.checked)
         .map(Number);
     formData.append('active_seasons', JSON.stringify(seasons));
@@ -690,25 +702,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadInitialData();
     }
 
+    // En el listener del logout:
     document.getElementById('btnLogout')?.addEventListener('click', async () => {
-        try {
-            await adminFetch(`${API}/auth/logout`, { method: 'POST' });
-        } catch (e) {
-            console.warn('Logout request failed:', e);
-        } finally {
-            document.getElementById('loginOverlay').style.display = 'flex';
-            document.getElementById('adminPassword').value = '';
-            document.getElementById('loginError').style.display = 'none';
-        }
+        clearToken();
+        document.getElementById('loginOverlay').style.display = 'flex';
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('loginError').style.display = 'none';
     });
 
     // ── Editor toolbar ──────────────────────────────────────────
     document.querySelectorAll('.editor-toolbar button[data-tag]').forEach(btn => {
         btn.addEventListener('click', () => {
-            const tag      = btn.dataset.tag;
+            const tag = btn.dataset.tag;
             const textarea = document.getElementById('artContent');
-            const start    = textarea.selectionStart;
-            const end      = textarea.selectionEnd;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
             const selected = textarea.value.slice(start, end);
 
             let inserted;
@@ -730,10 +738,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     document.getElementById('btnTogglePreview')?.addEventListener('click', () => {
-        const preview  = document.getElementById('artContentPreview');
+        const preview = document.getElementById('artContentPreview');
         const textarea = document.getElementById('artContent');
-        const btn      = document.getElementById('btnTogglePreview');
-        const showing  = preview.style.display !== 'none';
+        const btn = document.getElementById('btnTogglePreview');
+        const showing = preview.style.display !== 'none';
         if (showing) {
             preview.style.display = 'none';
             textarea.style.display = '';
@@ -762,11 +770,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('imgModalUrl')?.addEventListener('input', (e) => {
         const url = e.target.value.trim();
         const wrap = document.getElementById('imgModalPreviewWrap');
-        const img  = document.getElementById('imgModalPreviewImg');
+        const img = document.getElementById('imgModalPreviewImg');
         if (url) {
             img.src = url;
             img.onerror = () => { wrap.style.display = 'none'; };
-            img.onload  = () => { wrap.style.display = 'block'; };
+            img.onload = () => { wrap.style.display = 'block'; };
         } else {
             wrap.style.display = 'none';
         }
@@ -784,11 +792,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('imgModalInsert')?.addEventListener('click', () => {
         const url = document.getElementById('imgModalUrl').value.trim();
         if (!url) return alert('Ingresá la URL de la imagen.');
-        const alt  = document.getElementById('imgModalAlt').value.trim() || '';
-        const tag  = `<img src="${url}" alt="${alt}" style="max-width:100%; border-radius:6px; margin:12px 0;">`;
+        const alt = document.getElementById('imgModalAlt').value.trim() || '';
+        const tag = `<img src="${url}" alt="${alt}" style="max-width:100%; border-radius:6px; margin:12px 0;">`;
         if (_imgTarget) {
             const start = _imgTarget.selectionStart;
-            const end   = _imgTarget.selectionEnd;
+            const end = _imgTarget.selectionEnd;
             _imgTarget.setRangeText(tag, start, end, 'end');
             _imgTarget.focus();
         }
@@ -850,7 +858,7 @@ async function loadRacesForStint(year) {
     const select = document.getElementById('stintRaceSelect');
     if (!select) return;
     try {
-        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const res = await adminFetch(`${API}/races?year=${year}`);
         const json = await res.json();
         const races = json.data || [];
         select.innerHTML = '<option value="">Selecciona carrera...</option>' +
@@ -859,13 +867,13 @@ async function loadRacesForStint(year) {
 }
 
 async function loadDriversForStint() {
-    const year   = document.getElementById('stintYear').value || '2025';
+    const year = document.getElementById('stintYear').value || '2025';
     const select = document.getElementById('stintDriverSelect');
     if (!select) return;
     try {
-        const res  = await adminFetch(`${API}/drivers?year=${year}`);
+        const res = await adminFetch(`${API}/drivers?year=${year}`);
         const json = await res.json();
-        const drivers = (json.data || []).sort((a,b) => a.last_name.localeCompare(b.last_name));
+        const drivers = (json.data || []).sort((a, b) => a.last_name.localeCompare(b.last_name));
         select.innerHTML = '<option value="">Selecciona piloto...</option>' +
             drivers.map(d => `<option value="${d.id}">#${d.permanent_number} ${d.last_name}</option>`).join('');
     } catch (e) { console.error(e); }
@@ -875,7 +883,7 @@ async function loadRacesForStintDelete(year) {
     const select = document.getElementById('deleteStintRaceSelect');
     if (!select) return;
     try {
-        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const res = await adminFetch(`${API}/races?year=${year}`);
         const json = await res.json();
         const races = json.data || [];
         select.innerHTML = '<option value="">Carrera...</option>' +
@@ -888,7 +896,7 @@ async function loadDriversForStintDelete(raceId) {
     if (!select) return;
     if (!raceId) { select.innerHTML = '<option value="">Piloto...</option>'; return; }
     try {
-        const res  = await adminFetch(`${API}/strategy/admin/stints?race_id=${raceId}`);
+        const res = await adminFetch(`${API}/strategy/admin/stints?race_id=${raceId}`);
         const json = await res.json();
         const stints = json.data || [];
         // Unique drivers that have stints for this race
@@ -910,7 +918,7 @@ async function loadDriversForStintDelete(raceId) {
 }
 
 async function handleDeleteStints() {
-    const raceId   = document.getElementById('deleteStintRaceSelect').value;
+    const raceId = document.getElementById('deleteStintRaceSelect').value;
     const driverId = document.getElementById('deleteStintDriverSelect').value;
     if (!raceId || !driverId) return alert('Selecciona carrera y piloto.');
 
@@ -935,14 +943,14 @@ async function handleAddStint(e) {
     btn.innerText = 'Guardando...';
 
     const body = {
-        race_id:      document.getElementById('stintRaceSelect').value,
-        driver_id:    document.getElementById('stintDriverSelect').value,
+        race_id: document.getElementById('stintRaceSelect').value,
+        driver_id: document.getElementById('stintDriverSelect').value,
         stint_number: document.getElementById('stintNumber').value,
-        tire_compound:document.getElementById('stintCompound').value,
-        start_lap:    document.getElementById('stintStartLap').value,
-        end_lap:      document.getElementById('stintEndLap').value,
+        tire_compound: document.getElementById('stintCompound').value,
+        start_lap: document.getElementById('stintStartLap').value,
+        end_lap: document.getElementById('stintEndLap').value,
         pit_duration: document.getElementById('stintPitDuration').value || null,
-        notes:        document.getElementById('stintNotes').value || null,
+        notes: document.getElementById('stintNotes').value || null,
     };
 
     if (!body.race_id || !body.driver_id) {
@@ -961,11 +969,11 @@ async function handleAddStint(e) {
         if (res.ok) {
             showSuccess('msgStint');
             // Keep race/driver selected for rapid multi-stint entry; only clear stint fields
-            document.getElementById('stintNumber').value    = '';
-            document.getElementById('stintStartLap').value  = '';
-            document.getElementById('stintEndLap').value    = '';
+            document.getElementById('stintNumber').value = '';
+            document.getElementById('stintStartLap').value = '';
+            document.getElementById('stintEndLap').value = '';
             document.getElementById('stintPitDuration').value = '';
-            document.getElementById('stintNotes').value     = '';
+            document.getElementById('stintNotes').value = '';
         } else {
             const data = await res.json();
             showError(data.error || 'Error desconocido', 'errorMsgStint', 'errorTextStint');
@@ -1041,14 +1049,14 @@ async function handleAddMoment(e) {
     btn.innerText = 'Guardando...';
 
     const body = {
-        year:        document.getElementById('momentYear').value,
-        race_id:     document.getElementById('momentRaceSelect').value || null,
-        type:        document.getElementById('momentType').value,
-        icon:        document.getElementById('momentIcon').value || null,
-        title:       document.getElementById('momentTitle').value,
+        year: document.getElementById('momentYear').value,
+        race_id: document.getElementById('momentRaceSelect').value || null,
+        type: document.getElementById('momentType').value,
+        icon: document.getElementById('momentIcon').value || null,
+        title: document.getElementById('momentTitle').value,
         description: document.getElementById('momentDesc').value || null,
         driver_name: document.getElementById('momentDriver').value || null,
-        team_name:   document.getElementById('momentTeam').value || null,
+        team_name: document.getElementById('momentTeam').value || null,
     };
 
     try {
@@ -1146,9 +1154,9 @@ async function handleUpdateCircuitInfo(e) {
     btn.innerText = 'Guardando...';
 
     const body = {
-        first_gp_year:  document.getElementById('circuitFirstGpYear').value || null,
-        drs_zones:      document.getElementById('circuitDrsZones').value || null,
-        circuit_notes:  document.getElementById('circuitNotes').value || null,
+        first_gp_year: document.getElementById('circuitFirstGpYear').value || null,
+        drs_zones: document.getElementById('circuitDrsZones').value || null,
+        circuit_notes: document.getElementById('circuitNotes').value || null,
     };
 
     try {
@@ -1183,12 +1191,12 @@ async function handleAddCircuitWinner(e) {
 
     const body = {
         circuit_name: document.getElementById('cwCircuitName').value,
-        year:         document.getElementById('cwYear').value,
-        winner_name:  document.getElementById('cwWinner').value,
-        team_name:    document.getElementById('cwTeam').value || null,
-        pole_name:    document.getElementById('cwPole').value || null,
-        fastest_lap:  document.getElementById('cwFastestLap').value || null,
-        notes:        document.getElementById('cwNotes').value || null,
+        year: document.getElementById('cwYear').value,
+        winner_name: document.getElementById('cwWinner').value,
+        team_name: document.getElementById('cwTeam').value || null,
+        pole_name: document.getElementById('cwPole').value || null,
+        fastest_lap: document.getElementById('cwFastestLap').value || null,
+        notes: document.getElementById('cwNotes').value || null,
     };
 
     try {
@@ -1264,15 +1272,15 @@ async function handleCreateArticle(e) {
     const tags = tagsRaw ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean) : [];
 
     const body = {
-        title:           document.getElementById('artTitle').value,
-        excerpt:         document.getElementById('artExcerpt').value || null,
-        content:         document.getElementById('artContent').value,
-        author:          document.getElementById('artAuthor').value || 'Redacción',
+        title: document.getElementById('artTitle').value,
+        excerpt: document.getElementById('artExcerpt').value || null,
+        content: document.getElementById('artContent').value,
+        author: document.getElementById('artAuthor').value || 'Redacción',
         cover_image_url: document.getElementById('artCover').value || null,
-        category:        document.getElementById('artCategory').value,
+        category: document.getElementById('artCategory').value,
         tags,
-        published:       document.getElementById('artPublished').checked,
-        featured:        document.getElementById('artFeatured').checked,
+        published: document.getElementById('artPublished').checked,
+        featured: document.getElementById('artFeatured').checked,
     };
 
     try {
@@ -1321,7 +1329,7 @@ async function loadRacesForAI(year) {
     const select = document.getElementById('aiRaceSelect');
     if (!select) return;
     try {
-        const res  = await adminFetch(`${API}/races?year=${year}`);
+        const res = await adminFetch(`${API}/races?year=${year}`);
         const json = await res.json();
         const races = json.data || [];
         select.innerHTML = '<option value="">Seleccionar carrera...</option>' +
@@ -1331,16 +1339,16 @@ async function loadRacesForAI(year) {
 
 async function handleGenerateArticle() {
     const raceId = document.getElementById('aiRaceSelect').value;
-    const type   = document.getElementById('aiArticleType').value;
+    const type = document.getElementById('aiArticleType').value;
     const status = document.getElementById('aiGenerateStatus');
-    const btn    = document.getElementById('btnGenerateArticle');
+    const btn = document.getElementById('btnGenerateArticle');
 
     if (!raceId) return alert('Seleccioná una carrera primero.');
 
     const typeLabels = {
         race_report: 'Crónica de Carrera',
-        strategy:    'Análisis de Estrategia',
-        standings:   'Actualización del Campeonato',
+        strategy: 'Análisis de Estrategia',
+        standings: 'Actualización del Campeonato',
     };
 
     btn.disabled = true;
@@ -1350,10 +1358,10 @@ async function handleGenerateArticle() {
     status.innerHTML = `⏳ Generando <strong>${typeLabels[type]}</strong>... esto puede tardar unos segundos.`;
 
     try {
-        const res  = await adminFetch(`${API}/articles/admin/generate`, {
-            method:  'POST',
+        const res = await adminFetch(`${API}/articles/admin/generate`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ race_id: raceId, type }),
+            body: JSON.stringify({ race_id: raceId, type }),
         });
         const json = await res.json();
 
@@ -1388,7 +1396,7 @@ async function loadDraftArticles() {
     if (!select) return;
     select.innerHTML = '<option>Cargando...</option>';
     try {
-        const res  = await adminFetch(`${API}/articles/admin/all`);
+        const res = await adminFetch(`${API}/articles/admin/all`);
         const json = await res.json();
         const drafts = (json.data || []).filter(a => !a.published);
         if (!drafts.length) {
@@ -1405,19 +1413,19 @@ async function loadDraftArticles() {
 
 async function handlePublishDraft() {
     const select = document.getElementById('draftArticleSelect');
-    const msg    = document.getElementById('msgPublishDraft');
-    const id     = select.value;
+    const msg = document.getElementById('msgPublishDraft');
+    const id = select.value;
     if (!id) return alert('Seleccioná un borrador.');
 
     try {
         const res = await adminFetch(`${API}/articles/${id}`, {
-            method:  'PUT',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ published: true }),
+            body: JSON.stringify({ published: true }),
         });
         if (res.ok) {
             msg.style.display = 'block';
-            msg.textContent   = '✅ Artículo publicado correctamente.';
+            msg.textContent = '✅ Artículo publicado correctamente.';
             loadDraftArticles();
             loadArticlesForDelete();
             setTimeout(() => { msg.style.display = 'none'; }, 4000);
