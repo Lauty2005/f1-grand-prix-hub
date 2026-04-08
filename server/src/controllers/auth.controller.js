@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 
-const EXPIRATION = 24 * 60 * 60 * 1000; 
+const EXPIRATION = 24 * 60 * 60 * 1000;
+const IS_PROD = process.env.NODE_ENV === 'production';
 
 export const login = (req, res) => {
     const { password } = req.body;
