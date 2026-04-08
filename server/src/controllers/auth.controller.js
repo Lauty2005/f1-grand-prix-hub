@@ -5,6 +5,15 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 
 export const login = (req, res) => {
     const { password } = req.body;
+
+    // LOG TEMPORAL - borralo después
+    console.log('ENV CHECK:', {
+        hasPassword: !!process.env.ADMIN_PASSWORD,
+        hasSecret: !!process.env.JWT_SECRET,
+        nodeEnv: process.env.NODE_ENV,
+        match: password === process.env.ADMIN_PASSWORD
+    });
+
     if (!password || password !== process.env.ADMIN_PASSWORD) {
         return res.status(401).json({ error: 'Credenciales inválidas' });
     }
