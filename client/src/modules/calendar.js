@@ -265,23 +265,124 @@ async function loadRaceResults(raceId) {
 
 async function loadQualyResults(raceId) {
     const container = document.getElementById('tab-content');
-    container.innerHTML = '<div style="text-align:center; color:white;">Cargando Qualy...</div>';
+    container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando Clasificación...</div>';
+
     try {
         const res = await fetch(`${API}/races/${raceId}/qualifying`);
         const json = await res.json();
-        if (!json.success || json.data.length === 0) { container.innerHTML = '<p style="color:#aaa; text-align:center;">No hay datos.</p>'; return; }
 
-        const rows = json.data.map(r => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <td style="padding:10px; font-weight:bold; text-align:center; color:white;">${r.position}</td>
-                <td style="font-weight:bold; padding:10px; text-align:left; color:white;">${r.last_name} <span style="font-weight:normal; font-size:0.7rem; color:${r.primary_color}">(${r.team_name.substring(0, 3).toUpperCase()})</span></td>
-                <td style="padding:5px; font-family:monospace; color:#aaa; text-align:center;">${r.q1 || '-'}</td>
-                <td style="padding:5px; font-family:monospace; color:#ccc; text-align:center;">${r.q2 || '-'}</td>
-                <td style="padding:5px; font-family:monospace; color:#e10600; font-weight:bold; text-align:center;">${r.q3 || '-'}</td>
-            </tr>
-        `).join('');
-        container.innerHTML = `<table style="width:100%; border-collapse:collapse; font-size:0.9rem;"><thead><tr style="color:#666; font-size:0.7rem; border-bottom:1px solid #333;"><th>POS</th><th style="text-align:left;">PILOTO</th><th>Q1</th><th>Q2</th><th>Q3</th></tr></thead><tbody>${rows}</tbody></table>`;
-    } catch (e) { container.innerHTML = '<p style="color:red;">Error</p>'; }
+        if (!json.success || json.data.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">No hay datos de Clasificación aún.</p>';
+            return;
+        }
+
+        const qualyData = json.data;
+
+        const renderSession = (sessionKey) => {
+            const tableContainer = document.getElementById('qualy-table-container');
+
+            // Actualizar botones
+            ['q1', 'q2', 'q3'].forEach(key => {
+                const btn = document.getElementById(`btn-${key}`);
+                if (btn) {
+                    if (key === sessionKey) {
+                        btn.style.background = '#e10600';
+                        btn.style.color = 'white';
+                        btn.style.border = '1px solid #e10600';
+                    } else {
+                        btn.style.background = 'rgba(255,255,255,0.05)';
+                        btn.style.color = '#aaa';
+                        btn.style.border = '1px solid #333';
+                    }
+                }
+            });
+
+            // Filtrar por sesión
+            const sessionData = qualyData.filter(r => r[sessionKey] && r[sessionKey] !== '-');
+            const eliminated  = qualyData.filter(r => !r[sessionKey] || r[sessionKey] === '-');
+
+            // Ordenar por tiempo
+            const sorted = [...sessionData].sort((a, b) => {
+                const tA = (a[sessionKey] || '').trim();
+                const tB = (b[sessionKey] || '').trim();
+                if (!tA) return 1;
+                if (!tB) return -1;
+                return tA.localeCompare(tB, undefined, { numeric: true });
+            });
+
+            const activeRows = sorted.map((r, index) => {
+                const isLeader = index === 0;
+                const timeColor = isLeader ? '#e10600' : (index < 3 ? '#fff' : '#aaa');
+                return `
+                <tr style="${isLeader ? 'background: rgba(225, 6, 0, 0.08);' : 'border-bottom: 1px solid rgba(255,255,255,0.05);'}">
+                    <td style="padding:10px; text-align:center; color:${isLeader ? '#e10600' : '#666'}; font-weight:bold; width:40px;">${index + 1}</td>
+                    <td style="padding:10px; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:3px; height:25px; background:${r.primary_color}; border-radius:2px; flex-shrink:0;"></div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="color:white; font-weight:bold; font-size:0.95rem;">${r.last_name}</span>
+                                <span style="font-size:0.7rem; color:#888;">${r.team_name}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:10px 20px; text-align:right; font-family:'Courier New', monospace; font-size:0.95rem; font-weight:bold; color:${timeColor};">${r[sessionKey]}</td>
+                </tr>`;
+            }).join('');
+
+            const eliminatedRows = eliminated.map(r => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); opacity:0.45;">
+                    <td style="padding:8px; text-align:center; color:#444; font-weight:bold; width:40px;">—</td>
+                    <td style="padding:8px; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:3px; height:20px; background:${r.primary_color}; border-radius:2px; flex-shrink:0; opacity:0.4;"></div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="color:#555; font-weight:bold; font-size:0.85rem;">${r.last_name}</span>
+                                <span style="font-size:0.65rem; color:#444;">${r.team_name}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:8px 20px; text-align:right; font-family:'Courier New', monospace; font-size:0.85rem; color:#333;">—</td>
+                </tr>`).join('');
+
+            const separator = eliminated.length > 0 && sessionData.length > 0
+                ? `<tr><td colspan="3" style="padding:4px 10px;"><div style="border-top:1px dashed #333; margin:4px 0;"></div></td></tr>`
+                : '';
+
+            tableContainer.innerHTML = `
+                <div class="table-responsive">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="color:#666; font-size:0.7rem; text-transform:uppercase; border-bottom:2px solid #333;">
+                                <th style="padding:10px;">Pos</th>
+                                <th style="text-align:left; padding:10px;">Piloto</th>
+                                <th style="text-align:right; padding-right:20px;">Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>${activeRows}${separator}${eliminatedRows}</tbody>
+                    </table>
+                </div>`;
+        };
+
+        const subBtnStyle = `background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 5px 15px; cursor: pointer; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;`;
+
+        container.innerHTML = `
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px; padding-top:10px;">
+                <button id="btn-q1" style="${subBtnStyle}">Q1</button>
+                <button id="btn-q2" style="${subBtnStyle}">Q2</button>
+                <button id="btn-q3" style="${subBtnStyle}">Q3</button>
+            </div>
+            <div id="qualy-table-container"></div>`;
+
+        document.getElementById('btn-q1').onclick = () => renderSession('q1');
+        document.getElementById('btn-q2').onclick = () => renderSession('q2');
+        document.getElementById('btn-q3').onclick = () => renderSession('q3');
+
+        renderSession('q3'); // Q3 por defecto (más relevante)
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p style="color:red; text-align:center;">Error al cargar datos.</p>';
+    }
 }
 
 async function loadPracticesResults(raceId, isSprint) {
@@ -563,46 +664,122 @@ async function loadCircuitAnalysis(raceId) {
 
 async function loadSprintQualyResults(raceId) {
     const container = document.getElementById('tab-content');
-    container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando Shootout...</div>';
+    container.innerHTML = '<div style="text-align:center; color:white; padding:20px;">Cargando Sprint Shootout...</div>';
 
     try {
         const res = await fetch(`${API}/races/${raceId}/sprint-qualifying`);
         const json = await res.json();
 
         if (!json.success || json.data.length === 0) {
-            container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">No hay datos de Shootout.</p>';
+            container.innerHTML = '<p style="text-align:center; color:#666; padding:20px;">No hay datos de Sprint Shootout.</p>';
             return;
         }
 
-        const rows = json.data.map(r => `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
-                <td style="padding:10px; text-align:center; font-weight:bold;">${r.position}</td>
-                <td style="padding:10px; text-align:left;">
-                    <span style="color:white; font-weight:bold;">${r.last_name}</span>
-                    <span style="font-size:0.75rem; color:${r.primary_color}; margin-left:5px;">${r.team_name}</span>
-                </td>
-                <td style="text-align:right; font-family:monospace; color:${r.sq1 ? '#fff' : '#444'};">${r.sq1 || '-'}</td>
-                <td style="text-align:right; font-family:monospace; color:${r.sq2 ? '#fff' : '#444'};">${r.sq2 || '-'}</td>
-                <td style="text-align:right; font-family:monospace; color:${r.sq3 ? '#fff' : '#444'}; font-weight:bold;">${r.sq3 || '-'}</td>
-            </tr>
-        `).join('');
+        const sqData = json.data;
+
+        const renderSession = (sessionKey) => {
+            const tableContainer = document.getElementById('sq-table-container');
+
+            // Actualizar botones (naranja para diferenciar del Sprint Qualifying)
+            ['sq1', 'sq2', 'sq3'].forEach(key => {
+                const btn = document.getElementById(`btn-${key}`);
+                if (btn) {
+                    if (key === sessionKey) {
+                        btn.style.background = '#ff6b00';
+                        btn.style.color = 'white';
+                        btn.style.border = '1px solid #ff6b00';
+                    } else {
+                        btn.style.background = 'rgba(255,255,255,0.05)';
+                        btn.style.color = '#aaa';
+                        btn.style.border = '1px solid #333';
+                    }
+                }
+            });
+
+            const sessionData = sqData.filter(r => r[sessionKey] && r[sessionKey] !== '-');
+            const eliminated  = sqData.filter(r => !r[sessionKey] || r[sessionKey] === '-');
+
+            const sorted = [...sessionData].sort((a, b) => {
+                const tA = (a[sessionKey] || '').trim();
+                const tB = (b[sessionKey] || '').trim();
+                if (!tA) return 1;
+                if (!tB) return -1;
+                return tA.localeCompare(tB, undefined, { numeric: true });
+            });
+
+            const activeRows = sorted.map((r, index) => {
+                const isLeader = index === 0;
+                const timeColor = isLeader ? '#ff6b00' : (index < 3 ? '#fff' : '#aaa');
+                return `
+                <tr style="${isLeader ? 'background: rgba(255, 107, 0, 0.08);' : 'border-bottom: 1px solid rgba(255,255,255,0.05);'}">
+                    <td style="padding:10px; text-align:center; color:${isLeader ? '#ff6b00' : '#666'}; font-weight:bold; width:40px;">${index + 1}</td>
+                    <td style="padding:10px; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:3px; height:25px; background:${r.primary_color}; border-radius:2px; flex-shrink:0;"></div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="color:white; font-weight:bold; font-size:0.95rem;">${r.last_name}</span>
+                                <span style="font-size:0.7rem; color:#888;">${r.team_name}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:10px 20px; text-align:right; font-family:'Courier New', monospace; font-size:0.95rem; font-weight:bold; color:${timeColor};">${r[sessionKey]}</td>
+                </tr>`;
+            }).join('');
+
+            const eliminatedRows = eliminated.map(r => `
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); opacity:0.4;">
+                    <td style="padding:8px; text-align:center; color:#444; font-weight:bold; width:40px;">—</td>
+                    <td style="padding:8px; text-align:left;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div style="width:3px; height:20px; background:${r.primary_color}; border-radius:2px; flex-shrink:0; opacity:0.4;"></div>
+                            <div style="display:flex; flex-direction:column;">
+                                <span style="color:#555; font-weight:bold; font-size:0.85rem;">${r.last_name}</span>
+                                <span style="font-size:0.65rem; color:#444;">${r.team_name}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td style="padding:8px 20px; text-align:right; font-family:'Courier New', monospace; font-size:0.85rem; color:#333;">—</td>
+                </tr>`).join('');
+
+            const separator = eliminated.length > 0 && sessionData.length > 0
+                ? `<tr><td colspan="3" style="padding:4px 10px;"><div style="border-top:1px dashed #333; margin:4px 0;"></div></td></tr>`
+                : '';
+
+            tableContainer.innerHTML = `
+                <div class="table-responsive">
+                    <table style="width:100%; border-collapse:collapse;">
+                        <thead>
+                            <tr style="color:#666; font-size:0.7rem; text-transform:uppercase; border-bottom:2px solid #333;">
+                                <th style="padding:10px;">Pos</th>
+                                <th style="text-align:left; padding:10px;">Piloto</th>
+                                <th style="text-align:right; padding-right:20px;">Tiempo</th>
+                            </tr>
+                        </thead>
+                        <tbody>${activeRows}${separator}${eliminatedRows}</tbody>
+                    </table>
+                </div>`;
+        };
+
+        const subBtnStyle = `background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 5px 15px; cursor: pointer; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;`;
 
         container.innerHTML = `
-            <div class="table-responsive">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="color:#666; font-size:0.7rem; text-transform:uppercase; border-bottom: 2px solid #333;">
-                            <th style="padding:10px;">Pos</th>
-                            <th style="text-align:left; padding:10px;">Piloto</th>
-                            <th style="text-align:right;">SQ1</th>
-                            <th style="text-align:right;">SQ2</th>
-                            <th style="text-align:right;">SQ3</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rows}</tbody>
-                </table>
-            </div>`;
-    } catch (e) { console.error(e); }
+            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px; padding-top:10px;">
+                <button id="btn-sq1" style="${subBtnStyle}">SQ1</button>
+                <button id="btn-sq2" style="${subBtnStyle}">SQ2</button>
+                <button id="btn-sq3" style="${subBtnStyle}">SQ3</button>
+            </div>
+            <div id="sq-table-container"></div>`;
+
+        document.getElementById('btn-sq1').onclick = () => renderSession('sq1');
+        document.getElementById('btn-sq2').onclick = () => renderSession('sq2');
+        document.getElementById('btn-sq3').onclick = () => renderSession('sq3');
+
+        renderSession('sq3'); // SQ3 por defecto
+
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<p style="color:red; text-align:center;">Error al cargar datos.</p>';
+    }
 }
 
 // ─────────────────────────────────────────────
