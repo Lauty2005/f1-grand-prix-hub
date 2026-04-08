@@ -25,15 +25,15 @@ function init() {
             <div class="season-selector-container">
                 <label>TEMPORADA</label>
                 <select id="globalSeasonSelect" class="f1-select">
-                    <option value="2025" ${state.currentYear === '2025' ? 'selected' : ''}>2025</option>
+                    <option value="2025" ${state === '2025' ? 'selected' : ''}>2025</option>
                     <option value="2026" ${state.currentYear === '2026' ? 'selected' : ''}>2026</option>
                 </select>
             </div>
             <div class="nav-buttons-group">
+                <button id="btn-noticias" class="nav-btn">NOTICIAS</button>
                 <button id="btn-drivers" class="nav-btn">PILOTOS</button>
                 <button id="btn-calendar" class="nav-btn">CALENDARIO</button>
                 <button id="btn-standings" class="nav-btn">CAMPEONATO</button>
-                <button id="btn-noticias" class="nav-btn">NOTICIAS</button>
                 <button id="btn-comparar" class="nav-btn">COMPARAR</button>
                 <button id="btn-timeline" class="nav-btn">TIMELINE</button>
             </div>
@@ -78,8 +78,8 @@ function init() {
     });
 
     // Carga inicial
-    updateButtons('drivers');
-    loadDriversView();
+    updateButtons('noticias');
+    loadNoticiasView();
     initCountdown();
 }
 
@@ -89,7 +89,7 @@ function refreshActiveView() {
     if (document.getElementById('btn-standings').classList.contains('active-btn')) loadStandingsView();
     if (document.getElementById('btn-noticias').classList.contains('active-btn')) loadNoticiasView();
     if (document.getElementById('btn-comparar').classList.contains('active-btn')) loadCompararView();
-    if (document.getElementById('btn-timeline').classList.contains('active-btn'))  loadTimelineView();
+    if (document.getElementById('btn-timeline').classList.contains('active-btn')) loadTimelineView();
 }
 
 function updateButtons(activeId) {
