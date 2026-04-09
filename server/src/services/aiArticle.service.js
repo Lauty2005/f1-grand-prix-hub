@@ -200,16 +200,25 @@ function buildPrompt(ctx, type) {
     const instructions = {
         race_report: `Escribí una CRÓNICA DE CARRERA completa y emocionante.
 Cubrí: la largada, los momentos decisivos, el desenlace, actuaciones destacadas y análisis del resultado.
-Extensión: ~500 palabras. Incluí mínimo 3 secciones con <h2>.`,
+El título DEBE seguir este formato SEO: "[Ganador] gana el GP de [País] [Año]: crónica completa"
+Extensión: ~600 palabras. Incluí mínimo 3 secciones con <h2>.`,
 
         strategy: `Escribí un ANÁLISIS DE ESTRATEGIA centrado en las decisiones tácticas de neumáticos y pit stops.
 Explicá qué estrategias se usaron, cuál fue la más efectiva, qué role jugaron los undercuts/overcuts.
+El título DEBE seguir este formato SEO: "Estrategia GP de [País] [Año]: por qué ganó [equipo/piloto]"
 Si no hay datos de estrategia, hacé un análisis táctico general basándote en los resultados.
-Extensión: ~400 palabras. Incluí mínimo 2 secciones con <h2>.`,
+Extensión: ~500 palabras. Incluí mínimo 2 secciones con <h2>.`,
 
         standings: `Escribí un ANÁLISIS DEL CAMPEONATO enfocado en cómo este resultado impacta la lucha por los títulos.
-Analizá la situación de los líderes, los que ganaron/perdieron posiciones y qué se viene.
-Extensión: ~350 palabras. Incluí mínimo 2 secciones con <h2>.`,
+Analizá la situación de los líderes, los que ganaron/perdieron posiciones y qué se viene en el próximo GP.
+El título DEBE seguir este formato SEO: "Campeonato F1 [Año] tras el GP de [País]: así queda la tabla"
+Extensión: ~450 palabras. Incluí mínimo 2 secciones con <h2>.`,
+
+        preview: `Escribí un PREVIEW PRE-CARRERA para anticipar el Gran Premio.
+Cubrí: características clave del circuito, favoritos según el campeonato actual, estrategia esperada de neumáticos, y qué pilotos/equipos tienen ventaja.
+El título DEBE seguir este formato SEO: "Preview GP de [País] [Año]: favoritos, estrategia y predicciones"
+Usá los datos de clasificación si están disponibles, si no usá el campeonato actual como referencia.
+Extensión: ~500 palabras. Incluí mínimo 3 secciones con <h2>. La categoría debe ser "preview".`,
     };
 
     return `${instructions[type] || instructions.race_report}
@@ -220,7 +229,7 @@ ${context}
 IMPORTANTE:
 - Respondé SOLO con el JSON, sin texto adicional ni bloques de código
 - El campo "content" debe ser HTML válido
-- Los "tags" deben incluir el nombre del GP, pilotos destacados y el equipo ganador`;
+- Los "tags" deben incluir el nombre del GP, el año, pilotos destacados y el equipo ganador`;
 }
 
 // ── Llamadas a cada proveedor ─────────────────────────────────
@@ -340,4 +349,26 @@ export const generateArticle = async (raceId, type = 'race_report', authorName =
         race_name: ctx.race.name,
         provider:  PROVIDER,
     };
+};
+
+// ── Generación batch: todos los artículos post-carrera de un GP ───
+// Genera race_report → strategy → standings en secuencia
+// Cada uno se guarda como borrador independiente
+export const generatePostRaceBundle = async (raceId, authorName = 'IA Redacción') => {
+    const types = ['race_report', 'strategy', 'standings'];
+    const results = [];
+    const errors = [];
+
+    for (const type of types) {
+        try {
+            const result = await generateArticle(raceId, type, authorName);
+            results.push({ type, article: result.article, usage: result.usage });
+            // Pausa breve entre llamadas para no saturar la API
+            await new Promise(r => setTimeout(r, 1500));
+        } catch (err) {
+            errors.push({ type, error: err.message });
+        }
+    }
+
+    return { results, errors };
 };

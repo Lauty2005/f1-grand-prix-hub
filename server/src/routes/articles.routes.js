@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { adminAuth } from '../middleware/auth.middleware.js';
 import * as articlesController from '../controllers/articles.controller.js';
-import { generateArticleHandler } from '../controllers/aiArticle.controller.js';
+import { generateArticleHandler, generateBundleHandler } from '../controllers/aiArticle.controller.js';
 import { createUpload } from '../config/upload.js';
 
 const router = Router();
@@ -29,7 +29,8 @@ router.get('/:slug', articlesController.getArticleBySlug);
 // Rutas admin
 router.get('/admin/all', adminAuth, articlesController.getAllArticlesAdmin);
 router.get('/admin/:id', adminAuth, articlesController.getArticleByIdAdmin);
-router.post('/admin/generate', adminAuth, generateArticleHandler);   // ← AI generator
+router.post('/admin/generate', adminAuth, generateArticleHandler);        // Un artículo por tipo
+router.post('/admin/generate-bundle', adminAuth, generateBundleHandler);  // 3 artículos post-carrera de una vez
 router.post('/', adminAuth, articlesController.createArticle);
 router.put('/:id', adminAuth, articlesController.updateArticle);
 router.delete('/:id', adminAuth, articlesController.deleteArticle);
