@@ -44,10 +44,12 @@ export const createArticle = async (req, res) => {
 export const updateArticle = async (req, res) => {
     try {
         const { id } = req.params;
-        // Partial update: only published/featured flag
+        // Partial updates
         const keys = Object.keys(req.body);
         if (keys.length === 1 && keys[0] === 'published') {
             await articlesService.publishArticle(id, req.body.published);
+        } else if (keys.length === 1 && keys[0] === 'cover_image_url') {
+            await articlesService.updateCover(id, req.body.cover_image_url);
         } else {
             await articlesService.updateArticle(id, req.body);
         }
@@ -66,6 +68,16 @@ export const deleteArticle = async (req, res) => {
     } catch (err) {
         console.error('ERROR deleting article:', err.message);
         res.status(500).json({ error: 'Error eliminando artículo' });
+    }
+};
+
+export const getArticleByIdAdmin = async (req, res) => {
+    try {
+        const article = await articlesService.getArticleByIdAdmin(req.params.id);
+        if (!article) return res.status(404).json({ error: 'Artículo no encontrado' });
+        res.json({ success: true, data: article });
+    } catch (err) {
+        res.status(500).json({ error: 'Error obteniendo artículo' });
     }
 };
 

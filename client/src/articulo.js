@@ -112,7 +112,13 @@ async function init() {
         setMetaTags(article);
 
         const cover = article.cover_image_url
-            ? `<img class="article-header__cover" src="${article.cover_image_url}" alt="${article.title}">`
+            ? `<img
+                  class="article-header__cover"
+                  src="${article.cover_image_url}"
+                  alt="${article.title}"
+                  loading="lazy"
+                  onerror="this.style.display='none';"
+              >`
             : '';
 
         const tagsHTML = article.tags?.length

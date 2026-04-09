@@ -11,5 +11,8 @@
   "devDependencies": {
     "sass": "^1.97.1",
     "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "quill": "^2.0.3"
   }
 }

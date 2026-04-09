@@ -90,6 +90,13 @@ export const updateArticle = async (id, data) => {
     );
 };
 
+export const updateCover = async (id, coverUrl) => {
+    await query(
+        `UPDATE articles SET cover_image_url = $1, updated_at = NOW() WHERE id = $2`,
+        [coverUrl, id]
+    );
+};
+
 export const publishArticle = async (id, published) => {
     await query(
         `UPDATE articles SET published = $1, updated_at = NOW() WHERE id = $2`,
@@ -99,6 +106,14 @@ export const publishArticle = async (id, published) => {
 
 export const deleteArticle = async (id) => {
     await query('DELETE FROM articles WHERE id = $1', [id]);
+};
+
+export const getArticleByIdAdmin = async (id) => {
+    const result = await query(
+        `SELECT * FROM articles WHERE id = $1`,
+        [id]
+    );
+    return result.rows[0] || null;
 };
 
 export const getAllArticlesAdmin = async () => {

@@ -58,14 +58,30 @@
             </div>
 
             <div class="danger-item" style="border-color:#7c3aed; background:rgba(124,58,237,0.08);">
-                <label style="color:#a855f7;">Publicar Borrador IA</label>
+                <label style="color:#a855f7;">Publicar Borrador</label>
                 <div class="danger-row">
                     <select id="draftArticleSelect" class="form-control danger-select">
                         <option>Cargando...</option>
                     </select>
                     <button id="btnPublishDraft" style="background:#7c3aed; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap;">✅ Publicar</button>
                 </div>
-                <p id="msgPublishDraft" style="display:none; margin:4px 0 0; font-size:0.78rem; color:#a855f7;"></p>
+                <!-- Cover opcional para el borrador -->
+                <div id="draftCoverZone" style="
+                    margin-top: 10px;
+                    border: 2px dashed rgba(168,85,247,0.3);
+                    border-radius: 6px;
+                    padding: 10px 12px;
+                    text-align: center;
+                    cursor: pointer;
+                    color: #a855f7;
+                    font-size: 0.75rem;
+                    transition: border-color 0.2s;
+                ">
+                    🖼 Portada opcional (arrastrá o clickeá)
+                    <input type="file" id="draftCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                </div>
+                <img id="draftCoverPreview" src="" alt="" style="display:none; max-height:90px; width:100%; object-fit:cover; border-radius:6px; margin-top:6px; border:1px solid rgba(168,85,247,0.2);">
+                <p id="msgPublishDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7;"></p>
             </div>
 
             <div class="danger-item">
@@ -352,23 +368,27 @@
                             <option value="tecnica">⚙️ Técnica</option>
                         </select>
                         <input type="text" id="artAuthor" class="form-control" placeholder="Autor" value="Redacción">
-                        <input type="url" id="artCover" class="form-control span-full" placeholder="URL imagen portada (opcional)">
-                        <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
-                        <div class="span-full editor-toolbar">
-                            <button type="button" data-tag="strong" title="Negrita"><b>B</b></button>
-                            <button type="button" data-tag="em" title="Cursiva"><i>I</i></button>
-                            <button type="button" data-tag="h2" title="Título H2">H2</button>
-                            <button type="button" data-tag="h3" title="Título H3">H3</button>
-                            <button type="button" data-tag="p" title="Párrafo">¶</button>
-                            <button type="button" data-tag="li" title="Ítem de lista">• Li</button>
-                            <button type="button" data-tag="ul" title="Lista">UL</button>
-                            <span class="editor-toolbar__sep"></span>
-                            <button type="button" id="btnInsertImage" title="Insertar imagen">🖼 IMG</button>
-                            <span class="editor-toolbar__sep"></span>
-                            <button type="button" id="btnTogglePreview" title="Vista previa del contenido">👁 Preview</button>
+                        <div class="span-full" style="display:flex; flex-direction:column; gap:6px;">
+                            <label style="font-size:0.78rem; color:#aaa;">Imagen de portada</label>
+                            <div id="coverDropZone" style="
+                                border: 2px dashed rgba(255,255,255,0.15);
+                                border-radius: 8px;
+                                padding: 20px;
+                                text-align: center;
+                                cursor: pointer;
+                                color: #888;
+                                font-size: 0.85rem;
+                                transition: border-color 0.2s;
+                            ">
+                                🖼 Arrastrá una imagen o hacé click para seleccionar
+                                <input type="file" id="artCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                            </div>
+                            <img id="coverPreview" src="" alt="Preview portada"
+                                style="display:none; max-height:140px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); object-fit:cover;">
+                            <input type="hidden" id="artCover">
                         </div>
-                        <textarea id="artContent" class="form-control span-full" placeholder="Contenido HTML del artículo..." rows="10" style="resize:vertical; font-family:monospace; font-size:0.8rem;" required></textarea>
-                        <div id="artContentPreview" class="span-full article-preview" style="display:none;"></div>
+                        <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
+                        <div id="artContentEditor" class="span-full"></div>
                         <div class="span-full" style="display:flex; gap:20px; align-items:center; margin: 5px 0;">
                             <div style="display:flex; align-items:center; gap:6px;">
                                 <input type="checkbox" id="artPublished" style="width:18px;height:18px;accent-color:#00ff88;">
@@ -415,6 +435,27 @@
                         <div id="errorMsgStint" class="error-msg span-full">❌ <span id="errorTextStint"></span></div>
                         <p id="msgStint" class="success-msg span-full">✅ ¡Stint guardado!</p>
                     </form>
+                </div>
+
+                <div class="creation-item" style="border-color:rgba(168,85,247,0.4); background:rgba(124,58,237,0.05); grid-column: 1 / -1; box-sizing:border-box; width:100%; overflow:hidden;">
+                    <label style="color:#a855f7;">✏️ Editar Borrador</label>
+                    <p style="color:rgba(168,85,247,0.7); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">
+                        Seleccioná un borrador para editar su contenido antes de publicarlo. Podés pegar imágenes directamente en el editor.
+                    </p>
+                    <select id="editDraftSelect" class="form-control" style="width:100%; margin-bottom:12px;">
+                        <option value="" disabled selected>Seleccionar borrador...</option>
+                    </select>
+                    <div id="draftEditorWrap" style="display:none; width:100%;">
+                        <div id="draftContentEditor"></div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                            <button type="button" id="btnSaveDraft" style="
+                                background:#7c3aed; color:#fff; border:none;
+                                padding:8px 20px; border-radius:6px;
+                                cursor:pointer; font-weight:700; font-size:0.85rem;
+                            ">💾 Guardar cambios</button>
+                        </div>
+                        <p id="msgSaveDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7; text-align:right;"></p>
+                    </div>
                 </div>
 
                 <div class="creation-item creation-item--ai">

@@ -16,6 +16,8 @@ let state = {
     allLoaded: false,
 };
 
+let _abortController = null;
+
 function formatDate(iso) {
     const d = new Date(iso);
     return d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -25,12 +27,52 @@ function categoryLabel(val) {
     return CATEGORIES.find(c => c.value === val)?.label || val;
 }
 
+function skeletonHTML() {
+    const skeletonCard = `
+        <div class="article-card" style="pointer-events:none;">
+            <div style="height:180px; background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+                background-size:200% 100%; animation: f1-shimmer 1.4s infinite; border-radius:8px 8px 0 0;"></div>
+            <div class="article-card__body">
+                <div style="height:12px; width:45%; border-radius:4px; margin-bottom:10px;
+                    background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+                    background-size:200% 100%; animation: f1-shimmer 1.4s infinite;"></div>
+                <div style="height:16px; width:90%; border-radius:4px; margin-bottom:6px;
+                    background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+                    background-size:200% 100%; animation: f1-shimmer 1.4s infinite;"></div>
+                <div style="height:16px; width:70%; border-radius:4px; margin-bottom:14px;
+                    background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+                    background-size:200% 100%; animation: f1-shimmer 1.4s infinite;"></div>
+            </div>
+        </div>`;
+
+    return `
+        <style>
+            @keyframes f1-shimmer {
+                0%   { background-position: 200% 0; }
+                100% { background-position: -200% 0; }
+            }
+        </style>
+        <div style="height:380px; border-radius:12px; margin-bottom:24px;
+            background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
+            background-size:200% 100%; animation: f1-shimmer 1.4s infinite;"></div>
+        <div class="news-grid">${skeletonCard.repeat(6)}</div>
+    `;
+}
+
 function coverHTML(article, cls) {
-    if (article.cover_image_url) {
-        return `<img class="${cls}" src="${article.cover_image_url}" alt="${article.title}" loading="lazy">`;
-    }
     const icons = { noticias: '📰', analisis: '🔍', preview: '🏎️', tecnica: '⚙️' };
-    return `<div class="${cls}-placeholder">${icons[article.category] || '📄'}</div>`;
+    const fallback = icons[article.category] || '📄';
+
+    if (article.cover_image_url) {
+        return `<img
+            class="${cls}"
+            src="${article.cover_image_url}"
+            alt="${article.title}"
+            loading="lazy"
+            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+        ><div class="${cls}-placeholder" style="display:none;">${fallback}</div>`;
+    }
+    return `<div class="${cls}-placeholder">${fallback}</div>`;
 }
 
 function articleCardHTML(article) {
@@ -113,21 +155,25 @@ export async function loadNoticiasView() {
 }
 
 async function fetchAndRender(reset) {
-    if (state.loading) return;
+    // Cancelar request anterior si existe
+    if (_abortController) _abortController.abort();
+    _abortController = new AbortController();
     state.loading = true;
 
     const feed = document.getElementById('newsFeed');
     const loadMoreEl = document.getElementById('newsLoadMore');
 
     if (reset) {
-        feed.innerHTML = '<div class="news-loading">Cargando noticias...</div>';
+        feed.innerHTML = skeletonHTML();
     }
 
     try {
         const params = new URLSearchParams({ limit: state.limit, offset: state.offset });
         if (state.category) params.set('category', state.category);
 
-        const res = await fetch(`${API}/articles?${params}`);
+        const res = await fetch(`${API}/articles?${params}`, {
+            signal: _abortController.signal
+        });
         const json = await res.json();
         const articles = json.data || [];
 
@@ -177,6 +223,10 @@ async function fetchAndRender(reset) {
         });
 
     } catch (err) {
+        if (err.name === 'AbortError') {
+            state.loading = false;
+            return;
+        }
         console.error('Error cargando noticias:', err);
         if (reset) feed.innerHTML = '<div class="news-empty">Error cargando las noticias.</div>';
     } finally {
