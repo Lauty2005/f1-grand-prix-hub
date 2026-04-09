@@ -1,5 +1,6 @@
 import './scss/styles.scss';
 import { API } from './modules/config.js';
+import { setPageMeta, createArticleMetaConfig } from './modules/metaTags.js';
 
 const CATEGORIES = {
     noticias: 'Noticias',
@@ -16,28 +17,6 @@ function categoryLabel(val) {
     return CATEGORIES[val] || val;
 }
 
-function setMetaTags(article) {
-    document.title = `${article.title} | F1 Grand Prix Hub`;
-
-    const setMeta = (name, content, attr = 'name') => {
-        let el = document.querySelector(`meta[${attr}="${name}"]`);
-        if (!el) {
-            el = document.createElement('meta');
-            el.setAttribute(attr, name);
-            document.head.appendChild(el);
-        }
-        el.setAttribute('content', content);
-    };
-
-    setMeta('description', article.excerpt || article.title);
-    setMeta('og:title', article.title, 'property');
-    setMeta('og:description', article.excerpt || '', 'property');
-    setMeta('og:type', 'article', 'property');
-    if (article.cover_image_url) setMeta('og:image', article.cover_image_url, 'property');
-    setMeta('twitter:card', 'summary_large_image');
-    setMeta('twitter:title', article.title);
-    if (article.excerpt) setMeta('twitter:description', article.excerpt);
-}
 
 function shareButtonsHTML(article) {
     const url = encodeURIComponent(window.location.href);
@@ -109,7 +88,7 @@ async function init() {
         const json = await res.json();
         const article = json.data;
 
-        setMetaTags(article);
+        setPageMeta(createArticleMetaConfig(article));
 
         const cover = article.cover_image_url
             ? `<img

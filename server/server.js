@@ -13,6 +13,8 @@ import teamsRoutes from './src/routes/teams.routes.js';
 import articlesRoutes from './src/routes/articles.routes.js';
 import timelineRoutes  from './src/routes/timeline.routes.js';
 import strategyRoutes  from './src/routes/strategy.routes.js';
+import sitemapRouter from './src/routes/sitemap.routes.js';
+import newsletterRouter from './src/routes/newsletter.routes.js';
 
 dotenv.config();
 
@@ -74,6 +76,8 @@ app.use('/api/teams', teamsRoutes);
 app.use('/api/articles', articlesRoutes);
 app.use('/api/timeline',  timelineRoutes);
 app.use('/api/strategy', strategyRoutes);
+app.use('/api', sitemapRouter);
+app.use('/api/newsletter', newsletterRouter);
 
 // --- GLOBAL ERROR HANDLER ---
 import { errorHandler } from './src/middleware/error.middleware.js';
