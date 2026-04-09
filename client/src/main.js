@@ -1,6 +1,8 @@
 import './scss/styles.scss';
 import { API } from './modules/config.js';
 import { state } from './modules/state.js';
+import { setPageMeta, createHomeMetaConfig } from './modules/metaTags.js';
+import { renderNewsletterForm, NEWSLETTER_STYLES } from './modules/newsletter.js';
 import { loadDriversView } from './modules/drivers.js';
 import { loadCalendarView } from './modules/calendar.js';
 import { loadStandingsView } from './modules/standings.js';
@@ -81,6 +83,20 @@ function init() {
     updateButtons('noticias');
     loadNoticiasView();
     initCountdown();
+
+    // SEO: Meta tags de la home page
+    setPageMeta(createHomeMetaConfig());
+
+    // Newsletter: inyectar estilos y renderizar formulario
+    const styleEl = document.createElement('style');
+    styleEl.textContent = NEWSLETTER_STYLES;
+    document.head.appendChild(styleEl);
+
+    renderNewsletterForm('newsletter-container', {
+        title: '⚡ Resumen F1 semanal',
+        subtitle: 'Análisis, predicciones y datos que no ves en otros lados',
+        onSuccess: () => console.log('Usuario suscripto!')
+    });
 }
 
 function refreshActiveView() {
