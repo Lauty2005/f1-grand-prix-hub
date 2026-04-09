@@ -14,6 +14,7 @@ build/
 
 # Archivos de sistema
 .DS_Store
+og-image-generator.html
 
 # Archivos de los MCP y Agentes IA
 .mcp/
