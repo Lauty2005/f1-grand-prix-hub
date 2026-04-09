@@ -193,7 +193,7 @@ async function sendWelcomeEmail(email) {
             <hr style="border: none; border-top: 1px solid #ddd; margin: 20px 0;">
             <p style="font-size: 0.85rem; color: #666;">
                 Si no deseas recibir más emails, puedes
-                <a href="https://f1-grand-prix-hub.vercel.app/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}" style="color: #e10600;">
+                <a href="https://f1-grand-prix-hub.onrender.com/api/newsletter/unsubscribe?email=${encodeURIComponent(email)}" style="color: #e10600;">
                     desuscribirte aquí
                 </a>
             </p>
