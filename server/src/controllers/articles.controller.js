@@ -35,6 +35,15 @@ export const getArticleBySlug = async (req, res) => {
 export const createArticle = async (req, res) => {
     try {
         const result = await articlesService.createArticle(req.body);
+
+        // Si se crea directamente como publicado, notificar suscriptores
+        if (req.body.published === true) {
+            const fullArticle = await articlesService.getArticleByIdAdmin(result.id);
+            notifyNewArticle(fullArticle).catch(err =>
+                console.error('Error notificando suscriptores:', err.message)
+            );
+        }
+
         res.status(201).json({ success: true, data: result });
     } catch (err) {
         console.error('ERROR creating article:', err.message);

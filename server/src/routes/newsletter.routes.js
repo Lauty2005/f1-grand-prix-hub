@@ -138,6 +138,40 @@ router.post('/unsubscribe', async (req, res) => {
 });
 
 /**
+ * POST /newsletter/test-email (solo admin)
+ * Envía un email de prueba a todos los suscriptores activos
+ */
+router.post('/test-email', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !isValidAdminToken(authHeader)) {
+            return res.status(401).json({ success: false, message: 'No autorizado' });
+        }
+
+        const { notifyNewArticle } = await import('../services/email.service.js');
+
+        const fakeArticle = {
+            title:           'Artículo de prueba — F1 Grand Prix Hub',
+            slug:            'test-article',
+            excerpt:         'Este es un email de prueba para verificar que las notificaciones funcionan correctamente.',
+            category:        'noticias',
+            cover_image_url: null,
+        };
+
+        const result = await notifyNewArticle(fakeArticle);
+
+        return res.json({
+            success: true,
+            message: `Test enviado: ${result.sent} ok, ${result.errors} errores`,
+            ...result
+        });
+    } catch (error) {
+        console.error('Test email error:', error);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+/**
  * GET /newsletter/stats (solo admin)
  */
 router.get('/stats', async (req, res) => {
