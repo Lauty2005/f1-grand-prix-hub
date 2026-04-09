@@ -22,3 +22,5 @@ mcp.json
 .cline_mcp_settings.json
 stitch-skills/
 mcp-servers/.claude/
+.claude/
+CLAUDE.md

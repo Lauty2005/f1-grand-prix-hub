@@ -188,7 +188,7 @@ export function createArticleMetaConfig(article) {
     const articleURL = `${baseURL}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
 
     return {
-        title: `${article.title} | F1 Analytics`,
+        title: `${article.title} | F1 Grand Prix Hub`,
         description: article.excerpt,
         keywords: article.tags,
         canonical: articleURL,
@@ -209,7 +209,7 @@ export function createArticleMetaConfig(article) {
         article: {
             published_time: article.created_at,
             modified_time: article.updated_at,
-            author: article.author || 'F1 Analytics',
+            author: article.author || 'F1 Grand Prix Hub',
             tags: article.tags
         },
         schema: generateArticleSchema(article)
@@ -222,7 +222,7 @@ export function createArticleMetaConfig(article) {
  */
 export function createHomeMetaConfig() {
     return {
-        title: 'F1 Analytics | Análisis y Predicciones de Fórmula 1 en Español',
+        title: 'F1 Grand Prix Hub | Análisis y Predicciones de Fórmula 1 en Español',
         description: 'Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Seguimiento de campeonato, neumáticos y pit stops.',
         keywords: [
             'análisis F1',
@@ -235,7 +235,7 @@ export function createHomeMetaConfig() {
         canonical: 'https://f1-grand-prix-hub.vercel.app/',
         robots: 'index, follow',
         og: {
-            title: 'F1 Analytics - Análisis profesional de Fórmula 1',
+            title: 'F1 Grand Prix Hub - Análisis profesional de Fórmula 1',
             description: 'Predicciones, estrategia y análisis técnico de F1 en español',
             type: 'website',
             url: 'https://f1-grand-prix-hub.vercel.app/',
@@ -243,13 +243,13 @@ export function createHomeMetaConfig() {
         },
         twitter: {
             card: 'summary_large_image',
-            title: 'F1 Analytics',
+            title: 'F1 Grand Prix Hub',
             description: 'Análisis y predicciones de Fórmula 1'
         },
         schema: {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
-            name: 'F1 Analytics',
+            name: 'F1 Grand Prix Hub',
             url: 'https://f1-grand-prix-hub.vercel.app/',
             description: 'Análisis rioplatense de estrategia F1 y predicciones de carreras',
             image: 'https://f1-grand-prix-hub.vercel.app/logo.png'

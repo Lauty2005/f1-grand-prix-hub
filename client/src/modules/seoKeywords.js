@@ -7,7 +7,7 @@
 export const SEO_CONFIG = {
     // ─── HOME PAGE ───
     home: {
-        title: 'F1 Analytics | Análisis y Predicciones de Fórmula 1 en Español',
+        title: 'F1 Grand Prix Hub | Análisis y Predicciones de Fórmula 1 en Español',
         description: 'Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Seguimiento de campeonato, neumáticos y pit stops.',
         keywords: [
             'análisis F1',
@@ -19,7 +19,7 @@ export const SEO_CONFIG = {
         ],
         primaryKeyword: 'análisis F1',
         og: {
-            title: 'F1 Analytics - Análisis profesional de Fórmula 1',
+            title: 'F1 Grand Prix Hub - Análisis profesional de Fórmula 1',
             description: 'Predicciones, estrategia y análisis técnico de F1 en español',
             image: '/og-image-home.jpg'
         }
@@ -27,7 +27,7 @@ export const SEO_CONFIG = {
 
     // ─── ARTÍCULOS / NOTICIAS ───
     articles: {
-        title_template: '{articulo} | F1 Analytics',
+        title_template: '{articulo} | F1 Grand Prix Hub',
         description_template: '{excerpt}', // Max 155 chars
         keywords_categories: {
             'noticias': ['noticias F1', 'últimas noticias fórmula 1', 'GP hoy', 'carrera F1'],
@@ -140,10 +140,10 @@ export function generateSeoTitle(articleTitle, category = 'noticias') {
     const categoryKeyword = SEO_CONFIG.articles.keywords_categories[category]?.[0] || '';
     
     if (articleTitle.length <= maxLength) {
-        return `${articleTitle} | F1 Analytics`;
+        return `${articleTitle} | F1 Grand Prix Hub`;
     }
     
-    return articleTitle.substring(0, maxLength - 13) + '... | F1 Analytics';
+    return articleTitle.substring(0, maxLength - 13) + '... | F1 Grand Prix Hub';
 }
 
 /**
@@ -204,11 +204,11 @@ export function generateArticleSchema(article) {
         dateModified: article.updated_at,
         author: {
             '@type': 'Person',
-            name: article.author || 'F1 Analytics'
+            name: article.author || 'F1 Grand Prix Hub'
         },
         publisher: {
             '@type': 'Organization',
-            name: 'F1 Analytics',
+            name: 'F1 Grand Prix Hub',
             logo: {
                 '@type': 'ImageObject',
                 url: 'https://f1-grand-prix-hub.vercel.app/logo.png'
