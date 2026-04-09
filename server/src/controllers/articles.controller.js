@@ -1,4 +1,5 @@
 import * as articlesService from '../services/articles.service.js';
+import { notifyNewArticle } from '../services/email.service.js';
 
 export const getArticles = async (req, res) => {
     try {
@@ -44,15 +45,31 @@ export const createArticle = async (req, res) => {
 export const updateArticle = async (req, res) => {
     try {
         const { id } = req.params;
-        // Partial updates
         const keys = Object.keys(req.body);
+
         if (keys.length === 1 && keys[0] === 'published') {
-            await articlesService.publishArticle(id, req.body.published);
+            const publishing = req.body.published === true;
+
+            if (publishing) {
+                // Verificar estado previo para no notificar dos veces
+                const current = await articlesService.getArticleByIdAdmin(id);
+                await articlesService.publishArticle(id, true);
+
+                if (current && !current.published) {
+                    // Primera publicación → notificar suscriptores (async, no bloquea la respuesta)
+                    notifyNewArticle(current).catch(err =>
+                        console.error('Error notificando suscriptores:', err.message)
+                    );
+                }
+            } else {
+                await articlesService.publishArticle(id, false);
+            }
         } else if (keys.length === 1 && keys[0] === 'cover_image_url') {
             await articlesService.updateCover(id, req.body.cover_image_url);
         } else {
             await articlesService.updateArticle(id, req.body);
         }
+
         res.json({ success: true, message: 'Artículo actualizado' });
     } catch (err) {
         console.error('ERROR updating article:', err.message);

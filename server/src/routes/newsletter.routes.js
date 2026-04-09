@@ -94,7 +94,7 @@ router.get('/unsubscribe', async (req, res) => {
         return res.send(`
             <html><body style="font-family:sans-serif;text-align:center;padding:60px;">
                 <h2>✅ Te desuscribiste correctamente</h2>
-                <p style="color:#666;">Ya no recibirás emails de F1 Analytics.</p>
+                <p style="color:#666;">Ya no recibirás emails de F1 Grand Prix Hub.</p>
                 <a href="https://f1-grand-prix-hub.vercel.app" style="color:#e10600;">Volver al sitio</a>
             </body></html>
         `);
@@ -181,7 +181,7 @@ router.get('/stats', async (req, res) => {
 async function sendWelcomeEmail(email) {
     const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; color: #333;">
-            <h1 style="color: #e10600; margin-bottom: 20px;">¡Bienvenido a F1 Analytics!</h1>
+            <h1 style="color: #e10600; margin-bottom: 20px;">¡Bienvenido a F1 Grand Prix Hub!</h1>
             <p>¡Gracias por suscribirte a nuestro análisis semanal de Fórmula 1!</p>
             <p>Cada semana recibirás:</p>
             <ul style="line-height: 1.8;">
@@ -202,9 +202,9 @@ async function sendWelcomeEmail(email) {
 
     await sendEmail({
         to: email,
-        subject: '¡Bienvenido a F1 Analytics!',
+        subject: '¡Bienvenido a F1 Grand Prix Hub!',
         html: htmlContent,
-        plainText: 'Bienvenido a F1 Analytics. Recibirás análisis semanal de F1.'
+        plainText: 'Bienvenido a F1 Grand Prix Hub. Recibirás análisis semanal de F1.'
     });
 }
 
