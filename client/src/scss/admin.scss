@@ -430,7 +430,7 @@ select.form-control {
 
 .admin-layout {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 1fr 1fr;
     grid-template-rows: auto auto;
     gap: 20px;
     max-width: 1400px;
@@ -706,67 +706,187 @@ select.form-control {
    AI ARTICLE GENERATOR
 ========================================= */
 // ── Editor toolbar ────────────────────────────────────────────
-.editor-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 6px 8px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-bottom: none;
-    border-radius: 6px 6px 0 0;
+// ── Quill editor — dark theme override ─────────────────────────
+#artContentEditor,
+#draftContentEditor {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 16px rgba(0,0,0,0.35);
 
-    button {
-        background: rgba(255,255,255,0.07);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: #ccc;
-        border-radius: 4px;
-        padding: 3px 10px;
-        font-size: 0.78rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.15s, color 0.15s;
-        font-family: monospace;
+    .ql-toolbar {
+        background: #1a1a28;
+        border: 1px solid #333 !important;
+        border-bottom: 1px solid #2a2a38 !important;
+        padding: 8px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2px;
+        align-items: center;
 
-        &:hover {
-            background: rgba(225, 6, 0, 0.25);
-            border-color: #e10600;
-            color: #fff;
+        // Separadores de grupos
+        .ql-formats {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            margin-right: 6px;
+            padding-right: 8px;
+            border-right: 1px solid rgba(255,255,255,0.08);
+
+            &:last-child { border-right: none; margin-right: 0; }
         }
 
-        b { font-style: normal; }
-        i { font-style: italic; }
+        // Iconos
+        .ql-stroke { stroke: #888; transition: stroke 0.15s; }
+        .ql-fill   { fill: #888;   transition: fill 0.15s; }
+        .ql-picker-label { color: #888; font-size: 0.82rem; }
+
+        // Botones
+        button {
+            width: 28px;
+            height: 26px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+
+            &:hover {
+                background: rgba(225, 6, 0, 0.15);
+                .ql-stroke { stroke: #e10600; }
+                .ql-fill   { fill: #e10600; }
+            }
+
+            &.ql-active {
+                background: rgba(225, 6, 0, 0.2);
+                .ql-stroke { stroke: #e10600; }
+                .ql-fill   { fill: #e10600; }
+            }
+        }
+
+        // Picker (selector "Normal / H2 / H3")
+        .ql-picker {
+            .ql-picker-label {
+                border: 1px solid #333;
+                border-radius: 4px;
+                padding: 2px 8px;
+                background: #1f1f2e;
+                height: 26px;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                transition: border-color 0.15s;
+
+                &:hover { border-color: #e10600; color: #fff; }
+                &::before { font-size: 0.78rem; }
+
+                .ql-stroke { stroke: #666; }
+            }
+
+            &.ql-expanded .ql-picker-label {
+                border-color: #e10600;
+                color: #fff;
+            }
+
+            .ql-picker-options {
+                background: #1a1a28;
+                border: 1px solid #333;
+                border-radius: 6px;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+                padding: 4px;
+                top: calc(100% + 4px);
+
+                .ql-picker-item {
+                    color: #aaa;
+                    border-radius: 4px;
+                    padding: 4px 10px;
+                    font-size: 0.82rem;
+                    transition: background 0.12s, color 0.12s;
+
+                    &:hover, &.ql-selected {
+                        background: rgba(225, 6, 0, 0.15);
+                        color: #fff;
+                    }
+                }
+            }
+        }
     }
 
-    &__sep {
-        width: 1px;
-        background: rgba(255,255,255,0.15);
-        margin: 2px 4px;
+    .ql-container {
+        background: #1f1f27;
+        border: 1px solid #333 !important;
+        border-top: none !important;
+        font-family: inherit;
+        font-size: 0.92rem;
+
+        .ql-editor {
+            color: #ddd;
+            line-height: 1.8;
+            min-height: 260px;
+            padding: 16px 18px;
+
+            &.ql-blank::before {
+                color: rgba(255,255,255,0.2);
+                font-style: normal;
+                font-size: 0.9rem;
+            }
+
+            h2 {
+                font-size: 1.25rem;
+                color: #fff;
+                font-weight: 700;
+                margin: 18px 0 8px;
+                padding-bottom: 6px;
+                border-bottom: 1px solid rgba(225, 6, 0, 0.25);
+            }
+            h3 {
+                font-size: 1.05rem;
+                color: #e0e0e0;
+                font-weight: 600;
+                margin: 14px 0 6px;
+            }
+            p  { margin: 0 0 12px; }
+            strong { color: #fff; }
+            em { color: #ccc; }
+            ul, ol { padding-left: 22px; margin-bottom: 12px; }
+            li { margin-bottom: 5px; color: #ccc; }
+            blockquote {
+                border-left: 3px solid #e10600;
+                background: rgba(225, 6, 0, 0.05);
+                padding: 10px 16px;
+                margin: 14px 0;
+                border-radius: 0 6px 6px 0;
+                color: #aaa;
+                font-style: italic;
+            }
+            a { color: #e10600; text-decoration: underline; }
+            img {
+                max-width: 100%;
+                border-radius: 8px;
+                margin: 14px 0;
+                display: block;
+                border: 1px solid rgba(255,255,255,0.08);
+            }
+
+            // Selección de texto
+            ::selection { background: rgba(225, 6, 0, 0.25); }
+        }
+
+        // Scrollbar
+        .ql-editor::-webkit-scrollbar { width: 6px; }
+        .ql-editor::-webkit-scrollbar-track { background: transparent; }
+        .ql-editor::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            &:hover { background: rgba(225, 6, 0, 0.4); }
+        }
     }
 
-    & + textarea {
-        border-radius: 0 0 6px 6px !important;
-        border-top-color: rgba(255,255,255,0.05) !important;
+    // Focus glow
+    &:focus-within {
+        .ql-toolbar { border-color: #e10600 !important; }
+        .ql-container { border-color: #e10600 !important; }
+        box-shadow: 0 0 0 3px rgba(225, 6, 0, 0.15);
     }
-}
-
-.article-preview {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 6px;
-    padding: 16px 20px;
-    color: #ddd;
-    line-height: 1.7;
-    font-size: 0.9rem;
-    max-height: 420px;
-    overflow-y: auto;
-
-    h2 { font-size: 1.15rem; color: #fff; margin: 14px 0 6px; }
-    h3 { font-size: 1rem; color: #e10600; margin: 12px 0 4px; }
-    p  { margin: 0 0 10px; }
-    strong { color: #fff; }
-    ul { padding-left: 20px; }
-    li { margin-bottom: 4px; }
 }
 
 .creation-item--ai {

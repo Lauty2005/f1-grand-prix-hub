@@ -1,8 +1,13 @@
 import './scss/admin.scss';
+import 'quill/dist/quill.snow.css';
+import Quill from 'quill';
 import { COUNTRY_NAMES } from './modules/utils.js';
 import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar API desde config
 
 let allRacesData = [];
+let _quill = null;
+let _draftQuill = null;
+let _draftCoverUrl = null;
 
 // Helper para guardar/obtener token
 const getToken = () => localStorage.getItem('admin_token');
@@ -710,63 +715,141 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loginError').style.display = 'none';
     });
 
-    // ── Editor toolbar ──────────────────────────────────────────
-    document.querySelectorAll('.editor-toolbar button[data-tag]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tag = btn.dataset.tag;
-            const textarea = document.getElementById('artContent');
-            const start = textarea.selectionStart;
-            const end = textarea.selectionEnd;
-            const selected = textarea.value.slice(start, end);
+    // ── Quill WYSIWYG editor ────────────────────────────────────
+    const editorEl = document.getElementById('artContentEditor');
 
-            let inserted;
-            if (tag === 'ul') {
-                // wrap each selected line in <li> then wrap all in <ul>
-                const items = (selected || 'Ítem').split('\n').map(l => `  <li>${l.trim() || 'Ítem'}</li>`).join('\n');
-                inserted = `<ul>\n${items}\n</ul>`;
-            } else if (tag === 'li') {
-                inserted = `<li>${selected || 'Ítem'}</li>`;
-            } else if (tag === 'p') {
-                inserted = `<p>${selected || 'Párrafo...'}</p>`;
-            } else {
-                inserted = `<${tag}>${selected || '...'}</${tag}>`;
-            }
-
-            textarea.setRangeText(inserted, start, end, 'end');
-            textarea.focus();
-        });
-    });
-
-    document.getElementById('btnTogglePreview')?.addEventListener('click', () => {
-        const preview = document.getElementById('artContentPreview');
-        const textarea = document.getElementById('artContent');
-        const btn = document.getElementById('btnTogglePreview');
-        const showing = preview.style.display !== 'none';
-        if (showing) {
-            preview.style.display = 'none';
-            textarea.style.display = '';
-            btn.textContent = '👁 Preview';
-        } else {
-            preview.innerHTML = textarea.value || '<p style="color:#888">Sin contenido</p>';
-            preview.style.display = 'block';
-            textarea.style.display = 'none';
-            btn.textContent = '✏️ Editar';
+    // Sube un File/Blob al endpoint inline y lo inserta en el editor
+    async function uploadAndInsertImageInto(quillInstance, file) {
+        const range = quillInstance.getSelection(true);
+        const placeholder = ' ⏳ Subiendo imagen...';
+        quillInstance.insertText(range.index, placeholder, { color: '#888' }, Quill.sources.USER);
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            const res = await adminFetch(`${API}/articles/admin/upload-image`, {
+                method: 'POST',
+                body: formData,
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Error al subir');
+            quillInstance.deleteText(range.index, placeholder.length, Quill.sources.USER);
+            const fullUrl = `${SERVER_URL}${json.url}`;
+            quillInstance.insertEmbed(range.index, 'image', fullUrl, Quill.sources.USER);
+            quillInstance.setSelection(range.index + 1, Quill.sources.SILENT);
+        } catch (err) {
+            quillInstance.deleteText(range.index, ' ⏳ Subiendo imagen...'.length, Quill.sources.USER);
+            console.error('[upload inline image]', err);
+            alert('Error al subir la imagen. Intentá de nuevo.');
         }
+    }
+
+    if (editorEl) {
+        _quill = new Quill(editorEl, {
+            theme: 'snow',
+            placeholder: 'Escribí el contenido del artículo...',
+            modules: {
+                toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote'],
+                    ['link', 'image'],
+                    ['clean'],
+                ],
+            },
+        });
+
+        // Botón "image" del toolbar: abre selector de archivo local
+        const toolbar = _quill.getModule('toolbar');
+        toolbar.addHandler('image', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp,image/avif';
+            input.onchange = () => {
+                if (input.files?.[0]) uploadAndInsertImageInto(_quill, input.files[0]);
+            };
+            input.click();
+        });
+
+        // Paste de imagen desde el portapapeles
+        editorEl.addEventListener('paste', (e) => {
+            const items = Array.from(e.clipboardData?.items || []);
+            const imageItem = items.find(i => i.type.startsWith('image/'));
+            if (!imageItem) return;
+            e.preventDefault();
+            const file = imageItem.getAsFile();
+            if (file) uploadAndInsertImageInto(_quill, file);
+        });
+    }
+
+    // ── Cover image upload ──────────────────────────────────────────
+    const coverDropZone = document.getElementById('coverDropZone');
+    const coverFileInput = document.getElementById('artCoverFile');
+    const coverPreview   = document.getElementById('coverPreview');
+    const artCoverHidden = document.getElementById('artCover');
+
+    function setCoverState(text, isError = false) {
+        if (!coverDropZone) return;
+        coverDropZone.style.borderColor = isError ? '#e10600' : 'rgba(255,255,255,0.15)';
+        // Preservar el input file oculto al actualizar el texto
+        const existing = coverDropZone.querySelector('input[type="file"]');
+        coverDropZone.textContent = text;
+        if (existing) coverDropZone.appendChild(existing);
+    }
+
+    async function uploadCover(file) {
+        if (!file) return;
+        setCoverState('⏳ Subiendo imagen...');
+        const formData = new FormData();
+        formData.append('cover', file);
+        try {
+            const res = await adminFetch(`${API}/articles/admin/upload-cover`, {
+                method: 'POST',
+                body: formData,   // NO poner Content-Type: multer lo setea automáticamente
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Error al subir');
+            const fullUrl = `${SERVER_URL}${json.url}`;
+            artCoverHidden.value = fullUrl;
+            coverPreview.src = fullUrl;
+            coverPreview.style.display = 'block';
+            setCoverState(`✅ ${file.name}`);
+        } catch (err) {
+            setCoverState('❌ Error al subir. Intentá de nuevo.', true);
+            console.error('[upload cover]', err);
+        }
+    }
+
+    coverDropZone?.addEventListener('click', () => coverFileInput?.click());
+
+    coverFileInput?.addEventListener('change', () => {
+        if (coverFileInput.files?.[0]) uploadCover(coverFileInput.files[0]);
     });
 
-    // ── Insert image modal ──────────────────────────────────────
-    let _imgTarget = null; // textarea reference when modal opens
-
-    document.getElementById('btnInsertImage')?.addEventListener('click', () => {
-        _imgTarget = document.getElementById('artContent');
-        document.getElementById('imgModalUrl').value = '';
-        document.getElementById('imgModalAlt').value = '';
-        document.getElementById('imgModalPreviewWrap').style.display = 'none';
-        const modal = document.getElementById('imgModal');
-        modal.style.display = 'flex';
-        document.getElementById('imgModalUrl').focus();
+    coverDropZone?.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        coverDropZone.style.borderColor = '#e10600';
+    });
+    coverDropZone?.addEventListener('dragleave', () => {
+        coverDropZone.style.borderColor = 'rgba(255,255,255,0.15)';
+    });
+    coverDropZone?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        coverDropZone.style.borderColor = 'rgba(255,255,255,0.15)';
+        const file = e.dataTransfer.files?.[0];
+        if (file) uploadCover(file);
     });
 
+    // Al resetear el formulario, limpiar preview y editor
+    document.getElementById('newArticleForm')?.addEventListener('reset', () => {
+        artCoverHidden.value = '';
+        coverPreview.src = '';
+        coverPreview.style.display = 'none';
+        setCoverState('🖼 Arrastrá una imagen o hacé click para seleccionar');
+        _quill?.setContents([]);
+    });
+
+    // ── Insert image modal (para Quill) ────────────────────────
     document.getElementById('imgModalUrl')?.addEventListener('input', (e) => {
         const url = e.target.value.trim();
         const wrap = document.getElementById('imgModalPreviewWrap');
@@ -792,15 +875,155 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('imgModalInsert')?.addEventListener('click', () => {
         const url = document.getElementById('imgModalUrl').value.trim();
         if (!url) return alert('Ingresá la URL de la imagen.');
-        const alt = document.getElementById('imgModalAlt').value.trim() || '';
-        const tag = `<img src="${url}" alt="${alt}" style="max-width:100%; border-radius:6px; margin:12px 0;">`;
-        if (_imgTarget) {
-            const start = _imgTarget.selectionStart;
-            const end = _imgTarget.selectionEnd;
-            _imgTarget.setRangeText(tag, start, end, 'end');
-            _imgTarget.focus();
+        if (_quill) {
+            const range = _quill.getSelection(true);
+            _quill.insertEmbed(range.index, 'image', url, Quill.sources.USER);
+            _quill.setSelection(range.index + 1, Quill.sources.SILENT);
         }
         document.getElementById('imgModal').style.display = 'none';
+    });
+
+    // ── Draft cover drop zone ───────────────────────────────────
+    const draftCoverZone    = document.getElementById('draftCoverZone');
+    const draftCoverFile    = document.getElementById('draftCoverFile');
+    const draftCoverPreview = document.getElementById('draftCoverPreview');
+
+    async function uploadDraftCover(file) {
+        draftCoverZone.textContent = '⏳ Subiendo...';
+        draftCoverZone.appendChild(draftCoverFile);
+        const formData = new FormData();
+        formData.append('cover', file);
+        try {
+            const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || 'Error al subir');
+            _draftCoverUrl = `${SERVER_URL}${json.url}`;
+            draftCoverPreview.src = _draftCoverUrl;
+            draftCoverPreview.style.display = 'block';
+            draftCoverZone.textContent = `✅ ${file.name}`;
+            draftCoverZone.appendChild(draftCoverFile);
+            draftCoverZone.style.borderColor = 'rgba(168,85,247,0.6)';
+        } catch (err) {
+            draftCoverZone.textContent = '❌ Error al subir. Intentá de nuevo.';
+            draftCoverZone.appendChild(draftCoverFile);
+            console.error('[draft cover]', err);
+        }
+    }
+
+    draftCoverZone?.addEventListener('click',     () => draftCoverFile?.click());
+    draftCoverFile?.addEventListener('change',    () => { if (draftCoverFile.files?.[0]) uploadDraftCover(draftCoverFile.files[0]); });
+    draftCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); draftCoverZone.style.borderColor = '#a855f7'; });
+    draftCoverZone?.addEventListener('dragleave', ()  => { draftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)'; });
+    draftCoverZone?.addEventListener('drop',      (e) => {
+        e.preventDefault();
+        draftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)';
+        const file = e.dataTransfer.files?.[0];
+        if (file) uploadDraftCover(file);
+    });
+
+    // ── Draft content editor (Quill) ───────────────────────────
+    const draftEditorEl = document.getElementById('draftContentEditor');
+    if (draftEditorEl) {
+        _draftQuill = new Quill(draftEditorEl, {
+            theme: 'snow',
+            placeholder: 'Contenido del borrador...',
+            modules: {
+                toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote'],
+                    ['link', 'image'],
+                    ['clean'],
+                ],
+            },
+        });
+
+        // Botón imagen: abre selector de archivo
+        const draftToolbar = _draftQuill.getModule('toolbar');
+        draftToolbar.addHandler('image', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp,image/avif';
+            input.onchange = () => {
+                if (input.files?.[0]) uploadAndInsertImageInto(_draftQuill, input.files[0]);
+            };
+            input.click();
+        });
+
+        // Paste de imagen
+        draftEditorEl.addEventListener('paste', (e) => {
+            const items = Array.from(e.clipboardData?.items || []);
+            const imageItem = items.find(i => i.type.startsWith('image/'));
+            if (!imageItem) return;
+            e.preventDefault();
+            const file = imageItem.getAsFile();
+            if (file) uploadAndInsertImageInto(_draftQuill, file);
+        });
+    }
+
+    // Al seleccionar un borrador, cargar su contenido
+    document.getElementById('editDraftSelect')?.addEventListener('change', async (e) => {
+        const id = e.target.value;
+        if (!id || !_draftQuill) return;
+        const wrap = document.getElementById('draftEditorWrap');
+        wrap.style.display = 'none';
+        try {
+            const res  = await adminFetch(`${API}/articles/admin/${id}`);
+            const json = await res.json();
+            if (!res.ok || !json.data) return;
+            _draftQuill.clipboard.dangerouslyPasteHTML(json.data.content || '');
+            wrap.style.display = 'block';
+        } catch (err) {
+            console.error('[load draft]', err);
+        }
+    });
+
+    // Guardar cambios del borrador
+    document.getElementById('btnSaveDraft')?.addEventListener('click', async () => {
+        const id  = document.getElementById('editDraftSelect').value;
+        const msg = document.getElementById('msgSaveDraft');
+        const btn = document.getElementById('btnSaveDraft');
+        if (!id || !_draftQuill) return;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Guardando...';
+        try {
+            // Fetch artículo completo para preservar todos los campos
+            const allRes  = await adminFetch(`${API}/articles/admin/${id}`);
+            const allJson = await allRes.json();
+            const article = allJson.data;
+            if (!article) throw new Error('Artículo no encontrado.');
+
+            const patchRes = await adminFetch(`${API}/articles/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title:           article.title,
+                    excerpt:         article.excerpt || null,
+                    content:         _draftQuill.getSemanticHTML(),
+                    author:          article.author,
+                    cover_image_url: article.cover_image_url || null,
+                    category:        article.category,
+                    tags:            article.tags || [],
+                    published:       article.published,
+                    featured:        article.featured,
+                }),
+            });
+            if (patchRes.ok) {
+                msg.style.display = 'block';
+                msg.textContent = '✅ Cambios guardados.';
+                setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            } else {
+                alert('No se pudo guardar.');
+            }
+        } catch (err) {
+            console.error('[save draft]', err);
+            alert('Error al guardar.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '💾 Guardar cambios';
+        }
     });
 
     document.getElementById('deleteYearSelect').addEventListener('change', loadRacesForDelete);
@@ -1264,6 +1487,10 @@ async function handleDeleteArticle() {
 
 async function handleCreateArticle(e) {
     e.preventDefault();
+    if (_quill && _quill.getText().trim().length === 0) {
+        alert('El contenido del artículo no puede estar vacío.');
+        return;
+    }
     const btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     btn.innerText = 'Guardando...';
@@ -1274,7 +1501,7 @@ async function handleCreateArticle(e) {
     const body = {
         title: document.getElementById('artTitle').value,
         excerpt: document.getElementById('artExcerpt').value || null,
-        content: document.getElementById('artContent').value,
+        content: _quill ? _quill.getSemanticHTML() : '',
         author: document.getElementById('artAuthor').value || 'Redacción',
         cover_image_url: document.getElementById('artCover').value || null,
         category: document.getElementById('artCategory').value,
@@ -1392,18 +1619,23 @@ async function handleGenerateArticle() {
 
 // ── Publicar borrador IA ──────────────────────────────────────
 async function loadDraftArticles() {
-    const select = document.getElementById('draftArticleSelect');
+    const select     = document.getElementById('draftArticleSelect');
+    const editSelect = document.getElementById('editDraftSelect');
     if (!select) return;
     select.innerHTML = '<option>Cargando...</option>';
+    if (editSelect) editSelect.innerHTML = '<option value="" disabled selected>Seleccionar borrador...</option>';
     try {
         const res = await adminFetch(`${API}/articles/admin/all`);
         const json = await res.json();
         const drafts = (json.data || []).filter(a => !a.published);
         if (!drafts.length) {
             select.innerHTML = '<option value="" disabled>Sin borradores</option>';
+            if (editSelect) editSelect.innerHTML = '<option value="" disabled>Sin borradores</option>';
         } else {
-            select.innerHTML = '<option value="" disabled selected>Seleccionar borrador...</option>' +
+            const opts = '<option value="" disabled selected>Seleccionar borrador...</option>' +
                 drafts.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+            select.innerHTML = opts;
+            if (editSelect) editSelect.innerHTML = opts;
         }
     } catch (e) {
         console.error(e);
@@ -1413,11 +1645,26 @@ async function loadDraftArticles() {
 
 async function handlePublishDraft() {
     const select = document.getElementById('draftArticleSelect');
-    const msg = document.getElementById('msgPublishDraft');
-    const id = select.value;
+    const msg    = document.getElementById('msgPublishDraft');
+    const btn    = document.getElementById('btnPublishDraft');
+    const id     = select.value;
     if (!id) return alert('Seleccioná un borrador.');
 
+    btn.disabled = true;
+    btn.textContent = '⏳ Publicando...';
+
     try {
+        // 1. Si hay cover pendiente, subirlo primero
+        if (_draftCoverUrl) {
+            const coverRes = await adminFetch(`${API}/articles/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cover_image_url: _draftCoverUrl }),
+            });
+            if (!coverRes.ok) throw new Error('No se pudo guardar la portada.');
+        }
+
+        // 2. Publicar
         const res = await adminFetch(`${API}/articles/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1426,6 +1673,10 @@ async function handlePublishDraft() {
         if (res.ok) {
             msg.style.display = 'block';
             msg.textContent = '✅ Artículo publicado correctamente.';
+            _draftCoverUrl = null;
+            document.getElementById('draftCoverPreview').style.display = 'none';
+            document.getElementById('draftCoverZone').textContent = '🖼 Portada opcional (arrastrá o clickeá)';
+            document.getElementById('draftCoverZone').appendChild(document.getElementById('draftCoverFile'));
             loadDraftArticles();
             loadArticlesForDelete();
             setTimeout(() => { msg.style.display = 'none'; }, 4000);
@@ -1433,5 +1684,11 @@ async function handlePublishDraft() {
             const json = await res.json();
             alert(json.error || 'No se pudo publicar.');
         }
-    } catch (e) { console.error(e); alert('Error de conexión.'); }
+    } catch (e) {
+        console.error(e);
+        alert(e.message || 'Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '✅ Publicar';
+    }
 }

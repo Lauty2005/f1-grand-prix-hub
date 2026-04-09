@@ -402,6 +402,7 @@
     color: rgba(255, 255, 255, 0.82);
     font-size: 1rem;
     line-height: 1.75;
+    overflow: hidden;
 
     p   { margin: 0 0 1.2em; }
     h2  { font-size: 1.35rem; font-weight: 800; color: white; margin: 1.6em 0 0.6em; }
@@ -418,6 +419,13 @@
     ul, ol {
         margin: 0 0 1.2em 1.4em;
         li { margin-bottom: 0.35em; }
+    }
+    img {
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 8px;
+        margin: 1.2em 0;
     }
 }
 
