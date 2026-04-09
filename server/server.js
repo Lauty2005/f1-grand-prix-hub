@@ -76,7 +76,7 @@ app.use('/api/teams', teamsRoutes);
 app.use('/api/articles', articlesRoutes);
 app.use('/api/timeline',  timelineRoutes);
 app.use('/api/strategy', strategyRoutes);
-app.use('/api', sitemapRouter);
+app.use('/', sitemapRouter);  // /sitemap.xml — debe estar en la raíz, sin prefijo /api
 app.use('/api/newsletter', newsletterRouter);
 
 // --- GLOBAL ERROR HANDLER ---
