@@ -3,41 +3,49 @@
 // EMAIL SERVICE: Enviar emails transaccionales via Resend
 // ────────────────────────────────────────────────────────────────
 
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { query } from '../config/db.js';
 
-const FROM_ADDRESS = 'F1 Grand Prix Hub <onboarding@resend.dev>';
-const BASE_URL     = 'https://f1-grand-prix-hub.vercel.app';
-const API_URL      = 'https://f1-grand-prix-hub.onrender.com';
+const BASE_URL = 'https://f1-grand-prix-hub.vercel.app';
+const API_URL  = 'https://f1-grand-prix-hub.onrender.com';
 
-function getResend() {
-    if (!process.env.EMAIL_API_KEY) return null;
-    return new Resend(process.env.EMAIL_API_KEY);
+function getTransporter() {
+    const user = process.env.GMAIL_USER;
+    const pass = process.env.GMAIL_APP_PASSWORD;
+    if (!user || !pass) return null;
+
+    return nodemailer.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+    });
 }
 
 export async function sendEmail({ to, subject, html, plainText }) {
-    const resend = getResend();
-    if (!resend) {
+    const transporter = getTransporter();
+    if (!transporter) {
         console.log(`📧 [EMAIL STUB] Para: ${to} | Asunto: ${subject}`);
         return;
     }
 
-    await resend.emails.send({
+    const FROM_ADDRESS = `F1 Grand Prix Hub <${process.env.GMAIL_USER}>`;
+    await transporter.sendMail({
         from: FROM_ADDRESS,
         to,
         subject,
         html,
-        text: plainText
+        text: plainText,
     });
 }
 
 // ── Notificación de nuevo artículo a todos los suscriptores ──────
 export async function notifyNewArticle(article) {
-    const resend = getResend();
-    if (!resend) {
+    const transporter = getTransporter();
+    if (!transporter) {
         console.log(`📧 [EMAIL STUB] Notificación artículo: "${article.title}"`);
         return { sent: 0, errors: 0 };
     }
+
+    const FROM_ADDRESS = `F1 Grand Prix Hub <${process.env.GMAIL_USER}>`;
 
     // Obtener suscriptores activos
     const result = await query(
@@ -128,7 +136,7 @@ export async function notifyNewArticle(article) {
 </html>`;
 
             try {
-                await resend.emails.send({
+                await transporter.sendMail({
                     from:    FROM_ADDRESS,
                     to:      email,
                     subject: `🏎️ ${article.title}`,
