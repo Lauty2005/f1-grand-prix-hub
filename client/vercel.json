@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://f1-grand-prix-hub.onrender.com/sitemap.xml"
+    }
+  ]
+}
