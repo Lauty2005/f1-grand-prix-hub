@@ -55,34 +55,36 @@ export function renderNewsletterForm(containerId, options = {}) {
     function createFullForm() {
         return `
             <div class="newsletter-box">
-                <h3 class="newsletter-title">${title}</h3>
-                <p class="newsletter-subtitle">${subtitle}</p>
-                
-                <form id="newsletter-form" class="newsletter-form">
-                    <div class="form-group">
-                        <input
-                            type="email"
-                            id="newsletter-email"
-                            class="newsletter-input"
-                            placeholder="${placeholderText}"
-                            required
-                            aria-label="Email para newsletter"
-                        />
-                        <button
-                            type="submit"
-                            id="newsletter-submit"
-                            class="newsletter-button"
-                            aria-label="Suscribirse a newsletter"
-                        >
-                            ${buttonText}
-                        </button>
-                    </div>
-                    <p class="newsletter-message" id="newsletter-message" style="display:none;"></p>
-                </form>
-                
-                <p class="newsletter-disclaimer">
-                    No spam. Análisis F1 profesional cada semana.
-                </p>
+                <div class="newsletter-text">
+                    <h3 class="newsletter-title">${title}</h3>
+                    <p class="newsletter-subtitle">${subtitle}</p>
+                </div>
+                <div class="newsletter-action">
+                    <form id="newsletter-form" class="newsletter-form">
+                        <div class="form-group">
+                            <input
+                                type="email"
+                                id="newsletter-email"
+                                class="newsletter-input"
+                                placeholder="${placeholderText}"
+                                required
+                                aria-label="Email para newsletter"
+                            />
+                            <button
+                                type="submit"
+                                id="newsletter-submit"
+                                class="newsletter-button"
+                                aria-label="Suscribirse a newsletter"
+                            >
+                                ${buttonText}
+                            </button>
+                        </div>
+                        <p class="newsletter-message" id="newsletter-message" style="display:none;"></p>
+                    </form>
+                    <p class="newsletter-disclaimer">
+                        No spam. Análisis F1 profesional cada semana.
+                    </p>
+                </div>
             </div>
         `;
     }
@@ -204,8 +206,41 @@ export const NEWSLETTER_STYLES = `
     border: 1px solid rgba(225, 6, 0, 0.2);
     border-radius: 12px;
     padding: 24px;
-    margin: 20px 0;
+    margin: 20px;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+@media (min-width: 769px) {
+    .newsletter-box {
+        flex-direction: row;
+        align-items: center;
+        text-align: left;
+        gap: 32px;
+    }
+    .newsletter-text {
+        flex: 1;
+    }
+    .newsletter-action {
+        flex: 1;
+    }
+    .newsletter-subtitle {
+        margin-bottom: 0 !important;
+    }
+}
+
+.newsletter-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.newsletter-action {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .newsletter-title {
@@ -226,7 +261,7 @@ export const NEWSLETTER_STYLES = `
 .newsletter-form {
     display: flex;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
 }
 
 .form-group {
@@ -304,17 +339,13 @@ export const NEWSLETTER_STYLES = `
 @media (max-width: 640px) {
     .newsletter-box {
         padding: 16px;
-        margin: 16px 0;
+        margin: 16px;
     }
-    
-    .newsletter-form {
-        flex-direction: column;
-    }
-    
+
     .form-group {
         flex-direction: column;
     }
-    
+
     .newsletter-button {
         width: 100%;
     }
