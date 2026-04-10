@@ -121,9 +121,7 @@ async function init() {
 
                     ${shareButtonsHTML(article)}
 
-                    <div class="article-content">
-                        ${article.content}
-                    </div>
+                    <div class="article-content"></div>
 
                     ${tagsHTML}
                 </main>
@@ -131,6 +129,12 @@ async function init() {
                 ${relatedHTML(article.related)}
             </div>
         `;
+
+        // Inyectar el contenido del artículo por separado para que cualquier
+        // tag de cierre en el HTML (</div>, </main>, etc.) no rompa la estructura
+        // del DOM exterior. Esto es especialmente importante con contenido
+        // generado por Quill que puede incluir tags inesperados.
+        app.querySelector('.article-content').innerHTML = article.content;
 
         document.getElementById('btnBack').addEventListener('click', () => {
             history.length > 1 ? history.back() : (window.location.href = '/');
