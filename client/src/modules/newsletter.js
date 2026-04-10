@@ -201,6 +201,11 @@ function trackEvent(eventName, eventData = {}) {
 
 export const NEWSLETTER_STYLES = `
 /* Newsletter Box - Full Version */
+#newsletter-container {
+    display: flex;
+    justify-content: center;
+}
+
 .newsletter-box {
     background: linear-gradient(135deg, rgba(225, 6, 0, 0.1) 0%, rgba(225, 6, 0, 0.05) 100%);
     border: 1px solid rgba(225, 6, 0, 0.2);
@@ -215,10 +220,7 @@ export const NEWSLETTER_STYLES = `
 
 @media (min-width: 769px) {
     .newsletter-box {
-        flex-direction: row;
-        align-items: center;
-        text-align: left;
-        gap: 32px;
+        width: 50%;
     }
     .newsletter-text {
         flex: 1;
