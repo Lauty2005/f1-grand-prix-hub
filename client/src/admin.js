@@ -7,7 +7,7 @@ import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar
 let allRacesData = [];
 let _quill = null;
 let _draftQuill = null;
-let _draftCoverUrl = null;
+let _editDraftCoverUrl = null; // portada pendiente en la sección "Editar Borrador"
 
 // Helper para guardar/obtener token
 const getToken = () => localStorage.getItem('admin_token');
@@ -883,42 +883,42 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('imgModal').style.display = 'none';
     });
 
-    // ── Draft cover drop zone ───────────────────────────────────
-    const draftCoverZone    = document.getElementById('draftCoverZone');
-    const draftCoverFile    = document.getElementById('draftCoverFile');
-    const draftCoverPreview = document.getElementById('draftCoverPreview');
 
-    async function uploadDraftCover(file) {
-        draftCoverZone.textContent = '⏳ Subiendo...';
-        draftCoverZone.appendChild(draftCoverFile);
+    // ── Edit-draft cover drop zone ──────────────────────────────
+    const editDraftCoverZone    = document.getElementById('editDraftCoverZone');
+    const editDraftCoverFile    = document.getElementById('editDraftCoverFile');
+    const editDraftCoverPreview = document.getElementById('editDraftCoverPreview');
+
+    async function uploadEditDraftCover(file) {
+        editDraftCoverZone.textContent = '⏳ Subiendo...';
+        editDraftCoverZone.appendChild(editDraftCoverFile);
         const formData = new FormData();
         formData.append('cover', file);
         try {
             const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
             const json = await res.json();
-            if (!res.ok) throw new Error(json.error || 'Error al subir');
-            _draftCoverUrl = `${SERVER_URL}${json.url}`;
-            draftCoverPreview.src = _draftCoverUrl;
-            draftCoverPreview.style.display = 'block';
-            draftCoverZone.textContent = `✅ ${file.name}`;
-            draftCoverZone.appendChild(draftCoverFile);
-            draftCoverZone.style.borderColor = 'rgba(168,85,247,0.6)';
+            _editDraftCoverUrl = `${SERVER_URL}${json.url}`;
+            editDraftCoverPreview.src = _editDraftCoverUrl;
+            editDraftCoverPreview.style.display = 'block';
+            editDraftCoverZone.textContent = `✅ ${file.name}`;
+            editDraftCoverZone.appendChild(editDraftCoverFile);
+            editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.6)';
         } catch (err) {
-            draftCoverZone.textContent = '❌ Error al subir. Intentá de nuevo.';
-            draftCoverZone.appendChild(draftCoverFile);
-            console.error('[draft cover]', err);
+            editDraftCoverZone.textContent = '❌ Error al subir. Intentá de nuevo.';
+            editDraftCoverZone.appendChild(editDraftCoverFile);
+            console.error('[edit draft cover]', err);
         }
     }
 
-    draftCoverZone?.addEventListener('click',     () => draftCoverFile?.click());
-    draftCoverFile?.addEventListener('change',    () => { if (draftCoverFile.files?.[0]) uploadDraftCover(draftCoverFile.files[0]); });
-    draftCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); draftCoverZone.style.borderColor = '#a855f7'; });
-    draftCoverZone?.addEventListener('dragleave', ()  => { draftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)'; });
-    draftCoverZone?.addEventListener('drop',      (e) => {
+    editDraftCoverZone?.addEventListener('click',     () => editDraftCoverFile?.click());
+    editDraftCoverFile?.addEventListener('change',    () => { if (editDraftCoverFile.files?.[0]) uploadEditDraftCover(editDraftCoverFile.files[0]); });
+    editDraftCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); editDraftCoverZone.style.borderColor = '#a855f7'; });
+    editDraftCoverZone?.addEventListener('dragleave', ()  => { editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)'; });
+    editDraftCoverZone?.addEventListener('drop',      (e) => {
         e.preventDefault();
-        draftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)';
+        editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)';
         const file = e.dataTransfer.files?.[0];
-        if (file) uploadDraftCover(file);
+        if (file) uploadEditDraftCover(file);
     });
 
     // ── Draft content editor (Quill) ───────────────────────────
@@ -968,11 +968,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!id || !_draftQuill) return;
         const wrap = document.getElementById('draftEditorWrap');
         wrap.style.display = 'none';
+
+        // Resetear portada pendiente al cambiar de borrador
+        _editDraftCoverUrl = null;
+        if (editDraftCoverZone) {
+            editDraftCoverZone.textContent = '🖼 Arrastrá una imagen o hacé click para seleccionar';
+            editDraftCoverZone.appendChild(editDraftCoverFile);
+            editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)';
+        }
+        if (editDraftCoverPreview) {
+            editDraftCoverPreview.src = '';
+            editDraftCoverPreview.style.display = 'none';
+        }
+
         try {
             const res  = await adminFetch(`${API}/articles/admin/${id}`);
             const json = await res.json();
             if (!res.ok || !json.data) return;
             _draftQuill.clipboard.dangerouslyPasteHTML(json.data.content || '');
+
+            // Mostrar portada existente si tiene
+            if (json.data.cover_image_url && editDraftCoverPreview) {
+                editDraftCoverPreview.src = json.data.cover_image_url;
+                editDraftCoverPreview.style.display = 'block';
+                if (editDraftCoverZone) {
+                    editDraftCoverZone.textContent = '🖼 Portada actual (arrastrá para reemplazar)';
+                    editDraftCoverZone.appendChild(editDraftCoverFile);
+                }
+            }
+
             wrap.style.display = 'block';
         } catch (err) {
             console.error('[load draft]', err);
@@ -1003,7 +1027,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     excerpt:         article.excerpt || null,
                     content:         _draftQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
                     author:          article.author,
-                    cover_image_url: article.cover_image_url || null,
+                    cover_image_url: _editDraftCoverUrl || article.cover_image_url || null,
                     category:        article.category,
                     tags:            article.tags || [],
                     published:       article.published,
@@ -1013,6 +1037,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (patchRes.ok) {
                 msg.style.display = 'block';
                 msg.textContent = '✅ Cambios guardados.';
+                _editDraftCoverUrl = null; // portada ya persistida
                 setTimeout(() => { msg.style.display = 'none'; }, 3000);
             } else {
                 alert('No se pudo guardar.');
@@ -1521,6 +1546,7 @@ async function handleCreateArticle(e) {
             e.target.reset();
             document.getElementById('artAuthor').value = 'Redacción';
             loadArticlesForDelete();
+            loadDraftArticles();
         } else {
             const data = await res.json();
             showError(data.error || 'Error desconocido', 'errorMsgArticle', 'errorTextArticle');
@@ -1654,17 +1680,6 @@ async function handlePublishDraft() {
     btn.textContent = '⏳ Publicando...';
 
     try {
-        // 1. Si hay cover pendiente, subirlo primero
-        if (_draftCoverUrl) {
-            const coverRes = await adminFetch(`${API}/articles/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cover_image_url: _draftCoverUrl }),
-            });
-            if (!coverRes.ok) throw new Error('No se pudo guardar la portada.');
-        }
-
-        // 2. Publicar
         const res = await adminFetch(`${API}/articles/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -1673,12 +1688,6 @@ async function handlePublishDraft() {
         if (res.ok) {
             msg.style.display = 'block';
             msg.textContent = '✅ Artículo publicado correctamente.';
-            _draftCoverUrl = null;
-            document.getElementById('draftCoverPreview').style.display = 'none';
-            const draftCoverFileEl = document.getElementById('draftCoverFile');
-            const draftCoverZoneEl = document.getElementById('draftCoverZone');
-            draftCoverZoneEl.textContent = '🖼 Portada opcional (arrastrá o clickeá)';
-            if (draftCoverFileEl) draftCoverZoneEl.appendChild(draftCoverFileEl);
             loadDraftArticles();
             loadArticlesForDelete();
             setTimeout(() => { msg.style.display = 'none'; }, 4000);
