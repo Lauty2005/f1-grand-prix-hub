@@ -19,7 +19,13 @@ const API_URL  = 'https://f1-grand-prix-hub.onrender.com';
  * Enviar email individual transaccional
  * @param {Object} params - { to, subject, html, plainText }
  */
+const emailEnabled = () => process.env.EMAIL_NOTIFICATIONS_ENABLED !== 'false';
+
 export async function sendEmail({ to, subject, html, plainText }) {
+    if (!emailEnabled()) {
+        console.log(`📧 [EMAIL DESACTIVADO] Se habría enviado a ${to}: "${subject}"`);
+        return { success: false, disabled: true };
+    }
     try {
         const response = await resend.emails.send({
             from:    'F1 Grand Prix Hub <noreply@f1grandprixhub.com>',
@@ -51,6 +57,10 @@ export async function sendEmail({ to, subject, html, plainText }) {
  * Comportamiento: ASYNC, no bloquea HTTP response
  */
 export async function notifyNewArticle(article) {
+    if (!emailEnabled()) {
+        console.log(`📧 [EMAIL DESACTIVADO] No se notificó el artículo: "${article?.title}"`);
+        return { sent: 0, failed: 0, total: 0, disabled: true };
+    }
     try {
         if (!article || !article.id || !article.title) {
             console.warn('⚠️  notifyNewArticle: artículo inválido', article);

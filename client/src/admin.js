@@ -1675,8 +1675,10 @@ async function handlePublishDraft() {
             msg.textContent = '✅ Artículo publicado correctamente.';
             _draftCoverUrl = null;
             document.getElementById('draftCoverPreview').style.display = 'none';
-            document.getElementById('draftCoverZone').textContent = '🖼 Portada opcional (arrastrá o clickeá)';
-            document.getElementById('draftCoverZone').appendChild(document.getElementById('draftCoverFile'));
+            const draftCoverFileEl = document.getElementById('draftCoverFile');
+            const draftCoverZoneEl = document.getElementById('draftCoverZone');
+            draftCoverZoneEl.textContent = '🖼 Portada opcional (arrastrá o clickeá)';
+            if (draftCoverFileEl) draftCoverZoneEl.appendChild(draftCoverFileEl);
             loadDraftArticles();
             loadArticlesForDelete();
             setTimeout(() => { msg.style.display = 'none'; }, 4000);
