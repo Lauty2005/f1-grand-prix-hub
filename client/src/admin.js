@@ -1001,7 +1001,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 body: JSON.stringify({
                     title:           article.title,
                     excerpt:         article.excerpt || null,
-                    content:         _draftQuill.getSemanticHTML(),
+                    content:         _draftQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
                     author:          article.author,
                     cover_image_url: article.cover_image_url || null,
                     category:        article.category,

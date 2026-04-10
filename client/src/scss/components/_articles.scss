@@ -403,7 +403,8 @@
     color: rgba(255, 255, 255, 0.82);
     font-size: 1rem;
     line-height: 1.75;
-    overflow-x: clip;
+    overflow-wrap: break-word;
+    word-break: break-word;
 
     p   { margin: 0 0 1.2em; }
     h2  { font-size: 1.35rem; font-weight: 800; color: white; margin: 1.6em 0 0.6em; }
