@@ -22,7 +22,7 @@ const API_URL  = 'https://f1-grand-prix-hub.onrender.com';
 export async function sendEmail({ to, subject, html, plainText }) {
     try {
         const response = await resend.emails.send({
-            from:    'F1 Grand Prix Hub <noreply@resend.dev>',
+            from:    'F1 Grand Prix Hub <noreply@f1grandprixhub.com>',
             to,
             subject,
             html,
@@ -105,7 +105,7 @@ export async function notifyNewArticle(article) {
                     const htmlContent    = generateArticleEmailHTML(article, categoryLabel, articleUrl, unsubscribeUrl);
 
                     const response = await resend.emails.send({
-                        from:    'F1 Grand Prix Hub <noreply@resend.dev>',
+                        from:    'F1 Grand Prix Hub <noreply@f1grandprixhub.com>',
                         to:      subscriber.email,
                         subject: `🏎️ ${article.title}`,
                         html:    htmlContent,
