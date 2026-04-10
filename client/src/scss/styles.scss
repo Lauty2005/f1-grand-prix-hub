@@ -113,6 +113,29 @@
     letter-spacing: 0.5px;
 }
 
+/* --- LOGO DEL NAVBAR --- */
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    border-right: 1px solid #333;
+    padding-right: 25px;
+
+    @include mobile {
+        border-right: none;
+        padding-right: 0;
+        border-bottom: 1px solid #333;
+        padding-bottom: 15px;
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+.navbar-logo-img {
+    height: 40px;
+    width: auto;
+    display: block;
+}
+
 /* --- SELECTOR DE TEMPORADA --- */
 .season-selector-container {
     display: flex;
@@ -190,18 +213,9 @@
         }
     }
 
-    // Pantallas muy pequeñas: scroll horizontal
     @media (max-width: 400px) {
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        justify-content: flex-start;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: none;
-        &::-webkit-scrollbar { display: none; }
-
         .nav-btn {
-            flex-shrink: 0;
-            flex: none;
+            flex: 1 1 calc(33% - 10px);
             padding: 8px 10px;
             font-size: 0.68rem;
         }

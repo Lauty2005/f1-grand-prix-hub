@@ -24,6 +24,9 @@ function init() {
             <span style="color:#666;">Cargando próxima carrera...</span>
         </div>
         <nav class="main-navbar">
+            <div class="navbar-logo">
+                <img src="/logo.png" alt="F1 Grand Prix Hub" class="navbar-logo-img">
+            </div>
             <div class="season-selector-container">
                 <label>TEMPORADA</label>
                 <select id="globalSeasonSelect" class="f1-select">
