@@ -440,6 +440,9 @@
                         <option value="" disabled selected>Seleccionar borrador...</option>
                     </select>
                     <div id="draftEditorWrap" style="display:none; width:100%;">
+                        <!-- Título del borrador -->
+                        <p style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Título</p>
+                        <input type="text" id="editDraftTitle" class="form-control" style="width:100%; margin-bottom:12px; box-sizing:border-box;" placeholder="Título del artículo">
                         <!-- Cover image del borrador -->
                         <p style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Imagen de portada</p>
                         <div id="editDraftCoverZone" style="
@@ -466,6 +469,47 @@
                             ">💾 Guardar cambios</button>
                         </div>
                         <p id="msgSaveDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7; text-align:right;"></p>
+                    </div>
+                </div>
+
+                <div class="creation-item" style="border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.05); grid-column: 1 / -1; box-sizing:border-box; width:100%; overflow:hidden;">
+                    <label style="color:#34d399;">📝 Editar Artículo Publicado</label>
+                    <p style="color:rgba(52,211,153,0.7); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">
+                        Seleccioná un artículo publicado para editar su contenido. Podés cambiar la portada y el cuerpo del artículo.
+                    </p>
+                    <select id="editPublishedSelect" class="form-control" style="width:100%; margin-bottom:12px;">
+                        <option value="" disabled selected>Seleccionar artículo publicado...</option>
+                    </select>
+                    <div id="publishedEditorWrap" style="display:none; width:100%;">
+                        <!-- Título del artículo publicado -->
+                        <p style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Título</p>
+                        <input type="text" id="editPublishedTitle" class="form-control" style="width:100%; margin-bottom:12px; box-sizing:border-box;" placeholder="Título del artículo">
+                        <!-- Cover image del artículo publicado -->
+                        <p style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Imagen de portada</p>
+                        <div id="editPublishedCoverZone" style="
+                            border: 2px dashed rgba(52,211,153,0.3);
+                            border-radius: 6px;
+                            padding: 10px 12px;
+                            text-align: center;
+                            cursor: pointer;
+                            color: #34d399;
+                            font-size: 0.75rem;
+                            transition: border-color 0.2s;
+                            margin-bottom: 8px;
+                        ">
+                            🖼 Arrastrá una imagen o hacé click para seleccionar
+                            <input type="file" id="editPublishedCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                        </div>
+                        <img id="editPublishedCoverPreview" src="" alt="" style="display:none; max-height:160px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:10px; border:1px solid rgba(52,211,153,0.2);">
+                        <div id="publishedContentEditor"></div>
+                        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+                            <button type="button" id="btnSavePublished" style="
+                                background:#059669; color:#fff; border:none;
+                                padding:8px 20px; border-radius:6px;
+                                cursor:pointer; font-weight:700; font-size:0.85rem;
+                            ">💾 Guardar cambios</button>
+                        </div>
+                        <p id="msgSavePublished" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#34d399; text-align:right;"></p>
                     </div>
                 </div>
 

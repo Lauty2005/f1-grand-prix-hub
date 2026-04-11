@@ -8,6 +8,8 @@ let allRacesData = [];
 let _quill = null;
 let _draftQuill = null;
 let _editDraftCoverUrl = null; // portada pendiente en la sección "Editar Borrador"
+let _publishedQuill = null;
+let _editPublishedCoverUrl = null; // portada pendiente en la sección "Editar Publicado"
 
 // Helper para guardar/obtener token
 const getToken = () => localStorage.getItem('admin_token');
@@ -89,6 +91,7 @@ function loadInitialData() {
     loadServerImages();
     loadArticlesForDelete();
     loadDraftArticles();
+    loadPublishedArticles();
     loadCircuitWinnersForDelete();
     loadRacesForCircuitInfo(document.getElementById('circuitInfoYear').value || 2025);
     loadMomentsForDelete();
@@ -985,6 +988,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             const res  = await adminFetch(`${API}/articles/admin/${id}`);
             const json = await res.json();
             if (!res.ok || !json.data) return;
+            const draftTitleInput = document.getElementById('editDraftTitle');
+            if (draftTitleInput) draftTitleInput.value = json.data.title || '';
             _draftQuill.clipboard.dangerouslyPasteHTML(json.data.content || '');
 
             // Mostrar portada existente si tiene
@@ -1023,7 +1028,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title:           article.title,
+                    title:           document.getElementById('editDraftTitle')?.value.trim() || article.title,
                     excerpt:         article.excerpt || null,
                     content:         _draftQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
                     author:          article.author,
@@ -1044,6 +1049,170 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (err) {
             console.error('[save draft]', err);
+            alert('Error al guardar.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = '💾 Guardar cambios';
+        }
+    });
+
+    // ── Edit-published cover drop zone ─────────────────────────
+    const editPublishedCoverZone    = document.getElementById('editPublishedCoverZone');
+    const editPublishedCoverFile    = document.getElementById('editPublishedCoverFile');
+    const editPublishedCoverPreview = document.getElementById('editPublishedCoverPreview');
+
+    async function uploadEditPublishedCover(file) {
+        editPublishedCoverZone.textContent = '⏳ Subiendo...';
+        editPublishedCoverZone.appendChild(editPublishedCoverFile);
+        const formData = new FormData();
+        formData.append('cover', file);
+        try {
+            const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
+            const json = await res.json();
+            _editPublishedCoverUrl = `${SERVER_URL}${json.url}`;
+            editPublishedCoverPreview.src = _editPublishedCoverUrl;
+            editPublishedCoverPreview.style.display = 'block';
+            editPublishedCoverZone.textContent = `✅ ${file.name}`;
+            editPublishedCoverZone.appendChild(editPublishedCoverFile);
+            editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.6)';
+        } catch (err) {
+            editPublishedCoverZone.textContent = '❌ Error al subir. Intentá de nuevo.';
+            editPublishedCoverZone.appendChild(editPublishedCoverFile);
+            console.error('[edit published cover]', err);
+        }
+    }
+
+    editPublishedCoverZone?.addEventListener('click',     () => editPublishedCoverFile?.click());
+    editPublishedCoverFile?.addEventListener('change',    () => { if (editPublishedCoverFile.files?.[0]) uploadEditPublishedCover(editPublishedCoverFile.files[0]); });
+    editPublishedCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); editPublishedCoverZone.style.borderColor = '#34d399'; });
+    editPublishedCoverZone?.addEventListener('dragleave', ()  => { editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)'; });
+    editPublishedCoverZone?.addEventListener('drop',      (e) => {
+        e.preventDefault();
+        editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)';
+        const file = e.dataTransfer.files?.[0];
+        if (file) uploadEditPublishedCover(file);
+    });
+
+    // ── Published content editor (Quill) ──────────────────────
+    const publishedEditorEl = document.getElementById('publishedContentEditor');
+    if (publishedEditorEl) {
+        _publishedQuill = new Quill(publishedEditorEl, {
+            theme: 'snow',
+            placeholder: 'Contenido del artículo...',
+            modules: {
+                toolbar: [
+                    [{ header: [2, 3, false] }],
+                    ['bold', 'italic', 'underline'],
+                    [{ list: 'ordered' }, { list: 'bullet' }],
+                    ['blockquote'],
+                    ['link', 'image'],
+                    ['clean'],
+                ],
+            },
+        });
+
+        const publishedToolbar = _publishedQuill.getModule('toolbar');
+        publishedToolbar.addHandler('image', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/jpeg,image/png,image/webp,image/avif';
+            input.onchange = () => {
+                if (input.files?.[0]) uploadAndInsertImageInto(_publishedQuill, input.files[0]);
+            };
+            input.click();
+        });
+
+        publishedEditorEl.addEventListener('paste', (e) => {
+            const items = Array.from(e.clipboardData?.items || []);
+            const imageItem = items.find(i => i.type.startsWith('image/'));
+            if (!imageItem) return;
+            e.preventDefault();
+            const file = imageItem.getAsFile();
+            if (file) uploadAndInsertImageInto(_publishedQuill, file);
+        });
+    }
+
+    // Al seleccionar un artículo publicado, cargar su contenido
+    document.getElementById('editPublishedSelect')?.addEventListener('change', async (e) => {
+        const id = e.target.value;
+        if (!id || !_publishedQuill) return;
+        const wrap = document.getElementById('publishedEditorWrap');
+        wrap.style.display = 'none';
+
+        _editPublishedCoverUrl = null;
+        if (editPublishedCoverZone) {
+            editPublishedCoverZone.textContent = '🖼 Arrastrá una imagen o hacé click para seleccionar';
+            editPublishedCoverZone.appendChild(editPublishedCoverFile);
+            editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)';
+        }
+        if (editPublishedCoverPreview) {
+            editPublishedCoverPreview.src = '';
+            editPublishedCoverPreview.style.display = 'none';
+        }
+
+        try {
+            const res  = await adminFetch(`${API}/articles/admin/${id}`);
+            const json = await res.json();
+            if (!res.ok || !json.data) return;
+            const publishedTitleInput = document.getElementById('editPublishedTitle');
+            if (publishedTitleInput) publishedTitleInput.value = json.data.title || '';
+            _publishedQuill.clipboard.dangerouslyPasteHTML(json.data.content || '');
+
+            if (json.data.cover_image_url && editPublishedCoverPreview) {
+                editPublishedCoverPreview.src = json.data.cover_image_url;
+                editPublishedCoverPreview.style.display = 'block';
+                if (editPublishedCoverZone) {
+                    editPublishedCoverZone.textContent = '🖼 Portada actual (arrastrá para reemplazar)';
+                    editPublishedCoverZone.appendChild(editPublishedCoverFile);
+                }
+            }
+
+            wrap.style.display = 'block';
+        } catch (err) {
+            console.error('[load published]', err);
+        }
+    });
+
+    // Guardar cambios del artículo publicado
+    document.getElementById('btnSavePublished')?.addEventListener('click', async () => {
+        const id  = document.getElementById('editPublishedSelect').value;
+        const msg = document.getElementById('msgSavePublished');
+        const btn = document.getElementById('btnSavePublished');
+        if (!id || !_publishedQuill) return;
+
+        btn.disabled = true;
+        btn.textContent = '⏳ Guardando...';
+        try {
+            const allRes  = await adminFetch(`${API}/articles/admin/${id}`);
+            const allJson = await allRes.json();
+            const article = allJson.data;
+            if (!article) throw new Error('Artículo no encontrado.');
+
+            const patchRes = await adminFetch(`${API}/articles/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title:           document.getElementById('editPublishedTitle')?.value.trim() || article.title,
+                    excerpt:         article.excerpt || null,
+                    content:         _publishedQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
+                    author:          article.author,
+                    cover_image_url: _editPublishedCoverUrl || article.cover_image_url || null,
+                    category:        article.category,
+                    tags:            article.tags || [],
+                    published:       article.published,
+                    featured:        article.featured,
+                }),
+            });
+            if (patchRes.ok) {
+                msg.style.display = 'block';
+                msg.textContent = '✅ Cambios guardados.';
+                _editPublishedCoverUrl = null;
+                setTimeout(() => { msg.style.display = 'none'; }, 3000);
+            } else {
+                alert('No se pudo guardar.');
+            }
+        } catch (err) {
+            console.error('[save published]', err);
             alert('Error al guardar.');
         } finally {
             btn.disabled = false;
@@ -1644,6 +1813,26 @@ async function handleGenerateArticle() {
 }
 
 // ── Publicar borrador IA ──────────────────────────────────────
+async function loadPublishedArticles() {
+    const select = document.getElementById('editPublishedSelect');
+    if (!select) return;
+    select.innerHTML = '<option value="" disabled selected>Cargando...</option>';
+    try {
+        const res = await adminFetch(`${API}/articles/admin/all`);
+        const json = await res.json();
+        const published = (json.data || []).filter(a => a.published);
+        if (!published.length) {
+            select.innerHTML = '<option value="" disabled>Sin artículos publicados</option>';
+        } else {
+            select.innerHTML = '<option value="" disabled selected>Seleccionar artículo publicado...</option>' +
+                published.map(a => `<option value="${a.id}">${a.title}</option>`).join('');
+        }
+    } catch (e) {
+        console.error(e);
+        select.innerHTML = '<option>Error</option>';
+    }
+}
+
 async function loadDraftArticles() {
     const select     = document.getElementById('draftArticleSelect');
     const editSelect = document.getElementById('editDraftSelect');
