@@ -2,7 +2,7 @@ import './scss/admin.scss';
 import 'quill/dist/quill.snow.css';
 import Quill from 'quill';
 import { COUNTRY_NAMES } from './modules/utils.js';
-import { API, SERVER_URL } from './modules/config.js'; // Asegúrate de importar API desde config
+import { API, SERVER_URL, resolveImgUrl } from './modules/config.js';
 
 let allRacesData = [];
 let _quill = null;
@@ -813,7 +813,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || 'Error al subir');
             const fullUrl = `${SERVER_URL}${json.url}`;
-            artCoverHidden.value = fullUrl;
+            artCoverHidden.value = json.url;   // guarda ruta relativa en DB
             coverPreview.src = fullUrl;
             coverPreview.style.display = 'block';
             setCoverState(`✅ ${file.name}`);
@@ -900,8 +900,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
             const json = await res.json();
-            _editDraftCoverUrl = `${SERVER_URL}${json.url}`;
-            editDraftCoverPreview.src = _editDraftCoverUrl;
+            _editDraftCoverUrl = json.url;   // guarda ruta relativa en DB
+            editDraftCoverPreview.src = `${SERVER_URL}${json.url}`;
             editDraftCoverPreview.style.display = 'block';
             editDraftCoverZone.textContent = `✅ ${file.name}`;
             editDraftCoverZone.appendChild(editDraftCoverFile);
@@ -994,7 +994,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Mostrar portada existente si tiene
             if (json.data.cover_image_url && editDraftCoverPreview) {
-                editDraftCoverPreview.src = json.data.cover_image_url;
+                editDraftCoverPreview.src = resolveImgUrl(json.data.cover_image_url);
                 editDraftCoverPreview.style.display = 'block';
                 if (editDraftCoverZone) {
                     editDraftCoverZone.textContent = '🖼 Portada actual (arrastrá para reemplazar)';
@@ -1069,8 +1069,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
             const json = await res.json();
-            _editPublishedCoverUrl = `${SERVER_URL}${json.url}`;
-            editPublishedCoverPreview.src = _editPublishedCoverUrl;
+            _editPublishedCoverUrl = json.url;   // guarda ruta relativa en DB
+            editPublishedCoverPreview.src = `${SERVER_URL}${json.url}`;
             editPublishedCoverPreview.style.display = 'block';
             editPublishedCoverZone.textContent = `✅ ${file.name}`;
             editPublishedCoverZone.appendChild(editPublishedCoverFile);
@@ -1159,7 +1159,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             _publishedQuill.clipboard.dangerouslyPasteHTML(json.data.content || '');
 
             if (json.data.cover_image_url && editPublishedCoverPreview) {
-                editPublishedCoverPreview.src = json.data.cover_image_url;
+                editPublishedCoverPreview.src = resolveImgUrl(json.data.cover_image_url);
                 editPublishedCoverPreview.style.display = 'block';
                 if (editPublishedCoverZone) {
                     editPublishedCoverZone.textContent = '🖼 Portada actual (arrastrá para reemplazar)';
@@ -1892,3 +1892,13 @@ async function handlePublishDraft() {
         btn.textContent = '✅ Publicar';
     }
 }
+
+// ==========================================
+// ACCORDION — NUEVOS DATOS
+// ==========================================
+document.querySelectorAll('.accordion-trigger').forEach(trigger => {
+    trigger.addEventListener('click', () => {
+        const section = trigger.closest('.accordion-section');
+        section.classList.toggle('is-open');
+    });
+});

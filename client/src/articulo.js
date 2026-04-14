@@ -1,5 +1,5 @@
 import './scss/styles.scss';
-import { API } from './modules/config.js';
+import { API, resolveImgUrl } from './modules/config.js';
 import { setPageMeta, createArticleMetaConfig } from './modules/metaTags.js';
 
 const CATEGORIES = {
@@ -93,7 +93,7 @@ async function init() {
         const cover = article.cover_image_url
             ? `<img
                   class="article-header__cover"
-                  src="${article.cover_image_url}"
+                  src="${resolveImgUrl(article.cover_image_url)}"
                   alt="${article.title}"
                   loading="lazy"
                   onerror="this.style.display='none';"

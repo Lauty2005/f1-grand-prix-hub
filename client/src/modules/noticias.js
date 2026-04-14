@@ -1,4 +1,4 @@
-import { API, SERVER_URL } from './config.js';
+import { API, SERVER_URL, resolveImgUrl } from './config.js';
 
 const CATEGORIES = [
     { value: '', label: 'Todo' },
@@ -66,7 +66,7 @@ function coverHTML(article, cls) {
     if (article.cover_image_url) {
         return `<img
             class="${cls}"
-            src="${article.cover_image_url}"
+            src="${resolveImgUrl(article.cover_image_url)}"
             alt="${article.title}"
             loading="lazy"
             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -94,7 +94,7 @@ function articleCardHTML(article) {
 
 function heroHTML(article) {
     const cover = article.cover_image_url
-        ? `<img class="news-hero__cover" src="${article.cover_image_url}" alt="${article.title}">`
+        ? `<img class="news-hero__cover" src="${resolveImgUrl(article.cover_image_url)}" alt="${article.title}">`
         : '';
     return `
         <div class="news-hero" data-slug="${article.slug}">

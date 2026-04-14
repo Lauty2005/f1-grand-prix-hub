@@ -943,6 +943,117 @@ select.form-control {
     }
 }
 
+/* =========================================
+   ACCORDION — NUEVOS DATOS
+========================================= */
+.accordion {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.accordion-section {
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+
+    &.is-open {
+        border-color: rgba(0, 255, 136, 0.25);
+
+        .accordion-trigger {
+            background: rgba(0, 255, 136, 0.05);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.12);
+
+            .accordion-trigger__arrow { transform: rotate(180deg); }
+        }
+    }
+
+    &--purple {
+        border-color: rgba(168, 85, 247, 0.2);
+
+        &.is-open {
+            border-color: rgba(168, 85, 247, 0.4);
+
+            .accordion-trigger {
+                background: rgba(124, 58, 237, 0.08);
+                border-bottom-color: rgba(168, 85, 247, 0.15);
+            }
+        }
+
+        .accordion-trigger { color: #a855f7; }
+    }
+
+    &--teal {
+        border-color: rgba(16, 185, 129, 0.2);
+
+        &.is-open {
+            border-color: rgba(16, 185, 129, 0.4);
+
+            .accordion-trigger {
+                background: rgba(16, 185, 129, 0.06);
+                border-bottom-color: rgba(16, 185, 129, 0.15);
+            }
+        }
+
+        .accordion-trigger { color: #34d399; }
+    }
+
+    &--ai {
+        border-color: rgba(168, 85, 247, 0.25);
+        background: linear-gradient(135deg, rgba(168,85,247,0.04) 0%, transparent 100%);
+
+        &.is-open {
+            border-color: rgba(168, 85, 247, 0.45);
+
+            .accordion-trigger {
+                background: rgba(124, 58, 237, 0.1);
+                border-bottom-color: rgba(168, 85, 247, 0.15);
+            }
+        }
+
+        .accordion-trigger { color: #a855f7; }
+    }
+}
+
+.accordion-trigger {
+    width: 100%;
+    background: rgba(255,255,255,0.02);
+    border: none;
+    border-bottom: 1px solid transparent;
+    color: #00ff88;
+    font-family: 'Titillium Web', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 13px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    transition: background 0.2s, border-color 0.2s;
+
+    &:hover { background: rgba(0,255,136,0.04); }
+
+    &__icon { font-size: 0.95rem; flex-shrink: 0; }
+    &__title { flex: 1; }
+    &__arrow {
+        font-size: 0.8rem;
+        transition: transform 0.25s ease;
+        color: rgba(255,255,255,0.3);
+        flex-shrink: 0;
+    }
+}
+
+.accordion-body {
+    display: none;
+    padding: 16px;
+
+    .is-open & { display: block; }
+}
+
 .ai-status {
     &--loading {
         background: rgba(168,85,247,0.1);
