@@ -1,6 +1,5 @@
-import fs from 'fs';
-import path from 'path';
 import * as racesService from '../services/races.service.js';
+import { uploadToSupabase } from '../config/upload.js';
 
 export const getAll = async (req, res) => {
     try {
@@ -99,12 +98,14 @@ export const postRace = async (req, res) => {
     try {
         let map_image_url = req.body.existing_map_image || '/images/schedule/default.png';
         if (req.files && req.files['map_image']) {
-            map_image_url = `/images/schedule/${req.files['map_image'][0].filename}`;
+            const f = req.files['map_image'][0];
+            map_image_url = await uploadToSupabase(f.buffer, f.originalname, 'schedule');
         }
 
         let circuit_image_url = req.body.existing_circuit_image || null;
         if (req.files && req.files['circuit_image']) {
-            circuit_image_url = `/images/circuits/${req.files['circuit_image'][0].filename}`;
+            const f = req.files['circuit_image'][0];
+            circuit_image_url = await uploadToSupabase(f.buffer, f.originalname, 'circuits');
         }
 
         const data = {

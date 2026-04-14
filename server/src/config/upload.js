@@ -1,38 +1,54 @@
 import multer from 'multer';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const BUCKET = 'images';
 
-// Función para crear el middleware según la carpeta destino
-export const createUpload = (folderName) => {
+/**
+ * Sube un buffer a Supabase Storage y retorna la URL pública.
+ * @param {Buffer} buffer - Contenido del archivo
+ * @param {string} originalname - Nombre original (para extraer extensión)
+ * @param {string} folder - Subcarpeta dentro del bucket (ej: 'articles', 'pilots')
+ */
+export async function uploadToSupabase(buffer, originalname, folder) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
+        throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_KEY');
+    }
 
-    const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            // Guardar en server/public/images/[folderName]
-            // Desde src/config subimos 2 niveles (../../) hasta server, luego public/images/
-            const destPath = path.join(__dirname, '../../public/images', folderName);
-            cb(null, destPath);
+    const ext = path.extname(originalname).toLowerCase() || '.jpg';
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
+    const filePath = `${folder}/${filename}`;
+
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${filePath}`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+            'Content-Type': 'application/octet-stream',
+            'x-upsert': 'true',
         },
-        filename: function (req, file, cb) {
-            // Generar nombre único: nombreOriginal-timestamp.ext
-            // Ej: norris-167888888.avif
-            const ext = path.extname(file.originalname).toLowerCase();
-            const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-            cb(null, safeName);
-        }
+        body: buffer,
     });
 
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Supabase Storage error (${res.status}): ${text}`);
+    }
+
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${filePath}`;
+}
+
+/**
+ * Crea el middleware multer con memoryStorage.
+ * El parámetro folderName se mantiene por compatibilidad pero ya no determina el destino en disco.
+ */
+export const createUpload = (_folderName) => {
+    const storage = multer.memoryStorage();
+
     const fileFilter = (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            const ALLOWED = ['image/jpeg','image/png','image/webp','image/avif','image/gif'];
-            
-            if (ALLOWED.includes(file.mimetype)) {
-                cb(null, true);
-            } else {
-                cb(new Error('¡Solo se permiten archivos de imagen!'), false);
-            }
+        const ALLOWED = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
+        if (ALLOWED.includes(file.mimetype)) {
+            cb(null, true);
         } else {
             cb(new Error('¡Solo se permiten archivos de imagen!'), false);
         }

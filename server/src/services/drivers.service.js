@@ -173,16 +173,11 @@ export const compareDrivers = async (ids, year) => {
     };
 };
 
-export const createDriver = async (data, fileData) => {
+export const createDriver = async (data, imageUrl) => {
     const { first_name, last_name, number, team_id, country, seasons } = data;
-    
-    let profile_image_url;
-    if (fileData) {
-        const { protocol, host, filename } = fileData;
-        profile_image_url = `${protocol}://${host}/images/pilots/${filename}`;
-    } else {
-        profile_image_url = 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/unknown.jpg.img.jpg';
-    }
+
+    const profile_image_url = imageUrl
+        || 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/unknown.jpg.img.jpg';
 
     const seasonsToSave = seasons ? seasons.split(',').map(s => s.trim()) : ['2026'];
 

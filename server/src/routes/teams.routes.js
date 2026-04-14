@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query } from '../config/db.js';
-import { createUpload } from '../config/upload.js'; // 👇 Usamos tu helper
+import { createUpload, uploadToSupabase } from '../config/upload.js';
 import { adminAuth } from '../middleware/auth.middleware.js';
 
 const router = Router();
@@ -25,7 +25,7 @@ router.post('/', adminAuth, upload.single('logo_image'), async (req, res) => {
 
         let logo_url = null;
         if (req.file) {
-            logo_url = `/images/teams/${req.file.filename}`;
+            logo_url = await uploadToSupabase(req.file.buffer, req.file.originalname, 'teams');
         }
 
         // active_seasons viene como JSON string o array

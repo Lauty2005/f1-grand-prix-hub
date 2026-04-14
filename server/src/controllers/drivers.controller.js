@@ -1,4 +1,5 @@
 import * as driversService from '../services/drivers.service.js';
+import { uploadToSupabase } from '../config/upload.js';
 
 export const getAllDrivers = async (req, res) => {
     try {
@@ -63,13 +64,12 @@ export const compareDrivers = async (req, res) => {
 
 export const addDriver = async (req, res) => {
     try {
-        const fileData = req.file ? {
-            protocol: req.protocol,
-            host: req.get('host'),
-            filename: req.file.filename
-        } : null;
+        let imageUrl = null;
+        if (req.file) {
+            imageUrl = await uploadToSupabase(req.file.buffer, req.file.originalname, 'pilots');
+        }
 
-        await driversService.createDriver(req.body, fileData);
+        await driversService.createDriver(req.body, imageUrl);
         res.json({ success: true, message: 'Piloto creado' });
     } catch (e) {
         console.error(e);

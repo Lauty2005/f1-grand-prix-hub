@@ -1,43 +1,23 @@
 import { Router } from 'express';
 import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
 import { adminAuth } from '../middleware/auth.middleware.js';
 import { validateResult, validateRace } from '../middleware/validate.middleware.js';
 import * as racesController from '../controllers/races.controller.js';
 import * as circuitController  from '../controllers/circuit.controller.js';
 import * as strategyController from '../controllers/strategy.controller.js';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const router = Router();
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        let subFolder = file.fieldname === 'circuit_image' ? 'circuits' : 'schedule';
-        const uploadPath = path.join(__dirname, '../../public/images', subFolder);
-        if (!fs.existsSync(uploadPath)) fs.mkdirSync(uploadPath, { recursive: true });
-        cb(null, uploadPath);
-    },
-    filename: (req, file, cb) => {
-        const ext = path.extname(file.originalname).toLowerCase();
-        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}${ext}`;
-        cb(null, safeName);
-    }
-});
-
 const ALLOWED_MIME = ['image/jpeg','image/png','image/webp','image/avif','image/gif'];
-
 const fileFilter = (req, file, cb) => {
-    if (ALLOWED_MIME.includes(file.mimetype)) {
-       cb(null, true);
-    } else {
-        cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`), false);
-    }
+    ALLOWED_MIME.includes(file.mimetype) ? cb(null, true) : cb(new Error(`Tipo no permitido: ${file.mimetype}`), false);
 };
 
-const uploadFields = multer({ storage, fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }).fields([
+const uploadFields = multer({
+    storage: multer.memoryStorage(),
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }
+}).fields([
     { name: 'map_image', maxCount: 1 },
     { name: 'circuit_image', maxCount: 1 }
 ]);
