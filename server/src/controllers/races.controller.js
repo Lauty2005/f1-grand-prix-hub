@@ -1,5 +1,5 @@
 import * as racesService from '../services/races.service.js';
-import { uploadToSupabase } from '../config/upload.js';
+import { listR2Objects } from '../config/r2.js';
 
 export const getAll = async (req, res) => {
     try {
@@ -96,30 +96,28 @@ export const postPractices = async (req, res) => {
 
 export const postRace = async (req, res) => {
     try {
-        let map_image_url = req.body.existing_map_image || '/images/schedule/default.png';
-        if (req.files && req.files['map_image']) {
-            const f = req.files['map_image'][0];
-            map_image_url = await uploadToSupabase(f.buffer, f.originalname, 'schedule');
-        }
+        // req.fileUrls viene del middleware R2 en races.routes.js
+        // Si no se subió nueva imagen se usa la selección existente del formulario
+        const map_image_url = req.fileUrls?.['map_image']
+            ?? req.body.existing_map_image
+            ?? null;
 
-        let circuit_image_url = req.body.existing_circuit_image || null;
-        if (req.files && req.files['circuit_image']) {
-            const f = req.files['circuit_image'][0];
-            circuit_image_url = await uploadToSupabase(f.buffer, f.originalname, 'circuits');
-        }
+        const circuit_image_url = req.fileUrls?.['circuit_image']
+            ?? req.body.existing_circuit_image
+            ?? null;
 
         const data = {
             ...req.body,
             map_image_url,
             circuit_image_url,
             hasSprint: req.body.sprint === 'true',
-            lapsInt: req.body.total_laps ? parseInt(req.body.total_laps) : 0
+            lapsInt:   req.body.total_laps ? parseInt(req.body.total_laps) : 0,
         };
 
         await racesService.insertRace(data);
         res.json({ success: true, message: 'Carrera creada correctamente' });
     } catch (e) {
-        console.error("ERROR:", e);
+        console.error('ERROR postRace:', e);
         res.status(500).json({ error: e.message });
     }
 };
@@ -132,21 +130,15 @@ export const deleteResult = (session) => async (req, res) => {
     } catch (e) { res.status(500).json({ error: 'Error al eliminar' }); }
 };
 
-export const getServerImages = (req, res) => {
+export const getServerImages = async (req, res) => {
     try {
-        const schedulePath = path.join(process.cwd(), 'public/images/schedule');
-        const circuitsPath = path.join(process.cwd(), 'public/images/circuits');
-
-        const getFiles = (dir, urlPrefix) => {
-            if (!fs.existsSync(dir)) return [];
-            return fs.readdirSync(dir)
-                .filter(file => /\.(jpg|jpeg|png|webp|avif)$/i.test(file))
-                .map(file => ({ name: file, url: `${urlPrefix}/${file}` }));
-        };
-
-        res.json({ success: true, data: { maps: getFiles(schedulePath, '/images/schedule'), circuits: getFiles(circuitsPath, '/images/circuits') } });
+        const [maps, circuits] = await Promise.all([
+            listR2Objects('schedule/'),
+            listR2Objects('circuits/'),
+        ]);
+        res.json({ success: true, data: { maps, circuits } });
     } catch (e) {
-        console.error(e);
-        res.status(500).json({ error: 'Error leyendo imágenes' });
+        console.error('[getServerImages] Error listando R2:', e);
+        res.status(500).json({ error: 'Error leyendo imágenes del storage' });
     }
 };

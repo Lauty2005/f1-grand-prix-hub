@@ -173,13 +173,16 @@ export const compareDrivers = async (ids, year) => {
     };
 };
 
-export const createDriver = async (data, imageUrl) => {
+export const createDriver = async (data, profileImageUrl) => {
     const { first_name, last_name, number, team_id, country, seasons } = data;
 
-    const profile_image_url = imageUrl
-        || 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/unknown.jpg.img.jpg';
+    // Si no se subió imagen, usamos el fallback oficial de F1
+    const profile_image_url = profileImageUrl
+        ?? 'https://media.formula1.com/d_driver_fallback_image.png/content/dam/fom-website/drivers/unknown.jpg.img.jpg';
 
-    const seasonsToSave = seasons ? seasons.split(',').map(s => s.trim()) : ['2026'];
+    const seasonsToSave = seasons
+        ? seasons.split(',').map(s => s.trim())
+        : ['2026'];
 
     const driverRes = await query(
         `INSERT INTO drivers (first_name, last_name, permanent_number, constructor_id, country_code, profile_image_url, active_seasons)

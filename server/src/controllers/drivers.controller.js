@@ -1,5 +1,5 @@
+// server/src/controllers/drivers.controller.js
 import * as driversService from '../services/drivers.service.js';
-import { uploadToSupabase } from '../config/upload.js';
 
 export const getAllDrivers = async (req, res) => {
     try {
@@ -7,7 +7,7 @@ export const getAllDrivers = async (req, res) => {
         const drivers = await driversService.getDrivers(year);
         res.json({ success: true, data: drivers });
     } catch (err) {
-        console.error("ERROR SQL DRIVERS:", err.message);
+        console.error('ERROR SQL DRIVERS:', err.message);
         res.status(500).json({ error: 'Error interno obteniendo pilotos' });
     }
 };
@@ -15,11 +15,11 @@ export const getAllDrivers = async (req, res) => {
 export const getDriverHistorial = async (req, res) => {
     try {
         const { id } = req.params;
-        const year = req.query.year || '2025'; 
+        const year = req.query.year || '2025';
         const results = await driversService.getDriverResults(id, year);
         res.json({ success: true, data: results });
     } catch (err) {
-        console.error("ERROR historial piloto:", err.message);
+        console.error('ERROR historial piloto:', err.message);
         res.status(500).json({ error: 'Error buscando historial' });
     }
 };
@@ -30,7 +30,7 @@ export const removeDriver = async (req, res) => {
         await driversService.deleteDriver(id);
         res.json({ success: true, message: 'Piloto eliminado correctamente' });
     } catch (err) {
-        console.error("Error transaccional eliminando piloto:", err.message);
+        console.error('Error transaccional eliminando piloto:', err.message);
         res.status(500).json({ error: 'No se pudo eliminar al piloto' });
     }
 };
@@ -39,8 +39,8 @@ export const listTeams = async (req, res) => {
     try {
         const teams = await driversService.getTeams();
         res.json({ success: true, data: teams });
-    } catch (e) { 
-        res.status(500).json({ error: 'Error cargando equipos' }); 
+    } catch (e) {
+        res.status(500).json({ error: 'Error cargando equipos' });
     }
 };
 
@@ -64,12 +64,9 @@ export const compareDrivers = async (req, res) => {
 
 export const addDriver = async (req, res) => {
     try {
-        let imageUrl = null;
-        if (req.file) {
-            imageUrl = await uploadToSupabase(req.file.buffer, req.file.originalname, 'pilots');
-        }
-
-        await driversService.createDriver(req.body, imageUrl);
+        // req.fileUrl es la URL absoluta de R2, o undefined si no se subió imagen
+        const profileImageUrl = req.fileUrl ?? null;
+        await driversService.createDriver(req.body, profileImageUrl);
         res.json({ success: true, message: 'Piloto creado' });
     } catch (e) {
         console.error(e);

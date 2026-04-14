@@ -45,28 +45,6 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-const ONE_WEEK = 7 * 24 * 60 * 60;
-const ONE_MONTH = 30 * 24 * 60 * 60;
-
-app.use('/images/circuits', express.static(
-    path.join(__dirname, 'public/images/circuits'),
-    {
-        maxAge: ONE_MONTH * 1000,
-        etag: true,
-        lastModified: true,
-        immutable: true
-    }
-));
-
-app.use('/images', express.static(
-    path.join(__dirname, 'public/images'),
-    {
-        maxAge: ONE_WEEK * 1000,
-        etag: true,
-        lastModified: true
-    }
-));
-
 // --- RUTAS ---
 app.use('/api/drivers', driversRoutes);
 app.use('/api/races', racesRoutes);
