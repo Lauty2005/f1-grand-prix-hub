@@ -99,19 +99,23 @@ function renderResults(data) {
     const rounds = Object.keys(roundMap).map(Number).sort((a, b) => a - b);
     const labels = rounds.map(r => `R${r}`);
 
-    // Points per race per driver (cumulative)
+    // Points per race per driver
     const pointsByDriver = {};
     drivers.forEach(d => { pointsByDriver[d.id] = {}; });
+
     perRace.forEach(r => {
         if (pointsByDriver[r.driver_id] !== undefined) {
-            pointsByDriver[r.driver_id][r.round] = r.points || 0;
+            // ✅ FIX 1: parseFloat() — pg devuelve strings para resultados
+            // de operaciones aritméticas en SQL (e.g. res.points + sp.points)
+            pointsByDriver[r.driver_id][r.round] = parseFloat(r.points) || 0;
         }
     });
 
     const cumulativeDatasets = drivers.map(d => {
         let acc = 0;
         const data = rounds.map(round => {
-            acc += pointsByDriver[d.id][round] || 0;
+            // ✅ Doble seguridad: Number() garantiza suma numérica
+            acc += Number(pointsByDriver[d.id][round] || 0);
             return acc;
         });
         return {
@@ -130,7 +134,8 @@ function renderResults(data) {
     // Points per race (individual, not cumulative)
     const perRaceDatasets = drivers.map(d => ({
         label: `${d.first_name} ${d.last_name}`,
-        data: rounds.map(round => pointsByDriver[d.id][round] || 0),
+        // ✅ También parseFloat aquí para consistencia
+        data: rounds.map(round => Number(pointsByDriver[d.id][round] || 0)),
         backgroundColor: d.primary_color,
         borderRadius: 4,
         barPercentage: 0.6,
@@ -140,7 +145,7 @@ function renderResults(data) {
     const statLabels = ['Victorias', 'Podios', 'Top 5', 'Top 10', 'DNF'];
     const statDatasets = drivers.map(d => ({
         label: `${d.first_name} ${d.last_name}`,
-        data: [d.wins, d.podiums, d.top5, d.top10, d.dnfs],
+        data: [d.wins, d.podiums, d.top5, d.top10, d.dnfs].map(Number),
         backgroundColor: d.primary_color,
         borderRadius: 4,
         barPercentage: 0.5,
@@ -173,32 +178,41 @@ function renderResults(data) {
         ${h2hTableHTML(h2h, drivers)}
     `;
 
-    const chartDefaults = {
+    // ✅ FIX 2: chartScaleDefaults como función para evitar objeto compartido
+    // entre los 3 charts (shallow copy de { ...chartDefaults } no es suficiente
+    // porque chartDefaults.scales sigue siendo la misma referencia)
+    const makeChartOptions = () => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
             legend: { labels: { color: '#aaa', font: { size: 12 } } },
-            tooltip: { backgroundColor: '#1f1f27', titleColor: '#fff', bodyColor: '#aaa', borderColor: '#333', borderWidth: 1 }
+            tooltip: {
+                backgroundColor: '#1f1f27',
+                titleColor: '#fff',
+                bodyColor: '#aaa',
+                borderColor: '#333',
+                borderWidth: 1,
+            },
         },
         scales: {
             x: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#666' } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#666' }, beginAtZero: true }
-        }
-    };
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#666' }, beginAtZero: true },
+        },
+    });
 
     charts.cumulative = new Chart(
         document.getElementById('chartCumulative').getContext('2d'),
-        { type: 'line', data: { labels, datasets: cumulativeDatasets }, options: { ...chartDefaults } }
+        { type: 'line', data: { labels, datasets: cumulativeDatasets }, options: makeChartOptions() }
     );
 
     charts.perRace = new Chart(
         document.getElementById('chartPerRace').getContext('2d'),
-        { type: 'bar', data: { labels, datasets: perRaceDatasets }, options: { ...chartDefaults } }
+        { type: 'bar', data: { labels, datasets: perRaceDatasets }, options: makeChartOptions() }
     );
 
     charts.stats = new Chart(
         document.getElementById('chartStats').getContext('2d'),
-        { type: 'bar', data: { labels: statLabels, datasets: statDatasets }, options: { ...chartDefaults } }
+        { type: 'bar', data: { labels: statLabels, datasets: statDatasets }, options: makeChartOptions() }
     );
 }
 
@@ -238,14 +252,15 @@ export async function loadCompararView() {
     const app = document.getElementById('app');
     destroyCharts();
 
-    // Ensure drivers are loaded
+    // ✅ FIX 3: Re-fetch si la lista es de otro año o está vacía
     let drivers = state.driversList;
-    if (!drivers.length) {
+    if (!drivers.length || state.driversListYear !== state.currentYear) {
         try {
             const res = await fetch(`${API}/drivers?year=${state.currentYear}`);
             const json = await res.json();
             drivers = json.data || [];
             state.driversList = drivers;
+            state.driversListYear = state.currentYear; // ← marcar el año del caché
         } catch (e) {
             app.innerHTML = `<div class="cmp-loading" style="color:#e10600;">Error cargando pilotos.</div>`;
             return;

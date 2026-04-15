@@ -6,6 +6,9 @@ server/node_modules/
 # Archivos de entorno (Secretos, nunca se suben)
 .env
 server/.env
+server/scripts
+server/public
+server/migrations
 client/.env
 
 # Carpetas de compilación
