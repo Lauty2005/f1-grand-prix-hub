@@ -34,11 +34,13 @@ router.post(
 
 // ── Rutas públicas ──────────────────────────────────────────────────────────
 router.get('/',      articlesController.getArticles);
-router.get('/:slug', articlesController.getArticleBySlug);
 
-// ── Rutas admin ─────────────────────────────────────────────────────────────
+// ── Rutas admin GET — DEBEN ir antes de /:slug ──────────────────────────────
 router.get('/admin/all',  adminAuth, articlesController.getAllArticlesAdmin);
 router.get('/admin/:id',  adminAuth, articlesController.getArticleByIdAdmin);
+
+// ── Wildcard — va DESPUÉS de todas las rutas estáticas ──────────────────────
+router.get('/:slug', articlesController.getArticleBySlug);
 
 router.post('/admin/generate',        adminAuth, generateArticleHandler);   // 1 artículo por tipo
 router.post('/admin/generate-bundle', adminAuth, generateBundleHandler);    // 3 artículos post-carrera
