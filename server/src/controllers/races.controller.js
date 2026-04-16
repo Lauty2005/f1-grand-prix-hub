@@ -3,7 +3,7 @@ import { listR2Objects } from '../config/r2.js';
 
 export const getAll = async (req, res) => {
     try {
-        const year = req.query.year || '2025';
+        const year = req.query.year || String(new Date().getFullYear());
         const races = await racesService.getCalendar(year);
         res.json({ success: true, data: races });
     } catch (err) {

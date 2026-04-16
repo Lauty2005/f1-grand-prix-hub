@@ -3,7 +3,7 @@ import * as driversService from '../services/drivers.service.js';
 
 export const getAllDrivers = async (req, res) => {
     try {
-        const year = req.query.year || '2025';
+        const year = req.query.year || String(new Date().getFullYear());
         const drivers = await driversService.getDrivers(year);
         res.json({ success: true, data: drivers });
     } catch (err) {
@@ -15,7 +15,7 @@ export const getAllDrivers = async (req, res) => {
 export const getDriverHistorial = async (req, res) => {
     try {
         const { id } = req.params;
-        const year = req.query.year || '2025';
+        const year = req.query.year || String(new Date().getFullYear());
         const results = await driversService.getDriverResults(id, year);
         res.json({ success: true, data: results });
     } catch (err) {
@@ -46,7 +46,7 @@ export const listTeams = async (req, res) => {
 
 export const compareDrivers = async (req, res) => {
     try {
-        const { ids, year = '2025' } = req.query;
+        const { ids, year = String(new Date().getFullYear()) } = req.query;
         if (!ids) return res.status(400).json({ error: 'Parámetro ids requerido' });
 
         const idArray = ids.split(',').map(id => parseInt(id.trim())).filter(n => !isNaN(n));
