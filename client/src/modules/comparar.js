@@ -1,6 +1,17 @@
 import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 
+// ─── XSS PROTECTION ───────────────────────────────────────────────────────────
+function esc(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 // Instancias Chart.js activas — se destruyen al re-renderizar
 const charts = {};
 
@@ -29,7 +40,7 @@ function statBox(label, values, colors) {
 // ─── DRIVER SELECTOR ──────────────────────────────────────────────────────────
 function selectorHTML(slot, selectedId, drivers) {
     const options = drivers.map(d =>
-        `<option value="${d.id}" ${d.id == selectedId ? 'selected' : ''}>${d.first_name} ${d.last_name}</option>`
+        `<option value="${esc(d.id)}" ${d.id == selectedId ? 'selected' : ''}>${esc(d.first_name)} ${esc(d.last_name)}</option>`
     ).join('');
     return `
         <div class="cmp-selector" data-slot="${slot}">
@@ -53,9 +64,9 @@ function h2hTableHTML(h2h, drivers) {
         const posB = r.dnf_b ? 'NC' : `P${r.pos_b}`;
         return `
             <tr class="cmp-h2h__row">
-                <td class="cmp-h2h__pos ${aWon ? 'winner' : ''}" style="color:${aWon ? dA.primary_color : 'rgba(255,255,255,0.4)'};">${posA}</td>
-                <td class="cmp-h2h__race">R${r.round} · ${r.race_name}</td>
-                <td class="cmp-h2h__pos ${bWon ? 'winner' : ''}" style="color:${bWon ? dB.primary_color : 'rgba(255,255,255,0.4)'};">${posB}</td>
+                <td class="cmp-h2h__pos ${aWon ? 'winner' : ''}" style="color:${aWon ? esc(dA.primary_color) : 'rgba(255,255,255,0.4)'};">${posA}</td>
+                <td class="cmp-h2h__race">R${esc(r.round)} · ${esc(r.race_name)}</td>
+                <td class="cmp-h2h__pos ${bWon ? 'winner' : ''}" style="color:${bWon ? esc(dB.primary_color) : 'rgba(255,255,255,0.4)'};">${posB}</td>
             </tr>`;
     }).join('');
 
@@ -64,12 +75,12 @@ function h2hTableHTML(h2h, drivers) {
             <div class="cmp-section-title">HEAD TO HEAD</div>
             <div class="cmp-h2h__scoreboard">
                 <div class="cmp-h2h__score">
-                    <span style="color:${dA.primary_color}; font-size:2.5rem; font-weight:900;">${h2h.wins_a}</span>
+                    <span style="color:${esc(dA.primary_color)}; font-size:2.5rem; font-weight:900;">${esc(h2h.wins_a)}</span>
                     <span style="color:rgba(255,255,255,0.35); font-size:0.75rem;">VICTORIAS</span>
                 </div>
                 <span class="cmp-h2h__vs">VS</span>
                 <div class="cmp-h2h__score">
-                    <span style="color:${dB.primary_color}; font-size:2.5rem; font-weight:900;">${h2h.wins_b}</span>
+                    <span style="color:${esc(dB.primary_color)}; font-size:2.5rem; font-weight:900;">${esc(h2h.wins_b)}</span>
                     <span style="color:rgba(255,255,255,0.35); font-size:0.75rem;">VICTORIAS</span>
                 </div>
             </div>
@@ -77,9 +88,9 @@ function h2hTableHTML(h2h, drivers) {
                 <table class="cmp-h2h__table">
                     <thead>
                         <tr>
-                            <th style="color:${dA.primary_color};">${dA.last_name}</th>
+                            <th style="color:${esc(dA.primary_color)};">${esc(dA.last_name)}</th>
                             <th>CARRERA</th>
-                            <th style="color:${dB.primary_color};">${dB.last_name}</th>
+                            <th style="color:${esc(dB.primary_color)};">${esc(dB.last_name)}</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>
