@@ -805,7 +805,13 @@ async function loadStrategyAnalysis(raceId) {
             return;
         }
 
-        const { race, drivers, stats } = json.data;
+        const { race, stats } = json.data;
+        const drivers = [...json.data.drivers].sort((a, b) => {
+            if (a.final_position && b.final_position) return a.final_position - b.final_position;
+            if (a.final_position) return -1;
+            if (b.final_position) return 1;
+            return 0;
+        });
         const totalLaps = race.total_laps || 1;
 
         // ── KPI strip ────────────────────────────────
