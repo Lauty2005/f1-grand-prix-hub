@@ -43,21 +43,6 @@ export const postResult = async (req, res) => {
     }
 };
 
-export const getSession = async (req, res) => {
-    try {
-        // Obtenemos del URL qué tipo de sesión se pide (results, qualifying, practices...)
-        const routePath = req.path.split('/').pop(); 
-        let sessionType = routePath;
-        if(routePath === req.params.id) {
-            // Un truquito: express params hace que a veces fallé el pop si usamos el mismo router handler
-            // Mejor pasarlo estático por un middleware o leer el final de req.originalUrl
-        }
-        
-        // Pero como es más directo, puedo crear distintos handlers o leer el param
-        // En Express: router.get('/:id/:session', ...)
-    } catch (e) { res.status(500).json({ error: 'Error' }); }
-};
-
 // Handlers separadas para GET session outputs
 export const getRaceSession = (session) => async (req, res) => {
     try {
@@ -96,29 +81,31 @@ export const postPractices = async (req, res) => {
 
 export const postRace = async (req, res) => {
     try {
-        // req.fileUrls viene del middleware R2 en races.routes.js
-        // Si no se subió nueva imagen se usa la selección existente del formulario
-        const map_image_url = req.fileUrls?.['map_image']
-            ?? req.body.existing_map_image
-            ?? null;
+        const {
+            name, round, date, circuit_name, country,
+            total_laps, sprint, existing_map_image, existing_circuit_image,
+        } = req.body;
 
-        const circuit_image_url = req.fileUrls?.['circuit_image']
-            ?? req.body.existing_circuit_image
-            ?? null;
+        const map_image_url     = req.fileUrls?.['map_image']     ?? existing_map_image     ?? null;
+        const circuit_image_url = req.fileUrls?.['circuit_image'] ?? existing_circuit_image ?? null;
 
         const data = {
-            ...req.body,
+            name,
+            round,
+            date,
+            circuit_name,
+            country,
             map_image_url,
             circuit_image_url,
-            hasSprint: req.body.sprint === 'true',
-            lapsInt:   req.body.total_laps ? parseInt(req.body.total_laps) : 0,
+            hasSprint: sprint === 'true',
+            lapsInt:   total_laps ? parseInt(total_laps) : 0,
         };
 
         await racesService.insertRace(data);
         res.json({ success: true, message: 'Carrera creada correctamente' });
     } catch (e) {
         console.error('ERROR postRace:', e);
-        res.status(500).json({ error: e.message });
+        res.status(500).json({ error: 'Error al crear carrera' });
     }
 };
 
