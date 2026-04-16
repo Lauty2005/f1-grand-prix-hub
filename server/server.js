@@ -54,7 +54,7 @@ const globalLimiter = rateLimit({
 });
 
 // --- MIDDLEWARES (SIEMPRE PRIMERO) ---
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(globalLimiter);
 app.use(cors({
     origin: (origin, callback) => {
