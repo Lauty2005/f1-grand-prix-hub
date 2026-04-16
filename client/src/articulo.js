@@ -27,7 +27,7 @@ function shareButtonsHTML(article) {
             <a class="share-btn share-btn--twitter"
                href="https://twitter.com/intent/tweet?text=${text}&url=${url}"
                target="_blank" rel="noopener noreferrer">
-                𝕏 Twitter
+                𝕏
             </a>
             <a class="share-btn share-btn--whatsapp"
                href="https://wa.me/?text=${text}%20${url}"
