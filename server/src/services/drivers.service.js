@@ -10,7 +10,7 @@ export const getDrivers = async (year) => {
             (COALESCE(race_stats.total_points, 0) + COALESCE(sprint_stats.total_points, 0)) as points,
             COALESCE(race_stats.podiums, 0) as podiums
         FROM drivers d
-        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $4::int
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $3::int
         JOIN constructors c    ON c.id = ds.constructor_id
         LEFT JOIN (
             SELECT r_res.driver_id, SUM(r_res.points) as total_points, COUNT(CASE WHEN r_res.position BETWEEN 1 AND 3 THEN 1 END) as podiums
@@ -24,13 +24,13 @@ export const getDrivers = async (year) => {
             WHERE r.date >= $1 AND r.date < $2
             GROUP BY s_res.driver_id
         ) sprint_stats ON d.id = sprint_stats.driver_id
-        WHERE d.active_seasons::text LIKE $3
-          AND (d.active = true OR $4::int < EXTRACT(YEAR FROM NOW())::int)
+        WHERE $3::int = ANY(d.active_seasons)
+          AND (d.active = true OR $3::int < EXTRACT(YEAR FROM NOW())::int)
         ORDER BY points DESC, d.last_name ASC;
     `;
     const startDate = `${year}-01-01`;
     const endDate = `${parseInt(year) + 1}-01-01`;
-    const result = await query(sql, [startDate, endDate, '%' + year + '%', year]);
+    const result = await query(sql, [startDate, endDate, year]);
     return result.rows;
 };
 
