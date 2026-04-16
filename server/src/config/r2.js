@@ -1,3 +1,5 @@
+import 'dotenv/config';
+
 // server/src/config/r2.js
 import {
     S3Client,

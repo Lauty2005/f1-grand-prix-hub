@@ -20,7 +20,14 @@ import newsletterRouter from './src/routes/newsletter.routes.js';
 
 dotenv.config();
 
-const REQUIRED_ENV = ['JWT_SECRET', 'CLOUDFLARE_R2_BUCKET', 'CLOUDFLARE_R2_PUBLIC_URL'];
+const REQUIRED_ENV = [
+    'JWT_SECRET',
+    'CLOUDFLARE_R2_BUCKET',
+    'CLOUDFLARE_R2_PUBLIC_URL',
+    'CLOUDFLARE_ACCOUNT_ID',
+    'CLOUDFLARE_R2_ACCESS_KEY',
+    'CLOUDFLARE_R2_SECRET_KEY',
+];
 for (const key of REQUIRED_ENV) {
     if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
 }
