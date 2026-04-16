@@ -1,10 +1,17 @@
 // server/src/config/upload.js
 import multer from 'multer';
-import path from 'path';
 import { randomBytes } from 'crypto';
 import { uploadToR2 } from './r2.js';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
+
+const MIME_TO_EXT = {
+    'image/jpeg': '.jpg',
+    'image/png':  '.png',
+    'image/webp': '.webp',
+    'image/avif': '.avif',
+    'image/gif':  '.gif',
+};
 
 const fileFilter = (req, file, cb) => {
     ALLOWED_MIME.includes(file.mimetype)
@@ -24,7 +31,7 @@ function makeR2SingleMiddleware(folderName, fieldName) {
     return async (req, res, next) => {
         if (!req.file) return next();
         try {
-            const ext = path.extname(req.file.originalname).toLowerCase();
+            const ext = MIME_TO_EXT[req.file.mimetype] ?? '.bin';
             const key = `${folderName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
             // req.fileUrl queda disponible para el handler de la ruta
             req.fileUrl = await uploadToR2(req.file.buffer, key, req.file.mimetype);
@@ -43,7 +50,7 @@ function makeR2FieldsMiddleware(folderName) {
             req.fileUrls = {};
             for (const [fieldName, files] of Object.entries(req.files)) {
                 const file = files[0];
-                const ext  = path.extname(file.originalname).toLowerCase();
+                const ext = MIME_TO_EXT[file.mimetype] ?? '.bin';
                 const key  = `${folderName}/${fieldName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
                 req.fileUrls[fieldName] = await uploadToR2(file.buffer, key, file.mimetype);
             }
