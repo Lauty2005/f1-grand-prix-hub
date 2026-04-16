@@ -4,9 +4,17 @@ import { adminAuth } from '../middleware/auth.middleware.js';
 import * as articlesController from '../controllers/articles.controller.js';
 import { generateArticleHandler, generateBundleHandler } from '../controllers/aiArticle.controller.js';
 import { createUpload } from '../config/upload.js';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 const upload = createUpload('articles');
+const aiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Límite de generación AI alcanzado, espere un minuto.' },
+});
 
 // ── Upload de imagen de portada ─────────────────────────────────────────────
 // DEBE ir antes de /:slug para evitar colisiones de ruteo
@@ -42,8 +50,8 @@ router.get('/admin/:id',  adminAuth, articlesController.getArticleByIdAdmin);
 // ── Wildcard — va DESPUÉS de todas las rutas estáticas ──────────────────────
 router.get('/:slug', articlesController.getArticleBySlug);
 
-router.post('/admin/generate',        adminAuth, generateArticleHandler);   // 1 artículo por tipo
-router.post('/admin/generate-bundle', adminAuth, generateBundleHandler);    // 3 artículos post-carrera
+router.post('/admin/generate',        adminAuth, aiLimiter, generateArticleHandler);   // 1 artículo por tipo
+router.post('/admin/generate-bundle', adminAuth, aiLimiter, generateBundleHandler);    // 3 artículos post-carrera
 
 router.post('/',    adminAuth, articlesController.createArticle);
 router.put('/:id',  adminAuth, articlesController.updateArticle);

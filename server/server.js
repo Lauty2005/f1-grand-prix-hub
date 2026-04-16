@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 import driversRoutes from './src/routes/drivers.routes.js';
 import racesRoutes from './src/routes/races.routes.js';
@@ -18,6 +20,11 @@ import newsletterRouter from './src/routes/newsletter.routes.js';
 
 dotenv.config();
 
+const REQUIRED_ENV = ['JWT_SECRET', 'CLOUDFLARE_R2_BUCKET', 'CLOUDFLARE_R2_PUBLIC_URL'];
+for (const key of REQUIRED_ENV) {
+    if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
+}
+
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
 ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
 : ['http://localhost:5173'];
@@ -31,13 +38,23 @@ if (process.env.NODE_ENV === 'production') {
     app.set('trust proxy', 1);
 }
 
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { error: 'Demasiadas solicitudes, intente más tarde.' },
+});
+
 // --- MIDDLEWARES (SIEMPRE PRIMERO) ---
+app.use(helmet());
+app.use(globalLimiter);
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin || ALLOWED_ORIGINS.includes(origin)) {
             callback(null, true);
         } else {
-            callback(new Error(`CORS bloqueado: ${origin}`));
+            callback(new Error('Not allowed by CORS'));
         }
     },
     credentials: true
