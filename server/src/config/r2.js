@@ -16,8 +16,8 @@ const r2Client = new S3Client({
     },
 });
 
-const BUCKET = () => process.env.CLOUDFLARE_R2_BUCKET;
-const CDN    = () => process.env.CLOUDFLARE_R2_PUBLIC_URL; // ej: https://pub-xxx.r2.dev
+const BUCKET = process.env.CLOUDFLARE_R2_BUCKET;
+const CDN    = process.env.CLOUDFLARE_R2_PUBLIC_URL; // ej: https://pub-xxx.r2.dev
 
 // ─── Subir archivo ──────────────────────────────────────────────────────────
 /**
@@ -30,7 +30,7 @@ const CDN    = () => process.env.CLOUDFLARE_R2_PUBLIC_URL; // ej: https://pub-xx
 export async function uploadToR2(buffer, key, mimeType) {
     await r2Client.send(
         new PutObjectCommand({
-            Bucket:       BUCKET(),
+            Bucket:       BUCKET,
             Key:          key,
             Body:         buffer,
             ContentType:  mimeType,
@@ -38,7 +38,7 @@ export async function uploadToR2(buffer, key, mimeType) {
             CacheControl: 'public, max-age=31536000, immutable',
         })
     );
-    return `${CDN()}/${key}`;
+    return `${CDN}/${key}`;
 }
 
 // ─── Eliminar archivo ────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ export async function deleteFromR2(key) {
     if (!key) return;
     try {
         await r2Client.send(
-            new DeleteObjectCommand({ Bucket: BUCKET(), Key: key })
+            new DeleteObjectCommand({ Bucket: BUCKET, Key: key })
         );
     } catch (err) {
         // No es fatal si falla el delete (ej: archivo ya borrado)
@@ -71,7 +71,7 @@ export async function listR2Objects(prefix) {
     do {
         const res = await r2Client.send(
             new ListObjectsV2Command({
-                Bucket:            BUCKET(),
+                Bucket:            BUCKET,
                 Prefix:            prefix,
                 ContinuationToken: continuationToken,
             })
@@ -80,7 +80,7 @@ export async function listR2Objects(prefix) {
         for (const obj of res.Contents ?? []) {
             const name = obj.Key.replace(prefix, '');
             if (name) {
-                objects.push({ name, url: `${CDN()}/${obj.Key}` });
+                objects.push({ name, url: `${CDN}/${obj.Key}` });
             }
         }
 
@@ -99,7 +99,7 @@ export async function listR2Objects(prefix) {
  */
 export function getKeyFromUrl(publicUrl) {
     if (!publicUrl) return null;
-    const base = CDN();
+    const base = CDN;
     if (!base || !publicUrl.startsWith(base)) return null;
     return publicUrl.replace(`${base}/`, '');
 }
