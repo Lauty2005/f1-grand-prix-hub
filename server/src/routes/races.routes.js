@@ -33,11 +33,11 @@ router.get('/:id/strategy',          strategyController.getRaceStrategy);
 // El middleware de upload sube ambas imágenes a R2 en paralelo antes del handler
 router.post(
     '/',
+    adminAuth,
     ...upload.fields([
         { name: 'map_image',     maxCount: 1 },
         { name: 'circuit_image', maxCount: 1 },
     ]),
-    adminAuth,
     validateRace,
     racesController.postRace
 );
