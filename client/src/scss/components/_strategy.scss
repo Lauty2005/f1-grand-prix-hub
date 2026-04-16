@@ -1,102 +1,135 @@
 @use '../abstracts/variables' as *;
 
-// ─────────────────────────────────────────────
-//  COMPOUND COLOURS (shared tokens)
-// ─────────────────────────────────────────────
-$compound-soft:   #e10600;
-$compound-medium: #ffc906;
-$compound-hard:   #e8e8e8;
-$compound-inter:  #39b54a;
-$compound-wet:    #0067ff;
-$compound-unknown:#666;
+// ─── Compound tokens ──────────────────────────
+$s: #e10600;
+$m: #ffc906;
+$h: #e8e8e8;
+$i: #39b54a;
+$w: #0067ff;
+$u: #555;
 
-// ─────────────────────────────────────────────
-//  STRATEGY SECTION (inside modal tab)
-// ─────────────────────────────────────────────
-.strategy-section {
-    padding: 6px 6px     24px;
+// ─── Root wrapper ─────────────────────────────
+.strat {
+    padding: 0 2px 32px;
+    font-family: 'Barlow Condensed', sans-serif;
 }
 
-// ── Stats strip ──────────────────────────────
-.strategy-stats {
+// ─── KPI strip ───────────────────────────────
+.strat-kpis {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 22px;
+    margin-bottom: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.02);
 }
 
-.strategy-stat-chip {
-    display: inline-flex;
-    flex-direction: column;
-    gap: 2px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 9px 14px;
+.strat-kpi {
+    flex: 1;
+    padding: 14px 18px;
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    position: relative;
+
+    &:last-child { border-right: none; }
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: $color-primary;
+        opacity: 0.6;
+    }
 
     &__label {
-        font-size: 0.6rem;
+        display: block;
+        font-size: 0.58rem;
         font-weight: 700;
+        letter-spacing: 2px;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
         color: $color-primary;
+        margin-bottom: 5px;
     }
 
     &__value {
-        font-size: 1rem;
-        font-weight: 800;
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 1.5rem;
+        font-weight: 700;
         color: #fff;
+        line-height: 1;
     }
 
     &__sub {
-        font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.4);
+        display: block;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.3);
+        margin-top: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    @include mobile {
+        padding: 12px 10px;
+
+        &__value { font-size: 1.1rem; }
+        &__sub { display: none; }
     }
 }
 
-// ── Compound legend ───────────────────────────
-.strategy-legend {
+// ─── Compound legend ──────────────────────────
+.strat-legend {
     display: flex;
     flex-wrap: wrap;
-    justify-content: center;
     gap: 12px;
     margin-bottom: 18px;
 }
 
-.strategy-legend-item {
+.strat-compound {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     font-size: 0.72rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.55);
+    letter-spacing: 0.8px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.45);
 
-    &__dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 3px;
+    &__circle {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
         flex-shrink: 0;
+        position: relative;
 
-        &--SOFT    { background: $compound-soft; }
-        &--MEDIUM  { background: $compound-medium; }
-        &--HARD    { background: $compound-hard; }
-        &--INTER   { background: $compound-inter; }
-        &--WET     { background: $compound-wet; }
-        &--UNKNOWN { background: $compound-unknown; }
+        &::after {
+            content: '';
+            position: absolute;
+            inset: 5px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.45);
+        }
     }
+
+    &--SOFT    .strat-compound__circle { background: $s; }
+    &--MEDIUM  .strat-compound__circle { background: $m; }
+    &--HARD    .strat-compound__circle { background: $h; }
+    &--INTER   .strat-compound__circle { background: $i; }
+    &--WET     .strat-compound__circle { background: $w; }
+    &--UNKNOWN .strat-compound__circle { background: $u; }
 }
 
-// ── Section header inside strategy ───────────
-.strategy-sub-title {
-    font-size: 0.65rem;
+// ─── Section label ────────────────────────────
+.strat-section-label {
+    font-size: 0.6rem;
     font-weight: 700;
+    letter-spacing: 3px;
     text-transform: uppercase;
-    letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.3);
-    margin-bottom: 12px;
+    color: rgba(255, 255, 255, 0.2);
+    margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -105,287 +138,305 @@ $compound-unknown:#666;
         content: '';
         flex: 1;
         height: 1px;
-        background: rgba(255, 255, 255, 0.06);
+        background: rgba(255, 255, 255, 0.05);
     }
 }
 
-// ─────────────────────────────────────────────
-//  GANTT CHART
-// ─────────────────────────────────────────────
-.strategy-gantt {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+// ─── Gantt chart ─────────────────────────────
+.strat-gantt {
     margin-bottom: 28px;
 }
 
-// Lap axis row
-.strategy-lap-axis {
+.strat-axis {
     display: flex;
-    margin-left: 126px; // align with stints column
-    height: 16px;
+    margin-left: 130px;
+    height: 22px;
     position: relative;
+    margin-bottom: 2px;
 
     @include mobile { display: none; }
 }
 
-.strategy-lap-tick {
+.strat-axis-tick {
     position: absolute;
-    font-size: 0.58rem;
-    color: rgba(255, 255, 255, 0.22);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.52rem;
+    color: rgba(255, 255, 255, 0.18);
     transform: translateX(-50%);
-    white-space: nowrap;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 14px;
+        left: 50%;
+        width: 1px;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.07);
+    }
 }
 
-// Driver row
-.strategy-row {
+// ── Driver row ────────────────────────────────
+.strat-row {
     display: flex;
     align-items: center;
-    gap: 10px;
-    min-height: 32px;
+    gap: 8px;
+    margin-bottom: 4px;
+    animation: stratRowIn 0.35s ease both;
 }
 
-.strategy-driver-col {
-    width: 120px;
+@keyframes stratRowIn {
+    from { opacity: 0; transform: translateX(-6px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.strat-driver-info {
+    width: 126px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     gap: 6px;
     overflow: hidden;
 
-    @include mobile { width: 80px; }
+    @include mobile { width: 82px; }
 }
 
-.strategy-pos {
-    font-size: 0.72rem;
-    font-weight: 900;
-    color: rgba(255, 255, 255, 0.3);
-    width: 18px;
-    text-align: right;
-    flex-shrink: 0;
-}
-
-.strategy-driver-name {
-    font-size: 0.72rem;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.75);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.strategy-driver-bar {
+.strat-team-bar {
     width: 3px;
-    height: 22px;
+    height: 36px;
     border-radius: 2px;
     flex-shrink: 0;
 }
 
-// Stints bar
-.strategy-stints-col {
-    flex: 1;
-    display: flex;
-    height: 28px;
-    border-radius: 5px;
-    overflow: hidden;
-    gap: 2px;
+.strat-pos {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.22);
+    width: 22px;
+    text-align: right;
+    flex-shrink: 0;
 }
 
-.strategy-stint {
+.strat-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.78);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+// ── Stint bars ────────────────────────────────
+.strat-bars {
+    flex: 1;
+    display: flex;
+    height: 36px;
+    gap: 3px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.strat-bar {
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: 3px;
     position: relative;
-    overflow: hidden;
     cursor: default;
-    min-width: 12px;
-    transition: filter 0.15s ease;
+    overflow: hidden;
+    transition: filter 0.15s, transform 0.15s;
+    min-width: 10px;
 
-    &:hover { filter: brightness(1.15); }
-
-    // Compound colors
-    &--SOFT    { background: $compound-soft;    color: rgba(255,255,255,0.9); }
-    &--MEDIUM  { background: $compound-medium;  color: rgba(0,0,0,0.75); }
-    &--HARD    { background: $compound-hard;    color: rgba(0,0,0,0.70); }
-    &--INTER   { background: $compound-inter;   color: rgba(255,255,255,0.9); }
-    &--WET     { background: $compound-wet;     color: rgba(255,255,255,0.9); }
-    &--UNKNOWN { background: $compound-unknown; color: rgba(255,255,255,0.7); }
-
-    &__label {
-        font-size: 0.6rem;
-        font-weight: 800;
-        white-space: nowrap;
-        padding: 0 5px;
-        line-height: 1;
+    &::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, transparent 55%);
         pointer-events: none;
     }
 
-    // Pit stop marker (right edge of every stint except last)
-    &:not(:last-child)::after {
-        content: '';
-        position: absolute;
-        right: -1px;
-        top: 0;
-        bottom: 0;
-        width: 2px;
-        background: rgba(0, 0, 0, 0.35);
+    &:hover {
+        filter: brightness(1.18);
+        z-index: 2;
+    }
+
+    &--SOFT    { background: $s; color: rgba(255, 255, 255, 0.95); }
+    &--MEDIUM  { background: $m; color: rgba(0, 0, 0, 0.82); }
+    &--HARD    { background: $h; color: rgba(0, 0, 0, 0.78); }
+    &--INTER   { background: $i; color: rgba(255, 255, 255, 0.95); }
+    &--WET     { background: $w; color: rgba(255, 255, 255, 0.95); }
+    &--UNKNOWN { background: $u; color: rgba(255, 255, 255, 0.7); }
+
+    &__label {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        padding: 0 6px;
+        pointer-events: none;
+        text-transform: uppercase;
+        position: relative;
+        z-index: 1;
     }
 }
 
-// Pit duration badge (shows on hover via title attr — browser native)
-// For a richer tooltip we use a data-attr approach:
-.strategy-stint[data-pit]::before {
+.strat-bar[data-pit]::after {
     content: attr(data-pit);
     position: absolute;
-    bottom: calc(100% + 5px);
+    bottom: calc(100% + 7px);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.85);
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: #fff;
+    font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
-    font-weight: 700;
-    padding: 3px 7px;
-    border-radius: 4px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 5px;
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 0.15s ease;
-    z-index: 10;
+    transition: opacity 0.15s;
+    z-index: 20;
 }
 
-.strategy-stint[data-pit]:hover::before {
-    opacity: 1;
-}
+.strat-bar[data-pit]:hover::after { opacity: 1; }
 
-// Stop count badge
-.strategy-stops-badge {
+.strat-stop-count {
     flex-shrink: 0;
-    font-size: 0.62rem;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.58rem;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.28);
-    width: 28px;
+    color: rgba(255, 255, 255, 0.2);
+    width: 26px;
     text-align: left;
 
     @include mobile { display: none; }
 }
 
-// ─────────────────────────────────────────────
-//  P1 vs P2 COMPARISON
-// ─────────────────────────────────────────────
-.strategy-comparison {
+// ─── P1 vs P2 ────────────────────────────────
+.strat-h2h {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 6px;
+    grid-template-columns: 1fr 44px 1fr;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.07);
 
-    @include mobile { grid-template-columns: 1fr; }
+    @include mobile { grid-template-columns: 1fr 36px 1fr; }
 }
 
-.strategy-comparison-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 10px;
-    padding: 14px 16px;
+.strat-h2h-card {
+    padding: 20px 18px;
+    background: rgba(255, 255, 255, 0.02);
+    position: relative;
 
-    &__header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 12px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--team-color, #e10600);
     }
 
     &__pos {
-        font-size: 1.1rem;
+        display: block;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.8rem;
         font-weight: 900;
-        color: $color-primary;
+        color: var(--team-color, #e10600);
+        line-height: 1;
+        margin-bottom: 2px;
+
+        @include mobile { font-size: 2rem; }
     }
 
     &__name {
-        font-size: 0.9rem;
-        font-weight: 700;
+        display: block;
+        font-size: 1rem;
+        font-weight: 800;
         color: #fff;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 1px;
+
+        @include mobile { font-size: 0.82rem; }
     }
 
     &__team {
-        font-size: 0.72rem;
-        color: rgba(255, 255, 255, 0.4);
-    }
-
-    &__bar {
-        width: 3px;
-        height: 30px;
-        border-radius: 2px;
-        flex-shrink: 0;
-    }
-}
-
-.strategy-comparison-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 6px 0;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    font-size: 0.8rem;
-
-    &:last-child { border-bottom: none; }
-
-    &__label {
-        color: rgba(255, 255, 255, 0.35);
-        font-weight: 600;
+        display: block;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.3);
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        font-size: 0.68rem;
+        margin-bottom: 16px;
     }
 
-    &__value {
-        color: #fff;
+    &__stat-label {
+        display: block;
+        font-size: 0.58rem;
         font-weight: 700;
-        text-align: right;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.25);
+        margin-top: 8px;
+    }
+
+    &__stat-value {
+        display: block;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #fff;
+        margin-top: 2px;
     }
 }
 
-// Compound pill inline (inside comparison)
-.cmp-pill {
-    display: inline-block;
-    padding: 1px 7px;
-    border-radius: 3px;
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    margin: 0 2px;
-
-    &--SOFT    { background: $compound-soft;    color: #fff; }
-    &--MEDIUM  { background: $compound-medium;  color: #000; }
-    &--HARD    { background: $compound-hard;    color: #000; }
-    &--INTER   { background: $compound-inter;   color: #fff; }
-    &--WET     { background: $compound-wet;     color: #fff; }
-    &--UNKNOWN { background: $compound-unknown; color: #fff; }
-}
-
-// ─────────────────────────────────────────────
-//  TEAM HISTORY TABLE
-// ─────────────────────────────────────────────
-.strategy-team-history {
-    margin-top: 6px;
-}
-
-.strategy-team-row {
+.strat-h2h-vs {
+    background: rgba(255, 255, 255, 0.03);
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 12px;
-    border-radius: 7px;
-    font-size: 0.82rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    justify-content: center;
+    writing-mode: vertical-rl;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    color: rgba(255, 255, 255, 0.12);
+    text-transform: uppercase;
+}
 
-    &:hover { background: rgba(255, 255, 255, 0.04); }
+// ─── Compound pills (h2h) ─────────────────────
+.strat-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 800;
+    margin: 0 1px;
 
-    &__round   { color: rgba(255,255,255,0.3); width: 28px; flex-shrink: 0; font-size: 0.7rem; }
-    &__race    { flex: 1; color: rgba(255,255,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    &__driver  { width: 90px; color: rgba(255,255,255,0.5); font-size: 0.75rem; flex-shrink: 0; }
-    &__stops   { width: 50px; text-align: center; font-weight: 700; color: #fff; flex-shrink: 0; }
-    &__strat   { color: rgba(255,255,255,0.5); font-size: 0.75rem; font-family: monospace; flex-shrink: 0; }
+    &--SOFT    { background: $s; color: #fff; }
+    &--MEDIUM  { background: $m; color: #000; }
+    &--HARD    { background: $h; color: #000; }
+    &--INTER   { background: $i; color: #fff; }
+    &--WET     { background: $w; color: #fff; }
+    &--UNKNOWN { background: $u; color: #fff; }
+}
+
+.strat-pill-arrow {
+    color: rgba(255, 255, 255, 0.18);
+    font-size: 0.8rem;
+    margin: 0 1px;
+    vertical-align: middle;
 }
