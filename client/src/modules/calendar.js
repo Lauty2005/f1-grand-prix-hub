@@ -194,7 +194,6 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 if (type === 'sprint') loadSprintResults(id);
                 if (type === 'practices') loadPracticesResults(id, hasSprint);
                 if (type === 'sprint-qualy') loadSprintQualyResults(id);
-                if (type === 'circuit')  loadCircuitAnalysis(id);
                 if (type === 'strategy') loadStrategyAnalysis(id);
             } catch (e) {
                 console.error('Error cargando tab:', e);
@@ -576,90 +575,6 @@ async function loadSprintResults(raceId) {
                 </table>
             </div>`;
     } catch (e) { console.error(e); }
-}
-
-async function loadCircuitAnalysis(raceId) {
-    const container = document.getElementById('tab-content');
-    container.innerHTML = '<div style="text-align:center; color:white; padding:30px;">Cargando análisis...</div>';
-
-    try {
-        const res = await fetch(`${API}/races/${raceId}/circuit-analysis`);
-        const json = await res.json();
-
-        if (!json.success) {
-            container.innerHTML = '<p style="color:#aaa; text-align:center; padding:20px;">No hay datos de análisis para este circuito.</p>';
-            return;
-        }
-
-        const { race, winners } = json.data;
-
-        // ── Meta grid ──
-        const metaItems = [
-            { label: 'Primer GP', value: race.first_gp_year ? race.first_gp_year : '—' },
-            { label: 'Zonas DRS', value: race.drs_zones != null ? race.drs_zones : '—' },
-            { label: 'Longitud', value: race.circuit_length || '—' },
-            { label: 'Vueltas', value: race.total_laps || '—' },
-            { label: 'Distancia', value: race.race_distance || '—' },
-            { label: 'Récord Vuelta', value: race.lap_record || '—' },
-        ];
-
-        const metaHTML = metaItems.map(item => `
-            <div class="circuit-meta-item">
-                <span class="circuit-meta-item__label">${item.label}</span>
-                <span class="circuit-meta-item__value">${item.value}</span>
-            </div>
-        `).join('');
-
-        // ── Notes ──
-        const notesHTML = race.circuit_notes
-            ? `<div class="circuit-notes">${race.circuit_notes}</div>`
-            : '';
-
-        // ── Winners table ──
-        let winnersHTML = '';
-        if (winners.length === 0) {
-            winnersHTML = '<p class="circuit-empty">No hay ganadores históricos registrados para este circuito.</p>';
-        } else {
-            const rows = winners.map(w => `
-                <tr>
-                    <td class="cw-year">${w.year}</td>
-                    <td class="cw-winner">${w.winner_name}</td>
-                    <td class="cw-team">${w.team_name || '—'}</td>
-                    <td class="cw-pole">${w.pole_name || '—'}</td>
-                    <td class="cw-fl">${w.fastest_lap || '—'}</td>
-                </tr>
-            `).join('');
-
-            winnersHTML = `
-                <div class="table-responsive">
-                    <table class="circuit-winners-table">
-                        <thead>
-                            <tr>
-                                <th>Año</th>
-                                <th>Ganador</th>
-                                <th>Equipo</th>
-                                <th>Pole</th>
-                                <th>VR</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        container.innerHTML = `
-            <div class="circuit-analysis">
-                <div class="circuit-meta-grid">${metaHTML}</div>
-                ${notesHTML}
-                <p class="circuit-section-title">Palmarés histórico</p>
-                ${winnersHTML}
-            </div>
-        `;
-    } catch (e) {
-        console.error(e);
-        container.innerHTML = '<p style="color:red; text-align:center; padding:20px;">Error al cargar análisis del circuito.</p>';
-    }
 }
 
 async function loadSprintQualyResults(raceId) {
