@@ -83,7 +83,7 @@ $u: #555;
 // ─── Compound legend ──────────────────────────
 .strat-legend {
     display: flex;
-    flex-wrap: wrap;
+    justify-content: center;
     gap: 12px;
     margin-bottom: 18px;
 }
