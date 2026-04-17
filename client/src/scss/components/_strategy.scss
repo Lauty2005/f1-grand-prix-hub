@@ -10,7 +10,7 @@ $u: #555;
 
 // ─── Root wrapper ─────────────────────────────
 .strat {
-    padding: 0 2px 32px;
+    padding: 1rem 1rem;
     font-family: 'Barlow Condensed', sans-serif;
 }
 
@@ -404,7 +404,6 @@ $u: #555;
     display: flex;
     align-items: center;
     justify-content: center;
-    writing-mode: vertical-rl;
     font-family: 'Barlow Condensed', sans-serif;
     font-size: 0.68rem;
     font-weight: 900;
