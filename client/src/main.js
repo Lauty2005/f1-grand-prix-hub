@@ -100,6 +100,24 @@ function init() {
         subtitle: 'Análisis, predicciones y datos que no ves en otros lados',
         onSuccess: () => console.log('Usuario suscripto!')
     });
+
+    document.body.insertAdjacentHTML('beforeend', `
+        <footer class="site-footer">
+            <div class="footer-inner">
+                <div class="footer-brand">
+                    <div class="footer-brand-name">F1 <span>Grand Prix</span> Hub</div>
+                    <div class="footer-copy">© ${new Date().getFullYear()} — Análisis de F1 en español</div>
+                </div>
+                <div class="footer-socials">
+                    <a href="https://x.com/f1grandprixhub" target="_blank" rel="noopener noreferrer" class="footer-social-link" aria-label="Seguinos en X">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </footer>
+    `);
 }
 
 function refreshActiveView() {
