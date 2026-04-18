@@ -95,7 +95,7 @@ router.get('/unsubscribe', async (req, res) => {
             <html><body style="font-family:sans-serif;text-align:center;padding:60px;">
                 <h2>✅ Te desuscribiste correctamente</h2>
                 <p style="color:#666;">Ya no recibirás emails de F1 Grand Prix Hub.</p>
-                <a href="https://f1-grand-prix-hub.vercel.app" style="color:#e10600;">Volver al sitio</a>
+                <a href="https://f1grandprixhub.com" style="color:#e10600;">Volver al sitio</a>
             </body></html>
         `);
     } catch (error) {

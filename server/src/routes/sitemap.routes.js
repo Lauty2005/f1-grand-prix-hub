@@ -11,7 +11,7 @@ const router = Router();
 
 router.get('/sitemap.xml', async (req, res) => {
     try {
-        const baseURL = 'https://f1-grand-prix-hub.vercel.app';
+        const baseURL = 'https://f1grandprixhub.com';
 
         // 1. Obtener artículos (con prioridad alta)
         const articlesRes = await query(

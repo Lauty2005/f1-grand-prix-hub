@@ -8,7 +8,7 @@ import { Resend } from 'resend';
 import { query } from '../config/db.js';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const BASE_URL = 'https://f1-grand-prix-hub.vercel.app';
+const BASE_URL = 'https://f1grandprixhub.com';
 const API_URL  = 'https://f1-grand-prix-hub.onrender.com';
 
 // ────────────────────────────────────────────────────────────

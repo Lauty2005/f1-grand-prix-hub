@@ -29,3 +29,5 @@ mcp-servers/.claude/
 .claude/
 CLAUDE.md
 docs/
+skills-lock.json
+.agents/
