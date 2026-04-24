@@ -71,26 +71,30 @@ jobs:
             git commit -m "🏎️ [agent] publicados.json actualizado $(date +'%Y-%m-%d')"
           git push
 
-      # ── 6. Notificación Slack (solo en éxito y si está configurado) ───────────
-      - name: Notificación Slack
-        if: success() && secrets.SLACK_WEBHOOK_URL != ''
+      # ── 6. Notificación Slack éxito (solo si el secret está cargado) ────────────
+      # Para activar: agregá SLACK_WEBHOOK_URL en Settings → Secrets → Actions
+      # Si el secret no existe, el step falla silenciosamente y se ignora (continue-on-error)
+      - name: Notificación Slack (éxito)
+        if: success()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
             {
-              "text": "✅ *F1 Agent* publicó borradores nuevos el `${{ steps.agent.outputs.date }}`.\nRevisalos en el admin: https://f1-grand-prix-hub.vercel.app/admin.html\nArtículos procesados: *${{ steps.agent.outputs.count }}*"
+              "text": "✅ *F1 Agent* publicó borradores nuevos.\nRevisalos en el admin: https://f1-grand-prix-hub.vercel.app/admin.html\nArtículos procesados: *${{ steps.agent.outputs.count }}*"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
 
-      # ── 7. Notificación de fallo ──────────────────────────────────────────────
-      - name: Notificación de fallo
-        if: failure() && secrets.SLACK_WEBHOOK_URL != ''
+      # ── 7. Notificación Slack fallo ───────────────────────────────────────────
+      - name: Notificación Slack (fallo)
+        if: failure()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
             {
-              "text": "🔴 *F1 Agent falló* el `${{ steps.agent.outputs.date }}`.\nRevisá el log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              "text": "🔴 *F1 Agent falló*.\nRevisá el log: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
             }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
