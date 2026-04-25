@@ -40,14 +40,29 @@ log = logging.getLogger("f1-agent")
 # ── Constantes ────────────────────────────────────────────────────────────────
 MAX_ARTICLES_PER_RUN = 5
 
+# Mapea la categoría temática del scraper → categoría de la DB
 CATEGORY_MAP = {
-    "Fichajes y Rumores":       "noticias",
-    "Declaraciones":            "noticias",
-    "Técnico y Desarrollo":     "tecnico",
-    "Internas de Equipos":      "noticias",
-    "Polémicas y Sanciones":    "noticias",
+    "Fichajes y Rumores":              "noticias",
+    "Declaraciones":                   "noticias",
+    "Técnico y Desarrollo":            "tecnico",
+    "Internas de Equipos":             "noticias",
+    "Polémicas y Sanciones":           "noticias",
     "Noticias Generales / Estrategia": "estrategia",
 }
+
+# Mapea la categoría temática del scraper → tipo de artículo legible
+# Valores válidos: "Noticia" | "Análisis" | "Preview" | "Técnica"
+ARTICLE_TYPE_MAP = {
+    "Fichajes y Rumores":              "Noticia",
+    "Declaraciones":                   "Noticia",
+    "Técnico y Desarrollo":            "Técnica",
+    "Internas de Equipos":             "Análisis",
+    "Polémicas y Sanciones":           "Análisis",
+    "Noticias Generales / Estrategia": "Noticia",
+}
+
+# Autor por defecto para todos los artículos generados por el agente
+DEFAULT_AUTHOR = "Lautaro Iezzi"
 
 RSS_SOURCES = [
     "https://es.motorsport.com/rss/f1/news/",
@@ -198,53 +213,89 @@ class ContentGenerator:
         summary = news["summary"]
         cat_label = news["category"]
 
+        article_type = ARTICLE_TYPE_MAP.get(cat_label, "Noticia")
+
         prompt = f"""
-Eres un periodista experto en Fórmula 1. Escribe el cuerpo de un artículo periodístico sobre esta noticia.
+Eres un periodista experto en Fórmula 1. Vas a generar dos cosas para un artículo de tipo "{article_type}".
 
 Título: {title}
-Resumen/Extracto: {summary}
-Categoría: {cat_label}
+Resumen fuente: {summary}
+Categoría temática: {cat_label}
 
-INSTRUCCIONES DE FORMATO (importante):
-- Devuelve ÚNICAMENTE el HTML del contenido, sin head ni body.
+INSTRUCCIONES (devolvé EXACTAMENTE este formato, sin texto adicional):
+
+EXCERPT: [Un párrafo de 100 a 155 caracteres que resuma la noticia. Debe enganchar al lector y ser apto para meta description SEO.]
+
+CONTENT:
+[El cuerpo completo del artículo en HTML puro, sin head ni body.
 - Usa estas etiquetas: <p>, <h2>, <strong>, <em>, <ul>, <li>.
-- Estructura: párrafo de introducción (enganche), h2 con desarrollo, párrafo de conclusión/impacto.
+- Estructura: párrafo de introducción (enganche), mínimo 2 secciones con <h2>, párrafo de conclusión/impacto.
 - Tono profesional, objetivo, accesible para fans hispanohablantes.
-- Mínimo 300 palabras. NO repitas el título. NO incluyas saludos.
-- Solo devuelve HTML puro, sin bloques de código ni backticks.
+- Mínimo 350 palabras. NO repitas el título. NO incluyas saludos.
+- Solo HTML puro, sin bloques de código ni backticks.]
 """
+        # Valores de fallback
+        generated_excerpt = summary[:155] + "..." if len(summary) > 155 else summary
+        content_html = f"<p>{summary}</p>"
+
         try:
             log.info(f"Generando contenido para: '{title[:60]}...'")
             response = self.model.generate_content(prompt)
-            content_html = response.text.strip()
-            # Limpiar posibles bloques de código que Gemini a veces agrega
-            content_html = re.sub(r"^```html?\s*", "", content_html, flags=re.IGNORECASE)
-            content_html = re.sub(r"\s*```$", "", content_html)
+            raw = response.text.strip()
+
+            # Parsear las dos secciones: EXCERPT y CONTENT
+            excerpt_match = re.search(r"EXCERPT:\s*(.+?)(?=\nCONTENT:)", raw, re.DOTALL)
+            content_match = re.search(r"CONTENT:\s*(.+)$", raw, re.DOTALL)
+
+            if excerpt_match:
+                generated_excerpt = excerpt_match.group(1).strip()
+                # Recortar si Gemini se pasó del límite SEO
+                if len(generated_excerpt) > 160:
+                    generated_excerpt = generated_excerpt[:157] + "..."
+
+            if content_match:
+                content_html = content_match.group(1).strip()
+                # Limpiar posibles bloques de código que Gemini a veces agrega
+                content_html = re.sub(r"^```html?\s*", "", content_html, flags=re.IGNORECASE)
+                content_html = re.sub(r"\s*```$", "", content_html)
+
         except Exception as e:
             log.error(f"Error Gemini: {e}")
-            content_html = f"<p>{summary}</p>"
 
-        # Mapear la categoría del scraper a la categoría de la DB
-        db_category = CATEGORY_MAP.get(cat_label, "noticias")
+        # Mapear la categoría del scraper a los campos de la DB
+        db_category  = CATEGORY_MAP.get(cat_label, "noticias")
+        article_type = ARTICLE_TYPE_MAP.get(cat_label, "Noticia")
 
-        # Extraer tags relevantes del título
-        tags = _extract_tags(title)
+        # Extraer tags relevantes del título + agregar el tipo de artículo como tag
+        tags = _extract_tags(title, article_type)
+
+        log.info(f"  → Tipo: {article_type} | Categoría DB: {db_category} | Tags: {tags}")
 
         return {
-            "title":     title,
-            "excerpt":   summary[:157] + "..." if len(summary) > 157 else summary,
-            "content":   content_html,
-            "author":    "F1 Hub Agent",
-            "category":  db_category,
-            "tags":      tags,
-            "published": False,   # siempre borrador → lo revisás vos en el admin
-            "featured":  False,
+            "title":        title,
+            "excerpt":      generated_excerpt,
+            "content":      content_html,
+            "author":       DEFAULT_AUTHOR,
+            "category":     db_category,
+            "article_type": article_type,
+            "tags":         tags,
+            "published":    False,   # siempre borrador → lo revisás vos en el admin
+            "featured":     False,
         }
 
 
-def _extract_tags(title: str) -> list:
-    """Genera tags básicos a partir del título."""
+def _extract_tags(title: str, article_type: str = "Noticia") -> list:
+    """
+    Genera tags a partir del título + tipo de artículo.
+    Incluye: tags base de F1, pilotos/equipos detectados y el tipo de artículo.
+    """
+    # Tags base siempre presentes
     tags = ["f1", "fórmula 1"]
+
+    # Tipo de artículo como tag (para filtrado en el admin)
+    type_tag = article_type.lower().replace("é", "e").replace("á", "a")
+    tags.append(type_tag)
+
     pilots = [
         "verstappen", "hamilton", "leclerc", "norris", "sainz", "russell",
         "alonso", "piastri", "perez", "stroll", "tsunoda", "gasly", "hulkenberg",
@@ -258,7 +309,8 @@ def _extract_tags(title: str) -> list:
     for name in pilots + teams:
         if name in title_lower:
             tags.append(name)
-    return list(set(tags))[:8]   # máx 8 tags
+
+    return list(set(tags))[:10]   # máx 10 tags
 
 
 # ─────────────────────────────────────────────────────────────────────────────
