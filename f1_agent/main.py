@@ -422,16 +422,22 @@ def main():
         success = publisher.publish(article)
 
         if success:
-            published_hashes.add(news_hash(news))
             published_count += 1
+            # Solo acumular hashes si NO es dry run
+            if not publisher.dry_run:
+                published_hashes.add(news_hash(news))
         else:
             log.warning(f"Saltando registro del hash por fallo en publicación.")
 
-    # 4. Actualizar registro de publicados
-    save_published(registry_path, published_hashes)
-    log.info(f"\n{'=' * 60}")
-    log.info(f"✅ Proceso finalizado. Borradores publicados: {published_count}/{len(new_news)}")
-    log.info(f"{'=' * 60}")
+    # 4. Actualizar registro de publicados (solo en run real)
+    if not publisher.dry_run:
+        save_published(registry_path, published_hashes)
+        log.info(f"\n{'=' * 60}")
+        log.info(f"✅ Proceso finalizado. Borradores publicados: {published_count}/{len(new_news)}")
+    else:
+        log.info(f"\n{'=' * 60}")
+        log.info(f"🔍 [DRY RUN] Simulación finalizada. Artículos que se publicarían: {published_count}/{len(new_news)}")
+        log.info(f"ℹ️  [DRY RUN] publicados.json NO fue modificado.")
 
     # Outputs para GitHub Actions (usados en notificaciones)
     set_gha_output("count", str(published_count))
