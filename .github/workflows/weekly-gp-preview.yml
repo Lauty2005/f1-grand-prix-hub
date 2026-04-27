@@ -1,0 +1,116 @@
+# .github/workflows/weekly-gp-preview.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# WEEKLY GP PREVIEW GENERATOR
+# Corre todos los lunes a las 9:00 AM UTC.
+# Llama al endpoint de tu API que verifica si hay un GP en 7 días
+# y, si lo hay, genera automáticamente un artículo preview.
+#
+# Secrets requeridos en GitHub (Settings → Secrets → Actions):
+#   - API_BASE_URL  → URL de tu backend (ej: https://tu-api.vercel.app)
+#   - CRON_SECRET   → Mismo valor que CRON_SECRET en tu .env del server
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: 🏎️ Weekly GP Preview Generator
+
+on:
+  schedule:
+    # Todos los lunes a las 9:00 AM UTC
+    # Ajustá la hora si preferís otro horario (formato: minuto hora * * día)
+    - cron: '0 9 * * 1'
+
+  # Permite correrlo manualmente desde la pestaña Actions en GitHub
+  # Útil para testear sin esperar al lunes
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (solo loguear, no generar artículo)'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  generate-preview:
+    name: Generate Weekly GP Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10   # Si tarda más de 10 min, algo falló
+
+    steps:
+      - name: 📅 Log execution info
+        run: |
+          echo "🏎️ Weekly GP Preview Generator"
+          echo "📅 Fecha de ejecución: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "🔍 Buscando GP en 7 días desde hoy..."
+          echo "🌐 API URL: ${{ secrets.API_BASE_URL }}"
+
+      - name: 🚀 Call preview generator endpoint
+        id: generate
+        run: |
+          RESPONSE=$(curl \
+            --silent \
+            --show-error \
+            --fail-with-body \
+            --retry 3 \
+            --retry-delay 15 \
+            --retry-all-errors \
+            --max-time 120 \
+            --write-out "\n__HTTP_STATUS__:%{http_code}" \
+            -X POST "${{ secrets.API_BASE_URL }}/api/cron/weekly-preview" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          # Separar body y status code
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "__HTTP_STATUS__:" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | grep -v "__HTTP_STATUS__:")
+
+          echo "📨 HTTP Status: $HTTP_STATUS"
+          echo "📦 Response body:"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+
+          # Guardar para steps siguientes
+          echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+          echo "response_body=$BODY" >> $GITHUB_OUTPUT
+
+          # Fallar el job si el status no es 2xx
+          if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
+            echo "❌ El endpoint devolvió HTTP $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: 📊 Log result summary
+        if: always()
+        run: |
+          BODY='${{ steps.generate.outputs.response_body }}'
+
+          # Extraer campos clave del JSON para el summary
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('triggered', 'unknown'))" 2>/dev/null || echo "unknown")
+          MESSAGE=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('message', ''))" 2>/dev/null || echo "")
+          UPCOMING=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('upcoming_race', 'N/A'))" 2>/dev/null || echo "N/A")
+          BASED_ON=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('based_on', 'N/A'))" 2>/dev/null || echo "N/A")
+          SLUG=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); a=d.get('article',{}); print(a.get('slug','N/A'))" 2>/dev/null || echo "N/A")
+
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  RESULTADO DEL GENERADOR"
+          echo "════════════════════════════════════════"
+          echo "  GP próximo:     $UPCOMING"
+          echo "  Basado en:      $BASED_ON"
+          echo "  Artículo gen.:  $TRIGGERED"
+          if [[ "$TRIGGERED" == "True" || "$TRIGGERED" == "true" ]]; then
+            echo "  Slug artículo:  $SLUG"
+            echo "  ✅ Preview generado exitosamente"
+          else
+            echo "  ℹ️  $MESSAGE"
+          fi
+          echo "════════════════════════════════════════"
+
+      # Notificación por email en caso de falla (GitHub lo hace automáticamente
+      # si el job termina en "failure" y tenés configuradas las notificaciones)
+      - name: ❌ Log failure details
+        if: failure()
+        run: |
+          echo "El job falló. Revisar los logs anteriores."
+          echo "Posibles causas:"
+          echo "  1. La API no está disponible (cold start timeout)"
+          echo "  2. CRON_SECRET incorrecto"
+          echo "  3. Error en la generación de IA (API key inválida)"
+          echo "  4. No hay datos de la carrera del año anterior en la DB"
