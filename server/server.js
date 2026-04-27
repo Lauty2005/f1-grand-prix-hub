@@ -17,7 +17,7 @@ import timelineRoutes  from './src/routes/timeline.routes.js';
 import strategyRoutes  from './src/routes/strategy.routes.js';
 import sitemapRouter from './src/routes/sitemap.routes.js';
 import newsletterRouter from './src/routes/newsletter.routes.js';
-import cronRoutes from './routes/cron.routes.js';
+import cronRoutes from './src/routes/cron.routes.js';
 
 dotenv.config();
 
