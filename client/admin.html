@@ -11,10 +11,10 @@
     <!-- Google Analytics 4 — reemplazá G-K7NYQYQ04P con tu Measurement ID -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-K7NYQYQ04P"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-K7NYQYQ04P');
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-K7NYQYQ04P');
     </script>
 </head>
 
@@ -74,9 +74,11 @@
                     <select id="draftArticleSelect" class="form-control danger-select">
                         <option>Cargando...</option>
                     </select>
-                    <button id="btnPublishDraft" style="background:#7c3aed; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap;">✅ Publicar</button>
+                    <button id="btnPublishDraft"
+                        style="background:#7c3aed; color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-weight:700; white-space:nowrap;">✅
+                        Publicar</button>
                 </div>
-<p id="msgPublishDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7;"></p>
+                <p id="msgPublishDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7;"></p>
             </div>
 
             <div class="danger-item">
@@ -92,7 +94,8 @@
             <div class="danger-item">
                 <label>Eliminar Stints de Piloto</label>
                 <div class="danger-row">
-                    <select id="deleteStintYearSelect" class="form-control danger-select" style="width:70px; margin-right:5px;">
+                    <select id="deleteStintYearSelect" class="form-control danger-select"
+                        style="width:70px; margin-right:5px;">
                         <option value="2025" selected>2025</option>
                         <option value="2026">2026</option>
                     </select>
@@ -268,38 +271,52 @@
                             <select id="newCountry" class="form-control" required>
                                 <option value="" disabled selected>Cód. País</option>
                             </select>
-                            <input type="text" id="newRaceName" class="form-control span-full" placeholder="Nombre GP" required>
-                            <input type="text" id="newCircuit" class="form-control span-full" placeholder="Circuito" required>
+                            <input type="text" id="newRaceName" class="form-control span-full" placeholder="Nombre GP"
+                                required>
+                            <input type="text" id="newCircuit" class="form-control span-full" placeholder="Circuito"
+                                required>
                             <input type="date" id="newDate" class="form-control span-full" required>
 
                             <div class="span-full">
-                                <div class="form-group" style="margin-bottom: 20px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
+                                <div class="form-group"
+                                    style="margin-bottom: 20px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
                                     <label style="color:#aaa;">Imagen Preview (Lista):</label>
-                                    <select id="existingMapSelect" class="form-control" style="margin-bottom: 10px; background:#222; color:white;">
+                                    <select id="existingMapSelect" class="form-control"
+                                        style="margin-bottom: 10px; background:#222; color:white;">
                                         <option value="">-- Seleccionar existente --</option>
                                     </select>
-                                    <div style="text-align:center; color:#666; font-size:0.8rem; margin:5px 0;">- O SUBIR NUEVA -</div>
+                                    <div style="text-align:center; color:#666; font-size:0.8rem; margin:5px 0;">- O
+                                        SUBIR NUEVA -</div>
                                     <input type="file" id="newMapFile" class="form-control" accept="image/*">
-                                    <img id="previewMap" src="" style="display:none; height: 50px; margin-top:5px; border:1px solid #444;">
+                                    <img id="previewMap" src=""
+                                        style="display:none; height: 50px; margin-top:5px; border:1px solid #444;">
                                 </div>
 
-                                <div class="form-group" style="margin-bottom: 20px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
+                                <div class="form-group"
+                                    style="margin-bottom: 20px; border: 1px solid #333; padding: 10px; border-radius: 5px;">
                                     <label style="color:#00ff88;">Imagen Detallada (Modal):</label>
-                                    <select id="existingCircuitSelect" class="form-control" style="margin-bottom: 10px; background:#222; color:white;">
+                                    <select id="existingCircuitSelect" class="form-control"
+                                        style="margin-bottom: 10px; background:#222; color:white;">
                                         <option value="">-- Seleccionar existente --</option>
                                     </select>
-                                    <div style="text-align:center; color:#666; font-size:0.8rem; margin:5px 0;">- O SUBIR NUEVA -</div>
+                                    <div style="text-align:center; color:#666; font-size:0.8rem; margin:5px 0;">- O
+                                        SUBIR NUEVA -</div>
                                     <input type="file" id="newCircuitImageFile" class="form-control" accept="image/*">
-                                    <img id="previewCircuit" src="" style="display:none; height: 80px; margin-top:5px; border:1px solid #444;">
+                                    <img id="previewCircuit" src=""
+                                        style="display:none; height: 80px; margin-top:5px; border:1px solid #444;">
                                 </div>
                             </div>
 
-                            <div class="span-full" style="display:flex; justify-content: center; align-items:center; gap: 8px; margin: 10px 0;">
-                                <input type="checkbox" id="newHasSprint" style="width: 20px; height: 20px; accent-color: #00ff88; cursor: pointer;">
-                                <label style="font-size: 0.9rem; margin:0; cursor:pointer; color: white;" for="newHasSprint">Con Sprint</label>
+                            <div class="span-full"
+                                style="display:flex; justify-content: center; align-items:center; gap: 8px; margin: 10px 0;">
+                                <input type="checkbox" id="newHasSprint"
+                                    style="width: 20px; height: 20px; accent-color: #00ff88; cursor: pointer;">
+                                <label style="font-size: 0.9rem; margin:0; cursor:pointer; color: white;"
+                                    for="newHasSprint">Con Sprint</label>
                             </div>
 
-                            <h4 class="span-full" style="color: #666; margin-top: 0; border-bottom: 1px solid #333;">Datos Técnicos</h4>
+                            <h4 class="span-full" style="color: #666; margin-top: 0; border-bottom: 1px solid #333;">
+                                Datos Técnicos</h4>
 
                             <div>
                                 <label style="font-size: 75%;">Longitud (ej: 5.278 km):</label>
@@ -334,15 +351,19 @@
                     </button>
                     <div class="accordion-body">
                         <form id="newArticleForm" class="creation-form-grid">
-                            <input type="text" id="artTitle" class="form-control span-full" placeholder="Título" required>
-                            <textarea id="artExcerpt" class="form-control span-full" placeholder="Extracto / Resumen (opcional)" rows="2" style="resize:vertical;"></textarea>
+                            <input type="text" id="artTitle" class="form-control span-full" placeholder="Título"
+                                required>
+                            <textarea id="artExcerpt" class="form-control span-full"
+                                placeholder="Extracto / Resumen (opcional)" rows="2"
+                                style="resize:vertical;"></textarea>
                             <select id="artCategory" class="form-control">
                                 <option value="noticias">📰 Noticias</option>
                                 <option value="analisis">🔍 Análisis</option>
                                 <option value="preview">🏎️ Preview</option>
                                 <option value="tecnica">⚙️ Técnica</option>
                             </select>
-                            <input type="text" id="artAuthor" class="form-control" placeholder="Autor" value="Redacción">
+                            <input type="text" id="artAuthor" class="form-control" placeholder="Autor"
+                                value="Redacción">
                             <div class="span-full" style="display:flex; flex-direction:column; gap:6px;">
                                 <label style="font-size:0.78rem; color:#aaa;">Imagen de portada</label>
                                 <div id="coverDropZone" style="
@@ -356,26 +377,33 @@
                                     transition: border-color 0.2s;
                                 ">
                                     🖼 Arrastrá una imagen o hacé click para seleccionar
-                                    <input type="file" id="artCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                                    <input type="file" id="artCoverFile"
+                                        accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
                                 </div>
                                 <img id="coverPreview" src="" alt="Preview portada"
                                     style="display:none; max-height:140px; border-radius:6px; border:1px solid rgba(255,255,255,0.1); object-fit:cover;">
                                 <input type="hidden" id="artCover">
                             </div>
-                            <input type="text" id="artTags" class="form-control span-full" placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
+                            <input type="text" id="artTags" class="form-control span-full"
+                                placeholder="Tags separados por coma (ej: Ferrari, Leclerc)">
                             <div id="artContentEditor" class="span-full"></div>
                             <div class="span-full" style="display:flex; gap:20px; align-items:center; margin: 5px 0;">
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <input type="checkbox" id="artPublished" style="width:18px;height:18px;accent-color:#00ff88;">
-                                    <label for="artPublished" style="margin:0;color:#00ff88;font-weight:bold;cursor:pointer;">Publicar</label>
+                                    <input type="checkbox" id="artPublished"
+                                        style="width:18px;height:18px;accent-color:#00ff88;">
+                                    <label for="artPublished"
+                                        style="margin:0;color:#00ff88;font-weight:bold;cursor:pointer;">Publicar</label>
                                 </div>
                                 <div style="display:flex; align-items:center; gap:6px;">
-                                    <input type="checkbox" id="artFeatured" style="width:18px;height:18px;accent-color:#e10600;">
-                                    <label for="artFeatured" style="margin:0;color:#e10600;font-weight:bold;cursor:pointer;">Destacado</label>
+                                    <input type="checkbox" id="artFeatured"
+                                        style="width:18px;height:18px;accent-color:#e10600;">
+                                    <label for="artFeatured"
+                                        style="margin:0;color:#e10600;font-weight:bold;cursor:pointer;">Destacado</label>
                                 </div>
                             </div>
                             <button type="submit" class="btn-create span-full">PUBLICAR ARTÍCULO</button>
-                            <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span></div>
+                            <div id="errorMsgArticle" class="error-msg span-full">❌ <span id="errorTextArticle"></span>
+                            </div>
                             <p id="msgArticle" class="success-msg span-full">✅ ¡Artículo creado!</p>
                         </form>
                     </div>
@@ -390,7 +418,9 @@
                     </button>
                     <div class="accordion-body">
                         <form id="newStintForm" class="creation-form-grid">
-                            <p class="span-full" style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Agregar Stint</p>
+                            <p class="span-full"
+                                style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">
+                                Agregar Stint</p>
                             <select id="stintYear" class="form-control" style="width:80px;">
                                 <option value="2025" selected>2025</option>
                                 <option value="2026">2026</option>
@@ -401,7 +431,8 @@
                             <select id="stintDriverSelect" class="form-control span-full">
                                 <option value="">Piloto...</option>
                             </select>
-                            <input type="number" id="stintNumber" class="form-control" placeholder="N° Stint" min="1" max="6" required>
+                            <input type="number" id="stintNumber" class="form-control" placeholder="N° Stint" min="1"
+                                max="6" required>
                             <select id="stintCompound" class="form-control">
                                 <option value="SOFT">🔴 Blando</option>
                                 <option value="MEDIUM" selected>🟡 Medio</option>
@@ -409,12 +440,18 @@
                                 <option value="INTER">🟢 Intermedio</option>
                                 <option value="WET">🔵 Lluvia</option>
                             </select>
-                            <input type="number" id="stintStartLap" class="form-control" placeholder="Vuelta inicio" min="1" required>
-                            <input type="number" id="stintEndLap" class="form-control" placeholder="Vuelta fin" min="1" required>
-                            <input type="text" id="stintPitDuration" class="form-control" placeholder="Tiempo pit (ej: 2.4s)">
-                            <textarea id="stintNotes" class="form-control span-full" placeholder="Notas opcionales (ej: undercut, safety car...)" rows="2" style="resize:vertical;"></textarea>
+                            <input type="number" id="stintStartLap" class="form-control" placeholder="Vuelta inicio"
+                                min="1" required>
+                            <input type="number" id="stintEndLap" class="form-control" placeholder="Vuelta fin" min="1"
+                                required>
+                            <input type="text" id="stintPitDuration" class="form-control"
+                                placeholder="Tiempo pit (ej: 2.4s)">
+                            <textarea id="stintNotes" class="form-control span-full"
+                                placeholder="Notas opcionales (ej: undercut, safety car...)" rows="2"
+                                style="resize:vertical;"></textarea>
                             <button type="submit" class="btn-create span-full">GUARDAR STINT</button>
-                            <div id="errorMsgStint" class="error-msg span-full">❌ <span id="errorTextStint"></span></div>
+                            <div id="errorMsgStint" class="error-msg span-full">❌ <span id="errorTextStint"></span>
+                            </div>
                             <p id="msgStint" class="success-msg span-full">✅ ¡Stint guardado!</p>
                         </form>
                     </div>
@@ -429,15 +466,22 @@
                     </button>
                     <div class="accordion-body">
                         <p style="color:rgba(168,85,247,0.7); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">
-                            Seleccioná un borrador para editar su contenido antes de publicarlo. Podés pegar imágenes directamente en el editor.
+                            Seleccioná un borrador para editar su contenido antes de publicarlo. Podés pegar imágenes
+                            directamente en el editor.
                         </p>
                         <select id="editDraftSelect" class="form-control" style="width:100%; margin-bottom:12px;">
                             <option value="" disabled selected>Seleccionar borrador...</option>
                         </select>
                         <div id="draftEditorWrap" style="display:none; width:100%;">
-                            <p style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Título</p>
-                            <input type="text" id="editDraftTitle" class="form-control" style="width:100%; margin-bottom:12px; box-sizing:border-box;" placeholder="Título del artículo">
-                            <p style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Imagen de portada</p>
+                            <p
+                                style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">
+                                Título</p>
+                            <input type="text" id="editDraftTitle" class="form-control"
+                                style="width:100%; margin-bottom:12px; box-sizing:border-box;"
+                                placeholder="Título del artículo">
+                            <p
+                                style="color:rgba(168,85,247,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">
+                                Imagen de portada</p>
                             <div id="editDraftCoverZone" style="
                                 border: 2px dashed rgba(168,85,247,0.3);
                                 border-radius: 6px;
@@ -450,9 +494,11 @@
                                 margin-bottom: 8px;
                             ">
                                 🖼 Arrastrá una imagen o hacé click para seleccionar
-                                <input type="file" id="editDraftCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                                <input type="file" id="editDraftCoverFile"
+                                    accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
                             </div>
-                            <img id="editDraftCoverPreview" src="" alt="" style="display:none; max-height:160px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:10px; border:1px solid rgba(168,85,247,0.2);">
+                            <img id="editDraftCoverPreview" src="" alt=""
+                                style="display:none; max-height:160px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:10px; border:1px solid rgba(168,85,247,0.2);">
                             <div id="draftContentEditor"></div>
                             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
                                 <button type="button" id="btnSaveDraft" style="
@@ -461,7 +507,9 @@
                                     cursor:pointer; font-weight:700; font-size:0.85rem;
                                 ">💾 Guardar cambios</button>
                             </div>
-                            <p id="msgSaveDraft" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7; text-align:right;"></p>
+                            <p id="msgSaveDraft"
+                                style="display:none; margin:6px 0 0; font-size:0.78rem; color:#a855f7; text-align:right;">
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -475,15 +523,22 @@
                     </button>
                     <div class="accordion-body">
                         <p style="color:rgba(52,211,153,0.7); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">
-                            Seleccioná un artículo publicado para editar su contenido. Podés cambiar la portada y el cuerpo del artículo.
+                            Seleccioná un artículo publicado para editar su contenido. Podés cambiar la portada y el
+                            cuerpo del artículo.
                         </p>
                         <select id="editPublishedSelect" class="form-control" style="width:100%; margin-bottom:12px;">
                             <option value="" disabled selected>Seleccionar artículo publicado...</option>
                         </select>
                         <div id="publishedEditorWrap" style="display:none; width:100%;">
-                            <p style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Título</p>
-                            <input type="text" id="editPublishedTitle" class="form-control" style="width:100%; margin-bottom:12px; box-sizing:border-box;" placeholder="Título del artículo">
-                            <p style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Imagen de portada</p>
+                            <p
+                                style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">
+                                Título</p>
+                            <input type="text" id="editPublishedTitle" class="form-control"
+                                style="width:100%; margin-bottom:12px; box-sizing:border-box;"
+                                placeholder="Título del artículo">
+                            <p
+                                style="color:rgba(52,211,153,0.7); font-size:0.72rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">
+                                Imagen de portada</p>
                             <div id="editPublishedCoverZone" style="
                                 border: 2px dashed rgba(52,211,153,0.3);
                                 border-radius: 6px;
@@ -496,9 +551,11 @@
                                 margin-bottom: 8px;
                             ">
                                 🖼 Arrastrá una imagen o hacé click para seleccionar
-                                <input type="file" id="editPublishedCoverFile" accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
+                                <input type="file" id="editPublishedCoverFile"
+                                    accept="image/jpeg,image/png,image/webp,image/avif" style="display:none">
                             </div>
-                            <img id="editPublishedCoverPreview" src="" alt="" style="display:none; max-height:160px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:10px; border:1px solid rgba(52,211,153,0.2);">
+                            <img id="editPublishedCoverPreview" src="" alt=""
+                                style="display:none; max-height:160px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:10px; border:1px solid rgba(52,211,153,0.2);">
                             <div id="publishedContentEditor"></div>
                             <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
                                 <button type="button" id="btnSavePublished" style="
@@ -507,7 +564,9 @@
                                     cursor:pointer; font-weight:700; font-size:0.85rem;
                                 ">💾 Guardar cambios</button>
                             </div>
-                            <p id="msgSavePublished" style="display:none; margin:6px 0 0; font-size:0.78rem; color:#34d399; text-align:right;"></p>
+                            <p id="msgSavePublished"
+                                style="display:none; margin:6px 0 0; font-size:0.78rem; color:#34d399; text-align:right;">
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -521,8 +580,10 @@
                     </button>
                     <div class="accordion-body">
                         <div class="creation-form-grid">
-                            <p class="span-full" style="color:rgba(168,85,247,0.8); font-size:0.75rem; margin:0 0 8px; line-height:1.5;">
-                                Recopila resultados, estrategia y momentos clave de la carrera y genera un borrador listo para publicar.
+                            <p class="span-full"
+                                style="color:rgba(168,85,247,0.8); font-size:0.75rem; margin:0 0 8px; line-height:1.5;">
+                                Recopila resultados, estrategia y momentos clave de la carrera y genera un borrador
+                                listo para publicar.
                             </p>
                             <select id="aiYear" class="form-control">
                                 <option value="2025" selected>2025</option>
@@ -539,7 +600,112 @@
                             <button id="btnGenerateArticle" type="button" class="btn-ai span-full">
                                 ✨ GENERAR BORRADOR
                             </button>
-                            <div id="aiGenerateStatus" class="span-full" style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:0.82rem; line-height:1.5;"></div>
+                            <div id="aiGenerateStatus" class="span-full"
+                                style="display:none; margin-top:8px; padding:10px; border-radius:6px; font-size:0.82rem; line-height:1.5;">
+                            </div>
+                            <div id="schedulerStatus"
+                                style="margin-top: 20px; border-top: 1px solid rgba(168,85,247,0.2); padding-top: 16px;">
+
+                                <div
+                                    style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                                    <span
+                                        style="font-size:0.72rem; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; color:rgba(168,85,247,0.6);">
+                                        🤖 Auto-Scheduler
+                                    </span>
+                                    <button id="btnRefreshStatus" type="button"
+                                        style="background:none; border:1px solid rgba(168,85,247,0.3); color:#a855f7; border-radius:4px; padding:3px 10px; font-size:0.7rem; cursor:pointer; font-family:inherit; transition: all 0.2s;"
+                                        onmouseover="this.style.background='rgba(168,85,247,0.1)'"
+                                        onmouseout="this.style.background='none'">
+                                        ↻ Actualizar
+                                    </button>
+                                </div>
+
+                                <!-- Estado de carga inicial -->
+                                <div id="schedulerLoading"
+                                    style="text-align:center; padding:20px; color:rgba(168,85,247,0.5); font-size:0.8rem;">
+                                    Cargando estado del scheduler...
+                                </div>
+
+                                <!-- Contenido (se muestra tras cargar) -->
+                                <div id="schedulerContent" style="display:none;">
+
+                                    <!-- Fila: config + próximo trigger -->
+                                    <div
+                                        style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+
+                                        <div id="statusConfigBadge"
+                                            style="border-radius:6px; padding:10px 12px; font-size:0.78rem; line-height:1.4;">
+                                            <!-- Llenado por JS -->
+                                        </div>
+
+                                        <div id="statusTriggerBadge"
+                                            style="border-radius:6px; padding:10px 12px; font-size:0.78rem; line-height:1.4;">
+                                            <!-- Llenado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Próximos GPs -->
+                                    <div style="margin-bottom:12px;">
+                                        <p
+                                            style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.3); margin:0 0 6px;">
+                                            Próximas Carreras
+                                        </p>
+                                        <div id="upcomingRacesList"
+                                            style="display:flex; flex-direction:column; gap:4px;">
+                                            <!-- Llenado por JS -->
+                                        </div>
+                                    </div>
+
+                                    <!-- Estadísticas -->
+                                    <div
+                                        style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:12px;">
+                                        <div
+                                            style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:6px; padding:8px; text-align:center;">
+                                            <div id="statTotal"
+                                                style="font-size:1.4rem; font-weight:900; color:#a855f7;">—</div>
+                                            <div
+                                                style="font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.3); margin-top:2px;">
+                                                Total</div>
+                                        </div>
+                                        <div
+                                            style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:6px; padding:8px; text-align:center;">
+                                            <div id="statPublished"
+                                                style="font-size:1.4rem; font-weight:900; color:#10b981;">—</div>
+                                            <div
+                                                style="font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.3); margin-top:2px;">
+                                                Publicados</div>
+                                        </div>
+                                        <div
+                                            style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:6px; padding:8px; text-align:center;">
+                                            <div id="statDrafts"
+                                                style="font-size:1.4rem; font-weight:900; color:#f59e0b;">—</div>
+                                            <div
+                                                style="font-size:0.6rem; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.3); margin-top:2px;">
+                                                Borradores</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Últimos previews -->
+                                    <div>
+                                        <p
+                                            style="font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.3); margin:0 0 6px;">
+                                            Últimos Previews Generados
+                                        </p>
+                                        <div id="recentPreviewsList"
+                                            style="display:flex; flex-direction:column; gap:4px;">
+                                            <!-- Llenado por JS -->
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <!-- Error state -->
+                                <div id="schedulerError"
+                                    style="display:none; background:rgba(255,68,68,0.08); border:1px solid rgba(255,68,68,0.2); border-radius:6px; padding:10px; font-size:0.78rem; color:#ff6b6b;">
+                                    <!-- Llenado por JS -->
+                                </div>
+
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -570,9 +736,11 @@
                             <input type="text" id="momentTitle" class="form-control" placeholder="Título" required>
                             <input type="text" id="momentDriver" class="form-control" placeholder="Piloto (opcional)">
                             <input type="text" id="momentTeam" class="form-control" placeholder="Equipo (opcional)">
-                            <textarea id="momentDesc" class="form-control span-full" placeholder="Descripción del momento..." rows="3" style="resize:vertical;"></textarea>
+                            <textarea id="momentDesc" class="form-control span-full"
+                                placeholder="Descripción del momento..." rows="3" style="resize:vertical;"></textarea>
                             <button type="submit" class="btn-create span-full">AGREGAR MOMENTO</button>
-                            <div id="errorMsgMoment" class="error-msg span-full">❌ <span id="errorTextMoment"></span></div>
+                            <div id="errorMsgMoment" class="error-msg span-full">❌ <span id="errorTextMoment"></span>
+                            </div>
                             <p id="msgMoment" class="success-msg span-full">✅ ¡Momento creado!</p>
                         </form>
                     </div>
@@ -587,8 +755,10 @@
                     </button>
                     <div class="accordion-body">
                         <form id="newTeamForm" class="creation-form-grid">
-                            <input type="text" id="newTeamName" class="form-control span-full" placeholder="Nombre (ej: Cadillac)" required>
-                            <input type="color" id="newTeamColor" class="form-control" value="#e10600" title="Color principal" style="height:40px; cursor:pointer;">
+                            <input type="text" id="newTeamName" class="form-control span-full"
+                                placeholder="Nombre (ej: Cadillac)" required>
+                            <input type="color" id="newTeamColor" class="form-control" value="#e10600"
+                                title="Color principal" style="height:40px; cursor:pointer;">
                             <input type="file" id="newTeamLogo" class="form-control" accept="image/*">
                             <div class="span-full" style="margin-top:8px;">
                                 <label style="color:#aaa; font-size:0.9rem;">Activa en:</label>
@@ -607,7 +777,8 @@
                                     </div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-create span-full" style="margin-top:12px;">AGREGAR ESCUDERÍA</button>
+                            <button type="submit" class="btn-create span-full" style="margin-top:12px;">AGREGAR
+                                ESCUDERÍA</button>
                             <div id="errorMsgTeam" class="error-msg span-full">❌ <span id="errorTextTeam"></span></div>
                             <p id="msgTeam" class="success-msg span-full">✅ ¡Escudería creada!</p>
                         </form>
@@ -634,9 +805,12 @@
                             <select id="assignTeamSelect" class="form-control" required>
                                 <option value="">Seleccionar equipo...</option>
                             </select>
-                            <input type="number" id="assignDriverNumber" class="form-control span-full" placeholder="Número en esta temporada (opcional)">
-                            <button type="submit" class="btn-create span-full" style="margin-top:10px;">GUARDAR ASIGNACIÓN</button>
-                            <div id="errorMsgAssign" class="error-msg span-full">❌ <span id="errorTextAssign"></span></div>
+                            <input type="number" id="assignDriverNumber" class="form-control span-full"
+                                placeholder="Número en esta temporada (opcional)">
+                            <button type="submit" class="btn-create span-full" style="margin-top:10px;">GUARDAR
+                                ASIGNACIÓN</button>
+                            <div id="errorMsgAssign" class="error-msg span-full">❌ <span id="errorTextAssign"></span>
+                            </div>
                             <p id="msgAssign" class="success-msg span-full">✅ ¡Asignación guardada!</p>
                         </form>
                     </div>
@@ -652,7 +826,8 @@
                     <div class="accordion-body">
                         <form id="newDriverForm" class="creation-form-grid">
                             <input type="text" id="newDriverName" class="form-control" placeholder="Nombre" required>
-                            <input type="text" id="newDriverLastname" class="form-control" placeholder="Apellido" required>
+                            <input type="text" id="newDriverLastname" class="form-control" placeholder="Apellido"
+                                required>
                             <input type="number" id="newDriverNum" class="form-control" placeholder="N°" required>
                             <select id="newDriverCountry" class="form-control" required>
                                 <option>País</option>
@@ -676,8 +851,10 @@
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-create span-full" style="margin-top:15px;">AGREGAR PILOTO</button>
-                            <div id="errorMsgDriver" class="error-msg span-full">❌ <span id="errorTextDriver"></span></div>
+                            <button type="submit" class="btn-create span-full" style="margin-top:15px;">AGREGAR
+                                PILOTO</button>
+                            <div id="errorMsgDriver" class="error-msg span-full">❌ <span id="errorTextDriver"></span>
+                            </div>
                             <p id="msgDriver" class="success-msg span-full">✅ ¡Piloto creado!</p>
                         </form>
                     </div>
@@ -689,24 +866,35 @@
     </div>
 
     <!-- Modal: Insertar imagen -->
-    <div id="imgModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center;">
-        <div style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:28px 24px; width:420px; max-width:90vw;">
+    <div id="imgModal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.75); z-index:9999; align-items:center; justify-content:center;">
+        <div
+            style="background:#1a1a2e; border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:28px 24px; width:420px; max-width:90vw;">
             <h3 style="margin:0 0 16px; color:#fff; font-size:1rem;">🖼 Insertar Imagen</h3>
             <label style="font-size:0.78rem; color:#aaa; display:block; margin-bottom:4px;">URL de la imagen</label>
-            <input id="imgModalUrl" type="text" class="form-control" placeholder="/images/articles/mi-imagen.png" style="margin-bottom:8px; width:100%; box-sizing:border-box;">
-            <p style="font-size:0.72rem; color:#666; margin:0 0 12px;">Guardá tus imágenes en <code style="color:#e10600;">server/public/images/articles/</code> y referencialas como <code style="color:#e10600;">/images/articles/nombre.png</code></p>
-            <label style="font-size:0.78rem; color:#aaa; display:block; margin-bottom:4px;">Texto alternativo (alt)</label>
-            <input id="imgModalAlt" type="text" class="form-control" placeholder="Descripción de la imagen" style="margin-bottom:16px; width:100%; box-sizing:border-box;">
+            <input id="imgModalUrl" type="text" class="form-control" placeholder="/images/articles/mi-imagen.png"
+                style="margin-bottom:8px; width:100%; box-sizing:border-box;">
+            <p style="font-size:0.72rem; color:#666; margin:0 0 12px;">Guardá tus imágenes en <code
+                    style="color:#e10600;">server/public/images/articles/</code> y referencialas como <code
+                    style="color:#e10600;">/images/articles/nombre.png</code></p>
+            <label style="font-size:0.78rem; color:#aaa; display:block; margin-bottom:4px;">Texto alternativo
+                (alt)</label>
+            <input id="imgModalAlt" type="text" class="form-control" placeholder="Descripción de la imagen"
+                style="margin-bottom:16px; width:100%; box-sizing:border-box;">
             <div id="imgModalPreviewWrap" style="display:none; margin-bottom:14px; text-align:center;">
-                <img id="imgModalPreviewImg" src="" alt="" style="max-width:100%; max-height:180px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
+                <img id="imgModalPreviewImg" src="" alt=""
+                    style="max-width:100%; max-height:180px; border-radius:6px; border:1px solid rgba(255,255,255,0.1);">
             </div>
             <div style="display:flex; gap:10px; justify-content:flex-end;">
-                <button id="imgModalCancel" type="button" style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#aaa; padding:7px 18px; border-radius:6px; cursor:pointer;">Cancelar</button>
-                <button id="imgModalInsert" type="button" style="background:#e10600; border:none; color:#fff; font-weight:700; padding:7px 18px; border-radius:6px; cursor:pointer;">Insertar</button>
+                <button id="imgModalCancel" type="button"
+                    style="background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); color:#aaa; padding:7px 18px; border-radius:6px; cursor:pointer;">Cancelar</button>
+                <button id="imgModalInsert" type="button"
+                    style="background:#e10600; border:none; color:#fff; font-weight:700; padding:7px 18px; border-radius:6px; cursor:pointer;">Insertar</button>
             </div>
         </div>
     </div>
 
     <script type="module" src="./src/admin.js"></script>
 </body>
+
 </html>

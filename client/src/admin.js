@@ -97,6 +97,7 @@ function loadInitialData() {
     loadRacesForStint('2025');
     loadRacesForStintDelete('2025');
     loadRacesForAI('2025');
+    initSchedulerStatus();
 }
 
 // ==========================================
@@ -786,7 +787,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ── Cover image upload ──────────────────────────────────────────
     const coverDropZone = document.getElementById('coverDropZone');
     const coverFileInput = document.getElementById('artCoverFile');
-    const coverPreview   = document.getElementById('coverPreview');
+    const coverPreview = document.getElementById('coverPreview');
     const artCoverHidden = document.getElementById('artCover');
 
     function setCoverState(text, isError = false) {
@@ -886,8 +887,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     // ── Edit-draft cover drop zone ──────────────────────────────
-    const editDraftCoverZone    = document.getElementById('editDraftCoverZone');
-    const editDraftCoverFile    = document.getElementById('editDraftCoverFile');
+    const editDraftCoverZone = document.getElementById('editDraftCoverZone');
+    const editDraftCoverFile = document.getElementById('editDraftCoverFile');
     const editDraftCoverPreview = document.getElementById('editDraftCoverPreview');
 
     async function uploadEditDraftCover(file) {
@@ -896,7 +897,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const formData = new FormData();
         formData.append('cover', file);
         try {
-            const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
+            const res = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
             const json = await res.json();
             _editDraftCoverUrl = json.url;   // guarda ruta relativa en DB
             editDraftCoverPreview.src = `${SERVER_URL}${json.url}`;
@@ -911,11 +912,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    editDraftCoverZone?.addEventListener('click',     () => editDraftCoverFile?.click());
-    editDraftCoverFile?.addEventListener('change',    () => { if (editDraftCoverFile.files?.[0]) uploadEditDraftCover(editDraftCoverFile.files[0]); });
-    editDraftCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); editDraftCoverZone.style.borderColor = '#a855f7'; });
-    editDraftCoverZone?.addEventListener('dragleave', ()  => { editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)'; });
-    editDraftCoverZone?.addEventListener('drop',      (e) => {
+    editDraftCoverZone?.addEventListener('click', () => editDraftCoverFile?.click());
+    editDraftCoverFile?.addEventListener('change', () => { if (editDraftCoverFile.files?.[0]) uploadEditDraftCover(editDraftCoverFile.files[0]); });
+    editDraftCoverZone?.addEventListener('dragover', (e) => { e.preventDefault(); editDraftCoverZone.style.borderColor = '#a855f7'; });
+    editDraftCoverZone?.addEventListener('dragleave', () => { editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)'; });
+    editDraftCoverZone?.addEventListener('drop', (e) => {
         e.preventDefault();
         editDraftCoverZone.style.borderColor = 'rgba(168,85,247,0.3)';
         const file = e.dataTransfer.files?.[0];
@@ -983,7 +984,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const res  = await adminFetch(`${API}/articles/admin/${id}`);
+            const res = await adminFetch(`${API}/articles/admin/${id}`);
             const json = await res.json();
             if (!res.ok || !json.data) return;
             const draftTitleInput = document.getElementById('editDraftTitle');
@@ -1008,7 +1009,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Guardar cambios del borrador
     document.getElementById('btnSaveDraft')?.addEventListener('click', async () => {
-        const id  = document.getElementById('editDraftSelect').value;
+        const id = document.getElementById('editDraftSelect').value;
         const msg = document.getElementById('msgSaveDraft');
         const btn = document.getElementById('btnSaveDraft');
         if (!id || !_draftQuill) return;
@@ -1017,7 +1018,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.textContent = '⏳ Guardando...';
         try {
             // Fetch artículo completo para preservar todos los campos
-            const allRes  = await adminFetch(`${API}/articles/admin/${id}`);
+            const allRes = await adminFetch(`${API}/articles/admin/${id}`);
             const allJson = await allRes.json();
             const article = allJson.data;
             if (!article) throw new Error('Artículo no encontrado.');
@@ -1026,15 +1027,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title:           document.getElementById('editDraftTitle')?.value.trim() || article.title,
-                    excerpt:         article.excerpt || null,
-                    content:         _draftQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
-                    author:          article.author,
+                    title: document.getElementById('editDraftTitle')?.value.trim() || article.title,
+                    excerpt: article.excerpt || null,
+                    content: _draftQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
+                    author: article.author,
                     cover_image_url: _editDraftCoverUrl || article.cover_image_url || null,
-                    category:        article.category,
-                    tags:            article.tags || [],
-                    published:       article.published,
-                    featured:        article.featured,
+                    category: article.category,
+                    tags: article.tags || [],
+                    published: article.published,
+                    featured: article.featured,
                 }),
             });
             if (patchRes.ok) {
@@ -1055,8 +1056,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     // ── Edit-published cover drop zone ─────────────────────────
-    const editPublishedCoverZone    = document.getElementById('editPublishedCoverZone');
-    const editPublishedCoverFile    = document.getElementById('editPublishedCoverFile');
+    const editPublishedCoverZone = document.getElementById('editPublishedCoverZone');
+    const editPublishedCoverFile = document.getElementById('editPublishedCoverFile');
     const editPublishedCoverPreview = document.getElementById('editPublishedCoverPreview');
 
     async function uploadEditPublishedCover(file) {
@@ -1065,7 +1066,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const formData = new FormData();
         formData.append('cover', file);
         try {
-            const res  = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
+            const res = await adminFetch(`${API}/articles/admin/upload-cover`, { method: 'POST', body: formData });
             const json = await res.json();
             _editPublishedCoverUrl = json.url;   // guarda ruta relativa en DB
             editPublishedCoverPreview.src = `${SERVER_URL}${json.url}`;
@@ -1080,11 +1081,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    editPublishedCoverZone?.addEventListener('click',     () => editPublishedCoverFile?.click());
-    editPublishedCoverFile?.addEventListener('change',    () => { if (editPublishedCoverFile.files?.[0]) uploadEditPublishedCover(editPublishedCoverFile.files[0]); });
-    editPublishedCoverZone?.addEventListener('dragover',  (e) => { e.preventDefault(); editPublishedCoverZone.style.borderColor = '#34d399'; });
-    editPublishedCoverZone?.addEventListener('dragleave', ()  => { editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)'; });
-    editPublishedCoverZone?.addEventListener('drop',      (e) => {
+    editPublishedCoverZone?.addEventListener('click', () => editPublishedCoverFile?.click());
+    editPublishedCoverFile?.addEventListener('change', () => { if (editPublishedCoverFile.files?.[0]) uploadEditPublishedCover(editPublishedCoverFile.files[0]); });
+    editPublishedCoverZone?.addEventListener('dragover', (e) => { e.preventDefault(); editPublishedCoverZone.style.borderColor = '#34d399'; });
+    editPublishedCoverZone?.addEventListener('dragleave', () => { editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)'; });
+    editPublishedCoverZone?.addEventListener('drop', (e) => {
         e.preventDefault();
         editPublishedCoverZone.style.borderColor = 'rgba(52,211,153,0.3)';
         const file = e.dataTransfer.files?.[0];
@@ -1149,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         try {
-            const res  = await adminFetch(`${API}/articles/admin/${id}`);
+            const res = await adminFetch(`${API}/articles/admin/${id}`);
             const json = await res.json();
             if (!res.ok || !json.data) return;
             const publishedTitleInput = document.getElementById('editPublishedTitle');
@@ -1173,7 +1174,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Guardar cambios del artículo publicado
     document.getElementById('btnSavePublished')?.addEventListener('click', async () => {
-        const id  = document.getElementById('editPublishedSelect').value;
+        const id = document.getElementById('editPublishedSelect').value;
         const msg = document.getElementById('msgSavePublished');
         const btn = document.getElementById('btnSavePublished');
         if (!id || !_publishedQuill) return;
@@ -1181,7 +1182,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         btn.disabled = true;
         btn.textContent = '⏳ Guardando...';
         try {
-            const allRes  = await adminFetch(`${API}/articles/admin/${id}`);
+            const allRes = await adminFetch(`${API}/articles/admin/${id}`);
             const allJson = await allRes.json();
             const article = allJson.data;
             if (!article) throw new Error('Artículo no encontrado.');
@@ -1190,15 +1191,15 @@ document.addEventListener('DOMContentLoaded', async () => {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title:           document.getElementById('editPublishedTitle')?.value.trim() || article.title,
-                    excerpt:         article.excerpt || null,
-                    content:         _publishedQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
-                    author:          article.author,
+                    title: document.getElementById('editPublishedTitle')?.value.trim() || article.title,
+                    excerpt: article.excerpt || null,
+                    content: _publishedQuill.getSemanticHTML().replaceAll('&nbsp;', ' ').replaceAll('\u00A0', ' '),
+                    author: article.author,
                     cover_image_url: _editPublishedCoverUrl || article.cover_image_url || null,
-                    category:        article.category,
-                    tags:            article.tags || [],
-                    published:       article.published,
-                    featured:        article.featured,
+                    category: article.category,
+                    tags: article.tags || [],
+                    published: article.published,
+                    featured: article.featured,
                 }),
             });
             if (patchRes.ok) {
@@ -1690,7 +1691,7 @@ async function loadPublishedArticles() {
 }
 
 async function loadDraftArticles() {
-    const select     = document.getElementById('draftArticleSelect');
+    const select = document.getElementById('draftArticleSelect');
     const editSelect = document.getElementById('editDraftSelect');
     if (!select) return;
     select.innerHTML = '<option>Cargando...</option>';
@@ -1716,9 +1717,9 @@ async function loadDraftArticles() {
 
 async function handlePublishDraft() {
     const select = document.getElementById('draftArticleSelect');
-    const msg    = document.getElementById('msgPublishDraft');
-    const btn    = document.getElementById('btnPublishDraft');
-    const id     = select.value;
+    const msg = document.getElementById('msgPublishDraft');
+    const btn = document.getElementById('btnPublishDraft');
+    const id = select.value;
     if (!id) return alert('Seleccioná un borrador.');
 
     btn.disabled = true;
@@ -1758,3 +1759,169 @@ document.querySelectorAll('.accordion-trigger').forEach(trigger => {
         section.classList.toggle('is-open');
     });
 });
+
+function formatSchedulerDate(isoString) {
+    if (!isoString) return '—';
+    return new Date(isoString).toLocaleDateString('es-AR', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+    });
+}
+
+function formatRaceDate(isoString) {
+    if (!isoString) return '—';
+    return new Date(isoString).toLocaleDateString('es-AR', {
+        weekday: 'short', day: '2-digit', month: 'short',
+    });
+}
+
+function daysLabel(days) {
+    const n = parseInt(days);
+    if (n === 0) return 'hoy';
+    if (n === 1) return 'mañana';
+    return `en ${n} días`;
+}
+
+// ── Render del widget ─────────────────────────────────────────────────────────
+
+function renderSchedulerStatus(data) {
+    const { scheduler, upcoming_races, recent_previews, stats } = data;
+
+    // 1. Badge: CRON_SECRET configurado
+    const configBadge = document.getElementById('statusConfigBadge');
+    if (scheduler.configured) {
+        configBadge.style.cssText += 'background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.25);';
+        configBadge.innerHTML = `
+            <div style="color:#10b981; font-weight:700; margin-bottom:2px;">✅ Configurado</div>
+            <div style="color:rgba(255,255,255,0.4);">CRON_SECRET activo</div>
+        `;
+    } else {
+        configBadge.style.cssText += 'background:rgba(255,68,68,0.08); border:1px solid rgba(255,68,68,0.25);';
+        configBadge.innerHTML = `
+            <div style="color:#ff6b6b; font-weight:700; margin-bottom:2px;">❌ Sin configurar</div>
+            <div style="color:rgba(255,255,255,0.4);">Falta CRON_SECRET</div>
+        `;
+    }
+
+    // 2. Badge: ¿dispararía hoy?
+    const triggerBadge = document.getElementById('statusTriggerBadge');
+    if (scheduler.would_trigger_today && scheduler.trigger_race) {
+        triggerBadge.style.cssText += 'background:rgba(168,85,247,0.1); border:1px solid rgba(168,85,247,0.3);';
+        triggerBadge.innerHTML = `
+            <div style="color:#a855f7; font-weight:700; margin-bottom:2px;">🎯 Dispararía hoy</div>
+            <div style="color:rgba(255,255,255,0.4); font-size:0.72rem;">${scheduler.trigger_race.name}</div>
+        `;
+    } else {
+        triggerBadge.style.cssText += 'background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);';
+        triggerBadge.innerHTML = `
+            <div style="color:rgba(255,255,255,0.5); font-weight:700; margin-bottom:2px;">😴 En espera</div>
+            <div style="color:rgba(255,255,255,0.3); font-size:0.72rem;">Sin GP en 7 días</div>
+        `;
+    }
+
+    // 3. Próximas carreras
+    const racesList = document.getElementById('upcomingRacesList');
+    if (upcoming_races.length === 0) {
+        racesList.innerHTML = `
+            <p style="color:rgba(255,255,255,0.25); font-size:0.75rem; margin:0; padding:8px 0;">
+                No hay carreras en los próximos 14 días
+            </p>`;
+    } else {
+        racesList.innerHTML = upcoming_races.map(race => {
+            const days = parseInt(race.days_until);
+            const isTarget = days === 7;
+            const borderColor = isTarget ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.07)';
+            const bg = isTarget ? 'rgba(168,85,247,0.08)' : 'rgba(255,255,255,0.02)';
+            const indicator = isTarget ? '🎯' : (days <= 3 ? '🔴' : '⚪');
+
+            return `
+                <div style="display:flex; align-items:center; justify-content:space-between;
+                            background:${bg}; border:1px solid ${borderColor};
+                            border-radius:6px; padding:7px 10px; font-size:0.78rem;">
+                    <span style="color:rgba(255,255,255,0.8);">
+                        ${indicator} R${race.round} — ${race.name}
+                    </span>
+                    <span style="color:${isTarget ? '#a855f7' : 'rgba(255,255,255,0.35)'}; font-size:0.7rem; white-space:nowrap; margin-left:8px;">
+                        ${formatRaceDate(race.date)} · ${daysLabel(race.days_until)}
+                    </span>
+                </div>`;
+        }).join('');
+    }
+
+    // 4. Stats
+    document.getElementById('statTotal').textContent     = stats.total_previews;
+    document.getElementById('statPublished').textContent = stats.published_count;
+    document.getElementById('statDrafts').textContent    = stats.draft_count;
+
+    // 5. Últimos previews
+    const previewsList = document.getElementById('recentPreviewsList');
+    if (recent_previews.length === 0) {
+        previewsList.innerHTML = `
+            <p style="color:rgba(255,255,255,0.25); font-size:0.75rem; margin:0; padding:8px 0;">
+                No se generaron previews en los últimos 30 días
+            </p>`;
+    } else {
+        previewsList.innerHTML = recent_previews.map(article => {
+            const statusColor = article.published ? '#10b981' : '#f59e0b';
+            const statusLabel = article.published ? '✅ Publicado' : '⏸ Borrador';
+            return `
+                <div style="display:flex; align-items:center; justify-content:space-between;
+                            background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.07);
+                            border-radius:6px; padding:7px 10px; gap:8px;">
+                    <span style="color:rgba(255,255,255,0.7); font-size:0.75rem; 
+                                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1;"
+                          title="${article.title}">
+                        ${article.title}
+                    </span>
+                    <span style="color:${statusColor}; font-size:0.68rem; white-space:nowrap; flex-shrink:0;">
+                        ${statusLabel}
+                    </span>
+                    <span style="color:rgba(255,255,255,0.25); font-size:0.68rem; white-space:nowrap; flex-shrink:0;">
+                        ${formatSchedulerDate(article.created_at)}
+                    </span>
+                </div>`;
+        }).join('');
+    }
+}
+
+// ── Fetch y orquestación ──────────────────────────────────────────────────────
+
+async function loadSchedulerStatus() {
+    const loading = document.getElementById('schedulerLoading');
+    const content = document.getElementById('schedulerContent');
+    const error   = document.getElementById('schedulerError');
+
+    loading.style.display = 'block';
+    content.style.display = 'none';
+    error.style.display   = 'none';
+
+    try {
+        const res  = await adminFetch(`${API}/cron/status`);
+        const json = await res.json();
+
+        if (!res.ok || !json.success) throw new Error(json.error || 'Error desconocido');
+
+        renderSchedulerStatus(json);
+
+        loading.style.display = 'none';
+        content.style.display = 'block';
+    } catch (err) {
+        console.error('[Scheduler Status]', err.message);
+        loading.style.display = 'none';
+        error.style.display   = 'block';
+        error.innerHTML = `⚠️ No se pudo cargar el estado del scheduler: <strong>${err.message}</strong>`;
+    }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+function initSchedulerStatus() {
+    // Carga inicial
+    loadSchedulerStatus();
+
+    // Botón de refrescar
+    const btnRefresh = document.getElementById('btnRefreshStatus');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', loadSchedulerStatus);
+    }
+}
