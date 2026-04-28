@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# ARCHIVO 3: .github/workflows/weekly-standings.yml
+# Lunes 10:00 UTC — Standings post-carrera
+# ═══════════════════════════════════════════════════════════════════════════════
+---
+name: 📊 Weekly Standings Article
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'   # Lunes 10:00 UTC (1h después del preview)
+  workflow_dispatch:
+
+jobs:
+  generate-standings:
+    name: Generate Standings Article
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: 📅 Log info
+        run: |
+          echo "📊 Weekly Standings Generator"
+          echo "📅 Fecha: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: 🚀 Call standings endpoint
+        id: generate
+        run: |
+          RESPONSE=$(curl \
+            --silent --show-error --fail-with-body \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            --max-time 120 \
+            --write-out "\n__HTTP_STATUS__:%{http_code}" \
+            -X POST "${{ secrets.API_BASE_URL }}/api/cron/weekly-standings" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "__HTTP_STATUS__:" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | grep -v "__HTTP_STATUS__:")
+
+          echo "📨 HTTP Status: $HTTP_STATUS"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+
+          echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+          echo "response_body=$BODY"      >> $GITHUB_OUTPUT
+
+          if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
+            echo "❌ HTTP $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          BODY='${{ steps.generate.outputs.response_body }}'
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null)
+          RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null)
+          echo "GP: $RACE | Generado: $TRIGGERED"

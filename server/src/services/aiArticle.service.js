@@ -198,6 +198,13 @@ function buildPrompt(ctx, type) {
     const context = formatContext(ctx);
 
     const instructions = {
+        qualifying: `Escribí un ANÁLISIS DE CLASIFICACIÓN del Gran Premio.
+Cubrí: el pole position y su vuelta, las sorpresas y decepciones de la qualy,
+diferencias entre compañeros de equipo, los eliminados en Q1 y Q2, y
+las perspectivas para la carrera del domingo.
+El título DEBE seguir este formato: "Clasificación GP de [País] [Año]: [titular llamativo]"
+Extensión: ~400 palabras. Incluí mínimo 2 secciones con <h2>. La categoría debe ser "noticias".`,
+
         race_report: `Escribí una CRÓNICA DE CARRERA completa y emocionante.
 Cubrí: la largada, los momentos decisivos, el desenlace, actuaciones destacadas y análisis del resultado.
 El título DEBE seguir este formato SEO: "[Ganador] gana el GP de [País] [Año]: crónica completa"

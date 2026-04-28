@@ -1,6 +1,6 @@
 import { generateArticle, generatePostRaceBundle } from '../services/aiArticle.service.js';
 
-const VALID_TYPES = ['race_report', 'strategy', 'standings', 'preview'];
+const VALID_TYPES = ['race_report', 'strategy', 'standings', 'preview', 'qualifying'];
 
 export const generateArticleHandler = async (req, res) => {
     try {
