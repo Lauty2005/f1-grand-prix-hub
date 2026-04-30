@@ -18,6 +18,7 @@ import os
 import re
 import sys
 import json
+import time
 import hashlib
 import logging
 import argparse
@@ -321,9 +322,9 @@ class ArticlePublisher:
     """Publica artículos directamente en /api/articles con auth JWT."""
 
     def __init__(self):
-        self.api_url = os.environ.get("F1_API_URL", "").rstrip("/")
+        self.api_url    = os.environ.get("F1_API_URL", "").rstrip("/")
         self.cron_secret = os.environ.get("CRON_SECRET", "")
-        self.dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
+        self.dry_run    = os.environ.get("DRY_RUN", "false").lower() == "true"
 
         if not self.api_url:
             raise EnvironmentError("F1_API_URL no está definida.")
@@ -331,11 +332,49 @@ class ArticlePublisher:
             raise EnvironmentError("CRON_SECRET no está definida (o activá DRY_RUN=true).")
 
         self.endpoint = f"{self.api_url}/api/articles"
+
+        # 1. Despertar el servidor antes de cualquier operación
+        self._wake_up_server()
+
+        # 2. Obtener token fresco
         self.token = self._fetch_agent_token()
         self.headers = {
-            "Content-Type": "application/json",
+            "Content-Type":  "application/json",
             "Authorization": f"Bearer {self.token}",
         }
+
+    def _wake_up_server(self, max_attempts: int = 5, timeout: int = 30):
+        """
+        Hace ping al health endpoint hasta que el servidor responda.
+        Render tarda hasta ~60s en despertar desde el cold start.
+        """
+        if self.dry_run:
+            return
+
+        health_url = f"{self.api_url}/api/health"
+        log.info(f"⏳ Verificando disponibilidad del servidor ({health_url})...")
+
+        for attempt in range(1, max_attempts + 1):
+            try:
+                r = requests.get(health_url, timeout=timeout)
+                if r.status_code < 500:
+                    log.info(f"✅ Servidor disponible (intento {attempt}, status {r.status_code}).")
+                    return
+                log.warning(f"  Intento {attempt}/{max_attempts}: status {r.status_code}. Reintentando...")
+            except requests.exceptions.Timeout:
+                log.warning(f"  Intento {attempt}/{max_attempts}: timeout ({timeout}s). Reintentando...")
+            except requests.exceptions.ConnectionError as e:
+                log.warning(f"  Intento {attempt}/{max_attempts}: conexión fallida — {e}. Reintentando...")
+
+            if attempt < max_attempts:
+                wait = attempt * 10  # 10s, 20s, 30s, 40s
+                log.info(f"  Esperando {wait}s antes del próximo intento...")
+                time.sleep(wait)
+
+        raise EnvironmentError(
+            f"El servidor no respondió después de {max_attempts} intentos. "
+            f"Verificá que {self.api_url} esté activo."
+        )
 
     def _fetch_agent_token(self) -> str:
         """Obtiene un token JWT fresco del servidor usando CRON_SECRET."""
@@ -347,7 +386,7 @@ class ArticlePublisher:
             r = requests.get(
                 url,
                 headers={"Authorization": f"Bearer {self.cron_secret}"},
-                timeout=15,
+                timeout=30,  # más generoso ahora que el servidor ya está despierto
             )
             if r.status_code == 200:
                 token = r.json().get("token")

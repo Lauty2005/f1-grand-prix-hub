@@ -18,6 +18,7 @@ import strategyRoutes  from './src/routes/strategy.routes.js';
 import sitemapRouter from './src/routes/sitemap.routes.js';
 import newsletterRouter from './src/routes/newsletter.routes.js';
 import cronRoutes from './src/routes/cron.routes.js';
+import healthRoutes from './routes/health.routes.js';
 
 dotenv.config();
 
@@ -82,6 +83,7 @@ app.use('/api/strategy', strategyRoutes);
 app.use('/', sitemapRouter);  // /sitemap.xml — debe estar en la raíz, sin prefijo /api
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/cron', cronRoutes);
+app.use('/api/health', healthRoutes);
 
 // --- GLOBAL ERROR HANDLER ---
 import { errorHandler } from './src/middleware/error.middleware.js';
