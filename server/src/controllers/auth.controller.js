@@ -36,3 +36,24 @@ export const checkAuth = (req, res) => {
         return res.status(401).json({ authenticated: false });
     }
 };
+
+export const generateAgentToken = (req, res) => {
+    const secret = process.env.CRON_SECRET;
+    if (!secret) {
+        return res.status(503).json({ error: 'CRON_SECRET no configurado.' });
+    }
+
+    const providedSecret = (req.headers['authorization'] || '').replace('Bearer ', '');
+    if (providedSecret !== secret) {
+        return res.status(401).json({ error: 'No autorizado.' });
+    }
+
+    // Token de 365 días — solo para el agente automático
+    const token = jwt.sign(
+        { role: 'admin', source: 'f1-agent' },
+        process.env.JWT_SECRET,
+        { expiresIn: '365d' }
+    );
+
+    res.json({ success: true, token });
+};

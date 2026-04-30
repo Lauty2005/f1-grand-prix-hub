@@ -52,7 +52,7 @@ jobs:
         env:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           F1_API_URL:       ${{ secrets.F1_API_URL }}       # ej: https://f1-grand-prix-hub.onrender.com
-          F1_ADMIN_TOKEN:   ${{ secrets.F1_ADMIN_TOKEN }}   # JWT del admin (sin "Bearer ")
+          CRON_SECRET:   ${{ secrets.CRON_SECRET }}   # JWT del admin (sin "Bearer ")
           DRY_RUN:          ${{ github.event.inputs.dry_run || 'false' }}
           INPUT_DATES:      ${{ github.event.inputs.dates || '' }}
         run: |

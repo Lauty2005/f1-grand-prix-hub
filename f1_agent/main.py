@@ -321,50 +321,42 @@ class ArticlePublisher:
     """Publica artículos directamente en /api/articles con auth JWT."""
 
     def __init__(self):
-        self.api_url   = os.environ.get("F1_API_URL", "").rstrip("/")
-        self.token     = os.environ.get("F1_ADMIN_TOKEN", "")
-        self.dry_run   = os.environ.get("DRY_RUN", "false").lower() == "true"
+        self.api_url = os.environ.get("F1_API_URL", "").rstrip("/")
+        self.cron_secret = os.environ.get("CRON_SECRET", "")
+        self.dry_run = os.environ.get("DRY_RUN", "false").lower() == "true"
 
         if not self.api_url:
             raise EnvironmentError("F1_API_URL no está definida.")
-        if not self.token and not self.dry_run:
-            raise EnvironmentError("F1_ADMIN_TOKEN no está definida (o activá DRY_RUN=true).")
+        if not self.cron_secret and not self.dry_run:
+            raise EnvironmentError("CRON_SECRET no está definida (o activá DRY_RUN=true).")
 
         self.endpoint = f"{self.api_url}/api/articles"
-        self.headers  = {
-            "Content-Type":  "application/json",
+        self.token = self._fetch_agent_token()
+        self.headers = {
+            "Content-Type": "application/json",
             "Authorization": f"Bearer {self.token}",
         }
 
-    def publish(self, article: dict) -> bool:
-        """
-        Hace POST a /api/articles. Retorna True si fue exitoso.
-        En dry_run solo loguea el payload sin publicar.
-        """
+    def _fetch_agent_token(self) -> str:
+        """Obtiene un token JWT fresco del servidor usando CRON_SECRET."""
         if self.dry_run:
-            log.info(f"[DRY RUN] Artículo que se publicaría: '{article['title']}'")
-            log.info(f"[DRY RUN] Payload: {json.dumps(article, ensure_ascii=False, indent=2)[:400]}...")
-            return True
+            return "dry-run-token"
 
+        url = f"{self.api_url}/api/auth/agent-token"
         try:
-            r = requests.post(
-                self.endpoint,
-                json=article,
-                headers=self.headers,
-                timeout=20,
+            r = requests.get(
+                url,
+                headers={"Authorization": f"Bearer {self.cron_secret}"},
+                timeout=15,
             )
-            if r.status_code == 201:
-                data = r.json()
-                slug = data.get("data", {}).get("slug", "?")
-                log.info(f"✅ Publicado como borrador → slug: {slug}")
-                return True
+            if r.status_code == 200:
+                token = r.json().get("token")
+                log.info("✅ Token de agente obtenido correctamente.")
+                return token
             else:
-                log.error(f"❌ Error {r.status_code} publicando '{article['title']}': {r.text[:200]}")
-                return False
+                raise EnvironmentError(f"No se pudo obtener el token: {r.status_code} {r.text}")
         except requests.RequestException as e:
-            log.error(f"❌ Error de red publicando '{article['title']}': {e}")
-            return False
-
+            raise EnvironmentError(f"Error conectando al servidor para obtener token: {e}")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # REGISTRO DE PUBLICADOS (deduplicación entre runs)

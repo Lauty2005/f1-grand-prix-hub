@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
-import * as authController from '../controllers/auth.controller.js';
+import { login, logout, checkAuth, generateAgentToken } from '../controllers/auth.controller.js';
 
 const router = Router();
 
@@ -13,8 +13,9 @@ const loginLimiter = rateLimit({
     skipSuccessfulRequests: true,
 });
 
-router.post('/login', loginLimiter, authController.login);
-router.post('/logout', authController.logout);
-router.get('/check', authController.checkAuth);
+router.post('/login', loginLimiter, login);
+router.post('/logout', logout);
+router.get('/check', checkAuth);
+router.get('/agent-token', generateAgentToken);
 
 export default router;
