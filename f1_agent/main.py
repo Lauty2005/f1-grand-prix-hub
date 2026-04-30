@@ -397,6 +397,39 @@ class ArticlePublisher:
         except requests.RequestException as e:
             raise EnvironmentError(f"Error conectando al servidor para obtener token: {e}")
 
+    def publish(self, article: dict) -> bool:
+        """
+        Hace POST a /api/articles. Retorna True si fue exitoso.
+        En dry_run solo loguea el payload sin publicar.
+        """
+        if self.dry_run:
+            log.info(f"[DRY RUN] Artículo que se publicaría: '{article['title']}'")
+            log.info(f"[DRY RUN] Payload: {json.dumps(article, ensure_ascii=False, indent=2)[:400]}...")
+            return True
+
+        try:
+            r = requests.post(
+                self.endpoint,
+                json=article,
+                headers=self.headers,
+                timeout=30,
+            )
+            if r.status_code == 201:
+                data = r.json()
+                slug = data.get("data", {}).get("slug", "?")
+                log.info(f"✅ Publicado como borrador: '{article['title']}' → slug: {slug}")
+                return True
+            else:
+                log.error(f"❌ Error {r.status_code} publicando '{article['title']}': {r.text}")
+                return False
+        except requests.exceptions.Timeout:
+            log.error(f"❌ Timeout publicando '{article['title']}'")
+            return False
+        except requests.RequestException as e:
+            log.error(f"❌ Error de red publicando '{article['title']}': {e}")
+            return False
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # REGISTRO DE PUBLICADOS (deduplicación entre runs)
 # ─────────────────────────────────────────────────────────────────────────────
