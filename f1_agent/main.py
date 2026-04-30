@@ -38,7 +38,7 @@ logging.basicConfig(
 log = logging.getLogger("f1-agent")
 
 # ── Constantes ────────────────────────────────────────────────────────────────
-MAX_ARTICLES_PER_RUN = 5
+MAX_ARTICLES_PER_RUN = int(os.getenv("MAX_ARTICLES", "5"))
 
 # Mapea la categoría temática del scraper → categoría de la DB
 CATEGORY_MAP = {

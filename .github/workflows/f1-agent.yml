@@ -1,9 +1,13 @@
-name: F1 Off-Weekend Content Agent
+name: 🏎️ Daily Content Generator
 
 on:
   schedule:
-    # Lunes a viernes a las 12:00 UTC = 09:00 AM Argentina (UTC-3)
-    - cron: '0 12 * * 1-5'
+    # 09:00 hs Argentina (UTC-3) → 12:00 UTC
+    - cron: '0 12 * * *'
+    # 13:00 hs Argentina (UTC-3) → 16:00 UTC
+    - cron: '0 16 * * *'
+    # 20:00 hs Argentina (UTC-3) → 23:00 UTC
+    - cron: '0 23 * * *'
   workflow_dispatch:
     # Permite disparar el workflow manualmente desde la UI de GitHub
     # (útil para testear sin esperar el cron)
@@ -55,6 +59,7 @@ jobs:
           CRON_SECRET:   ${{ secrets.CRON_SECRET }}   # JWT del admin (sin "Bearer ")
           DRY_RUN:          ${{ github.event.inputs.dry_run || 'false' }}
           INPUT_DATES:      ${{ github.event.inputs.dates || '' }}
+          MAX_ARTICLES:     '2'
         run: |
           python f1_agent/main.py \
             --published-registry f1_agent/publicados.json \
