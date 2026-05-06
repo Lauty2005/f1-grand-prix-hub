@@ -251,6 +251,58 @@
                 </div>
 
             </form>
+
+            <!-- 🚀 IMPORTACIÓN RÁPIDA -->
+            <div style="margin-top:40px; padding-top:40px; border-top: 2px solid #333;">
+                <h2 style="color:#00ff88; margin-bottom:20px;">🚀 Importación Rápida</h2>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label style="color:#aaa; display:block; margin-bottom:8px; font-size:0.85rem;">📊 Cargar CSV</label>
+                        <input type="file" id="csvImportFile" accept=".csv" class="form-control" style="padding:10px; cursor:pointer;">
+                        <small style="color:#666; display:block; margin-top:5px;">Formato: Piloto,Posición,Tiempo (FP1/Q1/etc)</small>
+                    </div>
+                    <div>
+                        <label style="color:#aaa; display:block; margin-bottom:8px; font-size:0.85rem;">📋 Cargar JSON</label>
+                        <input type="file" id="jsonImportFile" accept=".json" class="form-control" style="padding:10px; cursor:pointer;">
+                        <small style="color:#666; display:block; margin-top:5px;">Descarga template: <a href="#" id="downloadTemplate" style="color:#e10600; text-decoration:none;">JSON Template</a></small>
+                    </div>
+                </div>
+
+                <div style="background:#1a1a22; padding:15px; border-radius:6px; margin-bottom:15px; border-left: 3px solid #00ff88;">
+                    <p style="color:#aaa; margin:0; font-size:0.85rem; line-height:1.5;">
+                        <strong style="color:#00ff88;">Instrucciones:</strong><br>
+                        1. Selecciona tipo de sesión (Prácticas, Qualy, Carrera, etc)<br>
+                        2. Elige MIAMI en el dropdown<br>
+                        3. Sube tu CSV o JSON<br>
+                        4. Revisa y guarda en lote
+                    </p>
+                </div>
+
+                <div id="bulkPreview" style="display:none; background:#2a2a35; border:1px solid #333; border-radius:6px; overflow:auto; max-height:400px; margin-bottom:15px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                        <thead>
+                            <tr style="background:#1a1a22; border-bottom:1px solid #333;">
+                                <th style="padding:10px; text-align:left; color:#aaa;">Piloto</th>
+                                <th style="padding:10px; text-align:center; color:#aaa;">Pos/Tiempo</th>
+                                <th style="padding:10px; text-align:center; color:#aaa;">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bulkPreviewBody"></tbody>
+                    </table>
+                </div>
+
+                <div style="display:flex; gap:10px;">
+                    <button id="btnBulkImport" style="flex:1; padding:12px; background:#00ff88; color:black; border:none; border-radius:6px; font-weight:bold; cursor:pointer; display:none;">
+                        ✅ GUARDAR TODO
+                    </button>
+                    <button id="btnCancelImport" style="flex:1; padding:12px; background:#333; color:#aaa; border:none; border-radius:6px; font-weight:bold; cursor:pointer; display:none;">
+                        ❌ CANCELAR
+                    </button>
+                </div>
+                <div id="bulkMessage" style="margin-top:10px; display:none; padding:10px; border-radius:6px; font-weight:bold;">
+                </div>
+            </div>
         </div>
 
         <div class="creation-sidebar">

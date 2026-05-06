@@ -1,0 +1,227 @@
+{
+  "race": "Miami Grand Prix",
+  "round": 5,
+  "date": "2026-05-10",
+  "sessions": [
+    {
+      "type": "practices",
+      "data": [
+        {
+          "driver": "Max Verstappen",
+          "p1": "1:27.852",
+          "p2": "1:26.341",
+          "p3": "1:25.934"
+        },
+        {
+          "driver": "Charles Leclerc",
+          "p1": "1:28.123",
+          "p2": "1:26.789",
+          "p3": "1:26.205"
+        },
+        {
+          "driver": "Carlos Sainz",
+          "p1": "1:28.456",
+          "p2": "1:27.102",
+          "p3": "1:26.512"
+        },
+        {
+          "driver": "Lewis Hamilton",
+          "p1": "1:27.234",
+          "p2": "1:26.098",
+          "p3": "1:25.678"
+        },
+        {
+          "driver": "George Russell",
+          "p1": "1:27.891",
+          "p2": "1:26.456",
+          "p3": "1:26.012"
+        }
+      ]
+    },
+    {
+      "type": "qualifying",
+      "data": [
+        {
+          "driver": "Max Verstappen",
+          "position": 1,
+          "q1": "1:26.234",
+          "q2": "1:25.678",
+          "q3": "1:24.956"
+        },
+        {
+          "driver": "Charles Leclerc",
+          "position": 2,
+          "q1": "1:26.456",
+          "q2": "1:25.912",
+          "q3": "1:25.234"
+        },
+        {
+          "driver": "Lewis Hamilton",
+          "position": 3,
+          "q1": "1:26.789",
+          "q2": "1:26.012",
+          "q3": "1:25.456"
+        },
+        {
+          "driver": "Carlos Sainz",
+          "position": 4,
+          "q1": "1:27.012",
+          "q2": "1:26.234",
+          "q3": "1:25.789"
+        },
+        {
+          "driver": "George Russell",
+          "position": 5,
+          "q1": "1:27.234",
+          "q2": "1:26.456",
+          "q3": "1:26.012"
+        }
+      ]
+    },
+    {
+      "type": "race",
+      "data": [
+        {
+          "driver": "Max Verstappen",
+          "position": 1,
+          "points": 25,
+          "fastest_lap": true,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Charles Leclerc",
+          "position": 2,
+          "points": 18,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Lewis Hamilton",
+          "position": 3,
+          "points": 15,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Carlos Sainz",
+          "position": 4,
+          "points": 12,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "George Russell",
+          "position": 5,
+          "points": 10,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Lando Norris",
+          "position": 6,
+          "points": 8,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Oscar Piastri",
+          "position": 7,
+          "points": 6,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Fernando Alonso",
+          "position": 8,
+          "points": 4,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Lance Stroll",
+          "position": 9,
+          "points": 2,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        },
+        {
+          "driver": "Yuki Tsunoda",
+          "position": 10,
+          "points": 1,
+          "fastest_lap": false,
+          "dnf": false,
+          "dsq": false,
+          "dns": false,
+          "dnq": false
+        }
+      ]
+    },
+    {
+      "type": "strategy",
+      "data": [
+        {
+          "driver": "Max Verstappen",
+          "final_position": 1,
+          "stops": 1,
+          "compounds": ["SOFT", "HARD"],
+          "total_pit_time": 22.5
+        },
+        {
+          "driver": "Charles Leclerc",
+          "final_position": 2,
+          "stops": 1,
+          "compounds": ["SOFT", "HARD"],
+          "total_pit_time": 23.1
+        },
+        {
+          "driver": "Lewis Hamilton",
+          "final_position": 3,
+          "stops": 1,
+          "compounds": ["MEDIUM", "HARD"],
+          "total_pit_time": 22.8
+        },
+        {
+          "driver": "Carlos Sainz",
+          "final_position": 4,
+          "stops": 2,
+          "compounds": ["SOFT", "MEDIUM", "HARD"],
+          "total_pit_time": 44.2
+        },
+        {
+          "driver": "George Russell",
+          "final_position": 5,
+          "stops": 1,
+          "compounds": ["SOFT", "HARD"],
+          "total_pit_time": 23.3
+        }
+      ]
+    }
+  ]
+}
