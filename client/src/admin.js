@@ -1987,8 +1987,10 @@ function parseBulkJSON(data) {
         return;
     }
 
+    let items = [];
+
     if (Array.isArray(data.results)) {
-        bulkDataCache = data.results.map((item, idx) => ({
+        items = data.results.map((item, idx) => ({
             idx,
             driver: item.driver,
             value: item.position || item.time || item.gap,
@@ -1996,11 +1998,46 @@ function parseBulkJSON(data) {
             session: item.session || sessionType,
             raceId
         }));
+    } else if (Array.isArray(data.sessions)) {
+        const sessionTypeMap = {
+            'race': 'race',
+            'qualy': 'qualifying',
+            'practices': 'practices',
+            'sprint': 'sprint',
+            'sprint-qualy': 'sprint-qualifying'
+        };
+        const targetType = sessionTypeMap[sessionType] || sessionType;
+        const session = data.sessions.find(s => s.type === targetType);
+
+        if (!session) {
+            showBulkMessage(`❌ No se encontró sesión de tipo "${targetType}" en el JSON.`, true);
+            return;
+        }
+
+        items = session.data.map((item, idx) => {
+            let value, status = '';
+            if (sessionType === 'race') {
+                value = item.position;
+                if (item.dnf) status = 'DNF';
+                else if (item.dsq) status = 'DSQ';
+                else if (item.dns) status = 'DNS';
+                else if (item.dnq) status = 'DNQ';
+            } else if (sessionType === 'qualy') {
+                value = item.position || item.q3 || item.q2 || item.q1;
+            } else if (sessionType === 'practices') {
+                value = item.p1 || item.p2 || item.p3;
+            } else {
+                value = item.position || item.time || item.gap;
+                status = item.status || '';
+            }
+            return { idx, driver: item.driver, value, status, session: sessionType, raceId };
+        });
     } else {
-        showBulkMessage('❌ JSON debe tener estructura: { results: [...] }', true);
+        showBulkMessage('❌ JSON debe tener estructura: { results: [...] } o { sessions: [...] }', true);
         return;
     }
 
+    bulkDataCache = items;
     displayBulkPreview();
 }
 
