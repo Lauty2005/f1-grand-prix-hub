@@ -6,8 +6,8 @@ export const validateResult = (req, res, next) => {
     }
 
     const pos = parseInt(position);
-    if (isNaN(pos) || pos < 1 || pos > 20) {
-        return res.status(400).json({ error: 'Posición inválida (1-20)' });
+    if (isNaN(pos) || pos < 1 || pos > 22) {
+        return res.status(400).json({ error: 'Posición inválida (1-22)' });
     }
 
     next();
