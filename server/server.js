@@ -18,7 +18,7 @@ import strategyRoutes  from './src/routes/strategy.routes.js';
 import sitemapRouter from './src/routes/sitemap.routes.js';
 import newsletterRouter from './src/routes/newsletter.routes.js';
 import cronRoutes from './src/routes/cron.routes.js';
-import healthRoutes from './routes/health.routes.js';
+import healthRoutes from './src/routes/health.routes.js';
 
 dotenv.config();
 
