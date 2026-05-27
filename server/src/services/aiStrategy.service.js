@@ -13,7 +13,7 @@ Siempre respondés con JSON válido, sin markdown ni bloques de código.`;
 
 async function collectStrategyContext(raceId) {
     const raceRes = await query(`
-        SELECT id, name, circuit_name, total_laps, circuit_length, circuit_notes, date, country_code, has_sprint
+        SELECT id, name, circuit_name, total_laps, circuit_length, date, country_code, has_sprint
         FROM races WHERE id = $1
     `, [raceId]);
     if (!raceRes.rows.length) throw new Error(`Carrera ${raceId} no encontrada`);
@@ -64,14 +64,12 @@ function buildPrompt(ctx) {
         })
         .join('\n');
 
-    const circuitNotes = race.circuit_notes ? `\nNotas del circuito: ${race.circuit_notes}` : '';
-
     return `Generá la estrategia de neumáticos real del Gran Premio de ${race.name} ${year}.
 
 ## CARRERA:
 Circuito: ${race.circuit_name} (${race.country_code})
 Total de vueltas: ${totalLaps}
-Longitud por vuelta: ${race.circuit_length || 'N/D'}${circuitNotes}
+Longitud por vuelta: ${race.circuit_length || 'N/D'}
 ${qualyLines}
 
 ## PILOTOS (excluidos DNS):
