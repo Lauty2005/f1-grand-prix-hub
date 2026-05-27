@@ -1233,6 +1233,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('stintRaceSelect')?.addEventListener('change', loadDriversForStint);
     document.getElementById('deleteStintYearSelect')?.addEventListener('change', (e) => loadRacesForStintDelete(e.target.value));
     document.getElementById('deleteStintRaceSelect')?.addEventListener('change', (e) => loadDriversForStintDelete(e.target.value));
+    document.getElementById('btnGenerateStrategy')?.addEventListener('click', handleGenerateStrategy);
     // AI Generator
     document.getElementById('btnGenerateArticle')?.addEventListener('click', handleGenerateArticle);
     document.getElementById('aiYear')?.addEventListener('change', (e) => loadRacesForAI(e.target.value));
@@ -1396,6 +1397,46 @@ async function handleAddStint(e) {
     } finally {
         btn.disabled = false;
         btn.innerText = 'GUARDAR STINT';
+    }
+}
+
+async function handleGenerateStrategy() {
+    const raceId = document.getElementById('stintRaceSelect').value;
+    if (!raceId) return alert('Seleccioná una carrera en el selector de arriba primero.');
+
+    const btn = document.getElementById('btnGenerateStrategy');
+    const status = document.getElementById('aiStrategyStatus');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Generando...';
+    status.style.display = 'none';
+
+    try {
+        const res = await adminFetch(`${API}/strategy/admin/generate-ai`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ race_id: raceId }),
+        });
+        const data = await res.json();
+
+        status.style.display = 'block';
+        if (res.ok && data.success) {
+            const tokensInfo = data.usage
+                ? ` (${data.usage.input_tokens}↑ ${data.usage.output_tokens}↓ tokens · ${data.provider})`
+                : '';
+            let html = `<span style="color:#4ade80">✅ ${data.stints_saved} stints generados y guardados.${tokensInfo}</span>`;
+            if (data.summary) html += `<br><em style="color:rgba(255,255,255,0.6)">${data.summary}</em>`;
+            if (data.errors?.length) html += `<br><span style="color:#fbbf24">⚠️ ${data.errors.length} error(es) al guardar.</span>`;
+            status.innerHTML = html;
+        } else {
+            status.innerHTML = `<span style="color:#f87171">❌ ${data.error || 'Error desconocido'}</span>`;
+        }
+    } catch (err) {
+        status.style.display = 'block';
+        status.innerHTML = `<span style="color:#f87171">❌ Error de conexión: ${err.message}</span>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🤖 GENERAR ESTRATEGIA CON IA';
     }
 }
 

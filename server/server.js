@@ -22,8 +22,8 @@ import healthRoutes from './src/routes/health.routes.js';
 
 dotenv.config();
 
-const REQUIRED_ENV = [
-    'JWT_SECRET',
+const REQUIRED_ENV = ['JWT_SECRET'];
+const REQUIRED_ENV_PROD = [
     'CLOUDFLARE_R2_BUCKET',
     'CLOUDFLARE_R2_PUBLIC_URL',
     'CLOUDFLARE_ACCOUNT_ID',
@@ -32,6 +32,11 @@ const REQUIRED_ENV = [
 ];
 for (const key of REQUIRED_ENV) {
     if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
+}
+if (process.env.NODE_ENV === 'production') {
+    for (const key of REQUIRED_ENV_PROD) {
+        if (!process.env[key]) throw new Error(`Missing required env var: ${key}`);
+    }
 }
 
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS

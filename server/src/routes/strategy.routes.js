@@ -8,8 +8,9 @@ const router = Router();
 router.get('/team-history',       strategyController.getTeamStrategyHistory);
 
 // Admin CRUD
-router.get('/admin/stints',       adminAuth, strategyController.getStintsForAdmin);
-router.post('/',                  adminAuth, strategyController.addStint);
+router.get('/admin/stints',            adminAuth, strategyController.getStintsForAdmin);
+router.post('/admin/generate-ai',      adminAuth, strategyController.generateAIStrategy);
+router.post('/',                       adminAuth, strategyController.addStint);
 router.delete('/:id',             adminAuth, strategyController.deleteStint);
 router.delete('/:raceId/driver/:driverId', adminAuth, strategyController.deleteDriverStints);
 

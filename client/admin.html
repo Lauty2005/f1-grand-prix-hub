@@ -454,6 +454,21 @@
                             </div>
                             <p id="msgStint" class="success-msg span-full">✅ ¡Stint guardado!</p>
                         </form>
+
+                        <!-- IA: Generación automática -->
+                        <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:14px; margin-top:6px;">
+                            <p style="color:#aaa; font-size:0.75rem; margin:0 0 6px; text-transform:uppercase; letter-spacing:1px;">Generar con IA</p>
+                            <p style="color:rgba(255,255,255,0.45); font-size:0.73rem; margin:0 0 10px; line-height:1.5;">
+                                Genera automáticamente los stints de todos los pilotos para la carrera seleccionada arriba. Requiere que los resultados estén cargados.
+                            </p>
+                            <button type="button" id="btnGenerateStrategy" style="
+                                width:100%; padding:10px; border:none; border-radius:6px; cursor:pointer;
+                                font-weight:700; font-size:0.85rem; letter-spacing:1px;
+                                background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff;
+                                transition:opacity 0.2s;
+                            ">🤖 GENERAR ESTRATEGIA CON IA</button>
+                            <div id="aiStrategyStatus" style="display:none; margin-top:8px; font-size:0.78rem; line-height:1.5;"></div>
+                        </div>
                     </div>
                 </div>
 

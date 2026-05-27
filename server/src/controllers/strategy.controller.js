@@ -1,4 +1,5 @@
 import * as strategyService from '../services/strategy.service.js';
+import { generateStrategyWithAI } from '../services/aiStrategy.service.js';
 
 export const getRaceStrategy = async (req, res) => {
     try {
@@ -62,5 +63,17 @@ export const deleteDriverStints = async (req, res) => {
     } catch (e) {
         console.error(e);
         res.status(500).json({ error: 'Error al eliminar stints del piloto' });
+    }
+};
+
+export const generateAIStrategy = async (req, res) => {
+    try {
+        const { race_id } = req.body;
+        if (!race_id) return res.status(400).json({ error: 'race_id requerido' });
+        const result = await generateStrategyWithAI(race_id);
+        res.json({ success: true, ...result });
+    } catch (e) {
+        console.error('[generateAIStrategy]', e);
+        res.status(500).json({ error: e.message || 'Error al generar estrategia con IA' });
     }
 };
