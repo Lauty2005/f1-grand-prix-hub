@@ -115,6 +115,7 @@ async function init() {
                             <span>Por ${article.author}</span>
                             <span>•</span>
                             <span>${formatDate(article.created_at)}</span>
+                            <span class="article-header__ai-badge" title="Este artículo fue generado con asistencia de inteligencia artificial y supervisión editorial">Generado con IA</span>
                         </div>
                         ${cover}
                     </header>

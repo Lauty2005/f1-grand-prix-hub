@@ -22,11 +22,13 @@ router.get('/sitemap.xml', async (req, res) => {
         );
 
         // 3. Construir URLs — solo páginas que realmente existen y devuelven 200
-        const today = new Date().toISOString().split('T')[0];
+        const latestMod = articlesRes.rows[0]?.updated_at
+            ? new Date(articlesRes.rows[0].updated_at).toISOString().split('T')[0]
+            : new Date().toISOString().split('T')[0];
         const urls = [
             {
                 loc: baseURL,
-                lastmod: today,
+                lastmod: latestMod,
                 priority: '1.0',
                 changefreq: 'daily'
             }
@@ -66,6 +68,32 @@ router.get('/sitemap.xml', async (req, res) => {
     } catch (error) {
         console.error('Error generando sitemap:', error);
         res.status(500).send('Error al generar sitemap');
+    }
+});
+
+router.get('/llms.txt', async (req, res) => {
+    try {
+        const baseURL = 'https://f1grandprixhub.com';
+        const articlesRes = await query(
+            `SELECT title, slug FROM articles WHERE published = true ORDER BY created_at DESC LIMIT 150`
+        );
+
+        const lines = [
+            '# F1 Grand Prix Hub',
+            '> Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo en español (Argentina).',
+            '',
+            '## Artículos',
+            ...articlesRes.rows.map(a =>
+                `- ${baseURL}/articulo.html?slug=${encodeURIComponent(a.slug)}: ${a.title}`
+            )
+        ];
+
+        res.setHeader('Content-Type', 'text/plain; charset=UTF-8');
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+        res.send(lines.join('\n'));
+    } catch (error) {
+        console.error('Error generando llms.txt:', error);
+        res.status(500).send('Error al generar llms.txt');
     }
 });
 

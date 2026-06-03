@@ -194,28 +194,55 @@ export function validateArticleSEO(article) {
  * @returns {object} JSON-LD structured data
  */
 export function generateArticleSchema(article) {
+    const BASE = 'https://f1grandprixhub.com';
+    const articleUrl = `${BASE}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
+    const SECTION_MAP = {
+        noticias: 'Noticias', analisis: 'Análisis', preview: 'Preview', tecnica: 'Técnica'
+    };
+
     return {
         '@context': 'https://schema.org',
-        '@type': 'NewsArticle',
-        headline: article.title,
-        description: article.excerpt,
-        image: article.cover_image_url || 'https://f1grandprixhub.com/og-image.jpg',
-        datePublished: article.created_at,
-        dateModified: article.updated_at,
-        author: {
-            '@type': 'Organization',
-            '@id': 'https://f1grandprixhub.com/#organization',
-            name: 'F1 Grand Prix Hub'
-        },
-        publisher: {
-            '@type': 'Organization',
-            '@id': 'https://f1grandprixhub.com/#organization',
-            name: 'F1 Grand Prix Hub',
-            logo: {
-                '@type': 'ImageObject',
-                url: 'https://f1grandprixhub.com/logo.png'
+        '@graph': [
+            {
+                '@type': 'NewsArticle',
+                '@id': `${articleUrl}#article`,
+                headline: article.title,
+                description: article.excerpt,
+                url: articleUrl,
+                mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrl },
+                image: {
+                    '@type': 'ImageObject',
+                    url: article.cover_image_url || `${BASE}/og-image.jpg`,
+                    width: 1200,
+                    height: 630
+                },
+                datePublished: article.created_at,
+                dateModified: article.updated_at || article.created_at,
+                inLanguage: 'es-AR',
+                articleSection: SECTION_MAP[article.category] || article.category || 'Noticias',
+                keywords: Array.isArray(article.tags) ? article.tags.join(', ') : '',
+                author: {
+                    '@type': 'Organization',
+                    '@id': `${BASE}/#organization`,
+                    name: 'F1 Grand Prix Hub'
+                },
+                publisher: {
+                    '@type': 'Organization',
+                    '@id': `${BASE}/#organization`,
+                    name: 'F1 Grand Prix Hub',
+                    logo: { '@type': 'ImageObject', url: `${BASE}/logo.png` }
+                }
+            },
+            {
+                '@type': 'BreadcrumbList',
+                '@id': `${articleUrl}#breadcrumb`,
+                itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Inicio', item: BASE },
+                    { '@type': 'ListItem', position: 2, name: 'Noticias', item: `${BASE}/#noticias` },
+                    { '@type': 'ListItem', position: 3, name: article.title, item: articleUrl }
+                ]
             }
-        }
+        ]
     };
 }
 

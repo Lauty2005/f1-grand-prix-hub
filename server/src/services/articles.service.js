@@ -34,7 +34,7 @@ export const getArticles = async ({ category, tag, featured, limit = 20, offset 
 
 export const getArticleBySlug = async (slug) => {
     const result = await query(
-        `SELECT id, title, slug, excerpt, content, author, cover_image_url, category, tags, featured, created_at
+        `SELECT id, title, slug, excerpt, content, author, cover_image_url, category, tags, featured, created_at, updated_at
          FROM articles
          WHERE slug = $1 AND published = true`,
         [slug]
