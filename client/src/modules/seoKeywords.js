@@ -199,19 +199,21 @@ export function generateArticleSchema(article) {
         '@type': 'NewsArticle',
         headline: article.title,
         description: article.excerpt,
-        image: article.cover_image_url || 'https://f1-grand-prix-hub.vercel.app/og-image.jpg',
+        image: article.cover_image_url || 'https://f1grandprixhub.com/og-image.jpg',
         datePublished: article.created_at,
         dateModified: article.updated_at,
         author: {
-            '@type': 'Person',
-            name: article.author || 'F1 Grand Prix Hub'
+            '@type': 'Organization',
+            '@id': 'https://f1grandprixhub.com/#organization',
+            name: 'F1 Grand Prix Hub'
         },
         publisher: {
             '@type': 'Organization',
+            '@id': 'https://f1grandprixhub.com/#organization',
             name: 'F1 Grand Prix Hub',
             logo: {
                 '@type': 'ImageObject',
-                url: 'https://f1-grand-prix-hub.vercel.app/logo.png'
+                url: 'https://f1grandprixhub.com/logo.png'
             }
         }
     };

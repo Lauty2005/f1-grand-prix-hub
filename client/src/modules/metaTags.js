@@ -167,14 +167,15 @@ function setCanonical(url) {
  * @param {object} schema - Objeto schema
  */
 function setSchemaJSON(schema) {
-    let script = document.querySelector('script[type="application/ld+json"]');
-    
+    let script = document.querySelector('script[type="application/ld+json"][data-schema-type="dynamic"]');
+
     if (!script) {
         script = document.createElement('script');
         script.type = 'application/ld+json';
+        script.dataset.schemaType = 'dynamic';
         document.head.appendChild(script);
     }
-    
+
     script.textContent = JSON.stringify(schema);
 }
 
@@ -184,7 +185,7 @@ function setSchemaJSON(schema) {
  * @returns {object} Config para setPageMeta()
  */
 export function createArticleMetaConfig(article) {
-    const baseURL = 'https://f1-grand-prix-hub.vercel.app';
+    const baseURL = 'https://f1grandprixhub.com';
     const articleURL = `${baseURL}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
 
     return {
@@ -232,14 +233,14 @@ export function createHomeMetaConfig() {
             'resultados GP',
             'campeonato F1'
         ],
-        canonical: 'https://f1-grand-prix-hub.vercel.app/',
+        canonical: 'https://f1grandprixhub.com/',
         robots: 'index, follow',
         og: {
             title: 'F1 Grand Prix Hub - Análisis profesional de Fórmula 1',
             description: 'Predicciones, estrategia y análisis técnico de F1 en español',
             type: 'website',
-            url: 'https://f1-grand-prix-hub.vercel.app/',
-            image: 'https://f1-grand-prix-hub.vercel.app/og-image-home.jpg'
+            url: 'https://f1grandprixhub.com/',
+            image: 'https://f1grandprixhub.com/og-image-home.jpg'
         },
         twitter: {
             card: 'summary_large_image',
@@ -250,9 +251,9 @@ export function createHomeMetaConfig() {
             '@context': 'https://schema.org',
             '@type': 'WebSite',
             name: 'F1 Grand Prix Hub',
-            url: 'https://f1-grand-prix-hub.vercel.app/',
+            url: 'https://f1grandprixhub.com/',
             description: 'Análisis rioplatense de estrategia F1 y predicciones de carreras',
-            image: 'https://f1-grand-prix-hub.vercel.app/logo.png'
+            image: 'https://f1grandprixhub.com/logo.png'
         }
     };
 }
