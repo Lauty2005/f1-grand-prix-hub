@@ -94,7 +94,7 @@ function articleCardHTML(article) {
 
 function heroHTML(article) {
     const cover = article.cover_image_url
-        ? `<img class="news-hero__cover" src="${resolveImgUrl(article.cover_image_url)}" alt="${article.title}">`
+        ? `<img class="news-hero__cover" src="${resolveImgUrl(article.cover_image_url)}" alt="${article.title}" width="1200" height="630" loading="eager" fetchpriority="high">`
         : '';
     return `
         <div class="news-hero" data-slug="${article.slug}">

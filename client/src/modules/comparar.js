@@ -253,7 +253,7 @@ function driverCardHeaderHTML(driver) {
     if (!driver) return `<div class="cmp-driver-card cmp-driver-card--empty">Selecciona un piloto</div>`;
     return `
         <div class="cmp-driver-card" style="--team-color: ${driver.primary_color};">
-            <img class="cmp-driver-card__img" src="${imgSrc(driver.profile_image_url)}" alt="${driver.last_name}">
+            <img class="cmp-driver-card__img" src="${imgSrc(driver.profile_image_url)}" alt="${driver.last_name}" width="200" height="200" loading="lazy">
             <div class="cmp-driver-card__info">
                 <span class="cmp-driver-card__name">${driver.first_name} <strong>${driver.last_name}</strong></span>
                 <span class="cmp-driver-card__team" style="color:${driver.primary_color};">${driver.team_name}</span>

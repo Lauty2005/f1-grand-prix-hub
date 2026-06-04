@@ -11,7 +11,6 @@ import '@fontsource/jetbrains-mono/latin-700.css';
 import { API } from './modules/config.js';
 import { state } from './modules/state.js';
 import { setPageMeta, createHomeMetaConfig } from './modules/metaTags.js';
-import { renderNewsletterForm, NEWSLETTER_STYLES } from './modules/newsletter.js';
 import { loadNoticiasView } from './modules/noticias.js'; // eager — first view on load
 
 // Lazy-loaded views — only download when the user first clicks their nav button.
@@ -103,16 +102,22 @@ function init() {
     // SEO: Meta tags de la home page
     setPageMeta(createHomeMetaConfig());
 
-    // Newsletter: inyectar estilos y renderizar formulario
-    const styleEl = document.createElement('style');
-    styleEl.textContent = NEWSLETTER_STYLES;
-    document.head.appendChild(styleEl);
-
-    renderNewsletterForm('newsletter-container', {
-        title: '⚡ Resumen F1 semanal',
-        subtitle: 'Análisis, predicciones y datos que no ves en otros lados',
-        onSuccess: () => console.log('Usuario suscripto!')
+    // Newsletter deferred to idle — not on critical path
+    const initNewsletter = () => import('./modules/newsletter.js').then(({ renderNewsletterForm, NEWSLETTER_STYLES }) => {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = NEWSLETTER_STYLES;
+        document.head.appendChild(styleEl);
+        renderNewsletterForm('newsletter-container', {
+            title: '⚡ Resumen F1 semanal',
+            subtitle: 'Análisis, predicciones y datos que no ves en otros lados',
+            onSuccess: () => console.log('Usuario suscripto!')
+        });
     });
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(initNewsletter, { timeout: 3000 });
+    } else {
+        setTimeout(initNewsletter, 1000);
+    }
 
     document.body.insertAdjacentHTML('beforeend', `
         <footer class="site-footer">

@@ -137,7 +137,8 @@ export default async function handler(req, res) {
     <script type="application/ld+json">${safeSchema}</script>
 
     <link rel="modulepreload" href="/assets/articulo.js" />
-    <link rel="stylesheet" href="/assets/metaTags.css" />
+    <link rel="preload" href="/assets/metaTags.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="/assets/metaTags.css" /></noscript>
   </head>
   <body>
     ${prerender}

@@ -94,10 +94,16 @@ export default async function handler(req, res) {
 
     <link rel="icon" type="image/png" href="/logo.png" />
 
+    ${articles[0]?.cover_image_url
+        ? `<link rel="preload" as="image" href="${esc(articles[0].cover_image_url)}" fetchpriority="high" />`
+        : '<link rel="preload" as="image" href="/logo.png" fetchpriority="high" />'
+    }
+
     <script type="application/ld+json">${schema}</script>
 
     <link rel="modulepreload" href="/assets/main.js" />
-    <link rel="stylesheet" href="/assets/main.css" />
+    <link rel="preload" href="/assets/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="/assets/main.css" /></noscript>
   </head>
   <body>
     <!-- Pre-rendered shell for crawlers — JS hydrates the full SPA after load -->
