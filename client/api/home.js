@@ -112,7 +112,7 @@ export default async function handler(req, res) {
         <a href="${SITE_BASE}/sobre.html">Sobre nosotros</a>
       </nav>
     </div>
-    <div id="app"></div>
+    <main id="app"></main>
     <div id="newsletter-container"></div>
     <script type="module" src="/assets/main.js"></script>
   </body>

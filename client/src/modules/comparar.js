@@ -47,7 +47,8 @@ function selectorHTML(slot, selectedId, drivers) {
     ).join('');
     return `
         <div class="cmp-selector" data-slot="${slot}">
-            <select class="f1-select cmp-select" id="cmpSelect${slot}">
+            <label for="cmpSelect${slot}" class="sr-only">Piloto ${slot}</label>
+            <select class="f1-select cmp-select" id="cmpSelect${slot}" aria-label="Seleccionar piloto ${slot}">
                 <option value="">— Elige piloto —</option>
                 ${options}
             </select>

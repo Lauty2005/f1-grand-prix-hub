@@ -172,7 +172,7 @@
     font-size: 1rem;
     cursor: pointer;
     outline: none;
-    transition: all 0.3s ease;
+    transition: border-color 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
     
     /* Icono de flecha personalizado (opcional) */
     appearance: none; 

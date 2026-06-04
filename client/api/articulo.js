@@ -141,7 +141,7 @@ export default async function handler(req, res) {
   </head>
   <body>
     ${prerender}
-    <div id="app"></div>
+    <main id="app"></main>
     <script type="module" src="/assets/articulo.js"></script>
   </body>
 </html>`;
