@@ -1,23 +1,26 @@
 import './scss/styles.scss';
-// Self-hosted fonts — eliminates Google Fonts DNS lookup and render-blocking stylesheet
-import '@fontsource/barlow-condensed/400.css';
-import '@fontsource/barlow-condensed/600.css';
-import '@fontsource/barlow-condensed/700.css';
-import '@fontsource/barlow-condensed/800.css';
-import '@fontsource/barlow-condensed/900.css';
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/600.css';
-import '@fontsource/jetbrains-mono/700.css';
+// Latin-only subsets — drops unused Cyrillic/Greek/Vietnamese (~95% CSS reduction)
+import '@fontsource/barlow-condensed/latin-400.css';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/barlow-condensed/latin-800.css';
+import '@fontsource/barlow-condensed/latin-900.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-600.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
 import { API } from './modules/config.js';
 import { state } from './modules/state.js';
 import { setPageMeta, createHomeMetaConfig } from './modules/metaTags.js';
 import { renderNewsletterForm, NEWSLETTER_STYLES } from './modules/newsletter.js';
-import { loadDriversView } from './modules/drivers.js';
-import { loadCalendarView } from './modules/calendar.js';
-import { loadStandingsView } from './modules/standings.js';
-import { loadNoticiasView } from './modules/noticias.js';
-import { loadCompararView } from './modules/comparar.js';
-import { loadTimelineView } from './modules/timeline.js';
+import { loadNoticiasView } from './modules/noticias.js'; // eager — first view on load
+
+// Lazy-loaded views — only download when the user first clicks their nav button.
+// Splits chart.js (164 KB) and 5 view modules out of the initial bundle.
+const lazyDrivers   = () => import('./modules/drivers.js').then(m => m.loadDriversView());
+const lazyCalendar  = () => import('./modules/calendar.js').then(m => m.loadCalendarView());
+const lazyStandings = () => import('./modules/standings.js').then(m => m.loadStandingsView());
+const lazyComparar  = () => import('./modules/comparar.js').then(m => m.loadCompararView());
+const lazyTimeline  = () => import('./modules/timeline.js').then(m => m.loadTimelineView());
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
@@ -64,17 +67,17 @@ function init() {
 
     document.getElementById('btn-drivers').addEventListener('click', () => {
         updateButtons('drivers');
-        loadDriversView();
+        lazyDrivers();
     });
 
     document.getElementById('btn-calendar').addEventListener('click', () => {
         updateButtons('calendar');
-        loadCalendarView();
+        lazyCalendar();
     });
 
     document.getElementById('btn-standings').addEventListener('click', () => {
         updateButtons('standings');
-        loadStandingsView();
+        lazyStandings();
     });
 
     document.getElementById('btn-noticias').addEventListener('click', () => {
@@ -84,12 +87,12 @@ function init() {
 
     document.getElementById('btn-comparar').addEventListener('click', () => {
         updateButtons('comparar');
-        loadCompararView();
+        lazyComparar();
     });
 
     document.getElementById('btn-timeline').addEventListener('click', () => {
         updateButtons('timeline');
-        loadTimelineView();
+        lazyTimeline();
     });
 
     // Carga inicial
@@ -131,12 +134,12 @@ function init() {
 }
 
 function refreshActiveView() {
-    if (document.getElementById('btn-drivers').classList.contains('active-btn')) loadDriversView();
-    if (document.getElementById('btn-calendar').classList.contains('active-btn')) loadCalendarView();
-    if (document.getElementById('btn-standings').classList.contains('active-btn')) loadStandingsView();
+    if (document.getElementById('btn-drivers').classList.contains('active-btn')) lazyDrivers();
+    if (document.getElementById('btn-calendar').classList.contains('active-btn')) lazyCalendar();
+    if (document.getElementById('btn-standings').classList.contains('active-btn')) lazyStandings();
     if (document.getElementById('btn-noticias').classList.contains('active-btn')) loadNoticiasView();
-    if (document.getElementById('btn-comparar').classList.contains('active-btn')) loadCompararView();
-    if (document.getElementById('btn-timeline').classList.contains('active-btn')) loadTimelineView();
+    if (document.getElementById('btn-comparar').classList.contains('active-btn')) lazyComparar();
+    if (document.getElementById('btn-timeline').classList.contains('active-btn')) lazyTimeline();
 }
 
 function updateButtons(activeId) {
