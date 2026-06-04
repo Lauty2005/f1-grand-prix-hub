@@ -3,6 +3,7 @@
     { "source": "/sitemap.xml",    "destination": "https://f1-grand-prix-hub.onrender.com/sitemap.xml" },
     { "source": "/llms.txt",       "destination": "https://f1-grand-prix-hub.onrender.com/llms.txt" },
     { "source": "/articulo/:slug", "destination": "/api/articulo?slug=:slug" },
-    { "source": "/articulo.html",  "destination": "/api/articulo" }
+    { "source": "/articulo.html",  "destination": "/api/articulo" },
+    { "source": "/",               "destination": "/api/home" }
   ]
 }

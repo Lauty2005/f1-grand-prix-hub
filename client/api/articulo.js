@@ -96,6 +96,7 @@ export default async function handler(req, res) {
     const prerender = `
 <div id="ssr-prerender" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;" aria-hidden="true">
   <h1>${esc(article.title)}</h1>
+  ${article.cover_image_url ? `<img src="${esc(article.cover_image_url)}" alt="${esc(article.title)}" width="1200" height="630" />` : ''}
   <p>${esc(article.excerpt || '')}</p>
   <span>Por ${esc(article.author || 'F1 Grand Prix Hub')}</span>
   <time datetime="${esc(article.created_at)}">${new Date(article.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
