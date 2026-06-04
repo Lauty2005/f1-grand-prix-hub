@@ -72,6 +72,7 @@ async function init() {
             </a>
             <span style="color:#333;">|</span>
             <span style="color:#888; font-size:0.85rem; text-transform:uppercase; letter-spacing:1px;">Noticias</span>
+            <a href="/sobre.html" style="color:rgba(255,255,255,0.45); font-size:0.8rem; text-decoration:none; text-transform:uppercase; letter-spacing:1px; margin-left:auto;">Nosotros</a>
         </nav>
     `);
 

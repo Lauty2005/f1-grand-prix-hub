@@ -1,4 +1,13 @@
 import './scss/styles.scss';
+// Self-hosted fonts — eliminates Google Fonts DNS lookup and render-blocking stylesheet
+import '@fontsource/barlow-condensed/400.css';
+import '@fontsource/barlow-condensed/600.css';
+import '@fontsource/barlow-condensed/700.css';
+import '@fontsource/barlow-condensed/800.css';
+import '@fontsource/barlow-condensed/900.css';
+import '@fontsource/jetbrains-mono/400.css';
+import '@fontsource/jetbrains-mono/600.css';
+import '@fontsource/jetbrains-mono/700.css';
 import { API } from './modules/config.js';
 import { state } from './modules/state.js';
 import { setPageMeta, createHomeMetaConfig } from './modules/metaTags.js';
@@ -41,6 +50,7 @@ function init() {
                 <button id="btn-standings" class="nav-btn">CAMPEONATO</button>
                 <button id="btn-comparar" class="nav-btn">COMPARAR</button>
                 <button id="btn-timeline" class="nav-btn">TIMELINE</button>
+                <a href="/sobre.html" class="nav-btn" style="display:inline-flex;align-items:center;text-decoration:none;">NOSOTROS</a>
             </div>
         </nav>
     `);

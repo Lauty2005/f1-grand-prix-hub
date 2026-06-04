@@ -1,3 +1,6 @@
+import { Chart, LineController, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend } from 'chart.js';
+Chart.register(LineController, CategoryScale, LinearScale, PointElement, LineElement, Tooltip, Legend);
+
 import { API } from './config.js';
 import { state } from './state.js';
 

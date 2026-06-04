@@ -1,3 +1,6 @@
+import { Chart, BarController, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
+Chart.register(BarController, CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
 import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 import { getFlagEmoji, getPositionBadge } from './utils.js';
