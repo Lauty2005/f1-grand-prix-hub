@@ -72,7 +72,7 @@ export async function loadCalendarView() {
                         </p>
                     </div>
                     <div class="race-card-wide__map-col">
-                        <img src="${mapSrc}" class="race-card__map" alt="Map" width="320" height="240" loading="lazy">
+                        <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy">
                     </div>
                     <div class="race-card-wide__cta">›</div>
                 </div>
@@ -142,7 +142,7 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
 
             <div class="circuit_info">
                 <div class="modal-circuit-image">
-                    <img src="${displayImage}" alt="${race.circuit_name}" width="600" height="400" loading="lazy">
+                    <img src="${displayImage}" alt="${race.circuit_name}" loading="lazy">
                 </div>
                 <div class="modal-circuit-stats">
                     <div class="circuit-stat">
