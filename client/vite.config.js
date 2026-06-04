@@ -5,12 +5,21 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        // Página Principal (Home)
-        main: resolve(__dirname, 'index.html'),
-        // Página de Admin (Panel)
-        admin: resolve(__dirname, 'admin.html'),
-        // Página de Artículo Individual
+        main:     resolve(__dirname, 'index.html'),
+        admin:    resolve(__dirname, 'admin.html'),
         articulo: resolve(__dirname, 'articulo.html'),
+      },
+      output: {
+        // Stable names for entry points so the SSR function can reference
+        // them without knowing the build hash. Lazy chunks keep their hashes.
+        entryFileNames: 'assets/[name].js',
+        assetFileNames: (assetInfo) => {
+          // Keep CSS for entries stable too; everything else stays hashed
+          const entries = ['main', 'admin', 'articulo', 'metaTags'];
+          const name = assetInfo.name?.replace(/\.[^.]+$/, '') ?? '';
+          if (entries.some(e => name.startsWith(e))) return 'assets/[name][extname]';
+          return 'assets/[name]-[hash][extname]';
+        },
       },
     },
   },

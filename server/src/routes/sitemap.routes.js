@@ -37,7 +37,7 @@ router.get('/sitemap.xml', async (req, res) => {
         // Agregar artículos (única sub-ruta real del frontend)
         articlesRes.rows.forEach(article => {
             urls.push({
-                loc: `${baseURL}/articulo.html?slug=${encodeURIComponent(article.slug)}`,
+                loc: `${baseURL}/articulo/${encodeURIComponent(article.slug)}`,
                 lastmod: new Date(article.updated_at).toISOString().split('T')[0],
                 priority: '0.8',
                 changefreq: 'monthly'
@@ -84,7 +84,7 @@ router.get('/llms.txt', async (req, res) => {
             '',
             '## Artículos',
             ...articlesRes.rows.map(a =>
-                `- ${baseURL}/articulo.html?slug=${encodeURIComponent(a.slug)}: ${a.title}`
+                `- ${baseURL}/articulo/${encodeURIComponent(a.slug)}: ${a.title}`
             )
         ];
 
