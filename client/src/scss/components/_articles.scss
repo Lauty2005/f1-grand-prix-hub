@@ -47,6 +47,12 @@
 }
 
 /* ----- ARTÍCULO DESTACADO (HERO) ----- */
+a.news-hero {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+}
+
 .news-hero {
     position: relative;
     border-radius: 14px;
@@ -142,6 +148,11 @@
 }
 
 /* ----- CARD DE ARTÍCULO ----- */
+a.article-card {
+    text-decoration: none;
+    color: inherit;
+}
+
 .article-card {
     background: $color-surface;
     border-radius: 12px;

@@ -224,7 +224,7 @@ export function createArticleMetaConfig(article) {
 export function createHomeMetaConfig() {
     return {
         title: 'F1 Grand Prix Hub | Análisis y Predicciones de Fórmula 1 en Español',
-        description: 'Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Seguimiento de campeonato, neumáticos y pit stops.',
+        description: 'Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Calendario, campeonato, comparativa de pilotos y crónicas de cada Gran Premio.',
         keywords: [
             'análisis F1',
             'predicciones fórmula 1',
@@ -236,8 +236,8 @@ export function createHomeMetaConfig() {
         canonical: 'https://f1grandprixhub.com/',
         robots: 'index, follow',
         og: {
-            title: 'F1 Grand Prix Hub - Análisis profesional de Fórmula 1',
-            description: 'Predicciones, estrategia y análisis técnico de F1 en español',
+            title: 'F1 Grand Prix Hub | Análisis y Predicciones de Fórmula 1 en Español',
+            description: 'Análisis rioplatense de estrategia F1, predicciones de carreras y crónicas de cada Gran Premio.',
             type: 'website',
             url: 'https://f1grandprixhub.com/',
             image: 'https://f1grandprixhub.com/og-image-home.jpg'
