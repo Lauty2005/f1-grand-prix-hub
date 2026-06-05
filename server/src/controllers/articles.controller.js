@@ -3,13 +3,15 @@ import { notifyNewArticle } from '../services/email.service.js';
 
 export const getArticles = async (req, res) => {
     try {
-        const { category, tag, featured, limit = 20, offset = 0 } = req.query;
+        const { category, tag, featured } = req.query;
+        const limit = Math.min(Math.max(parseInt(req.query.limit) || 20, 1), 100);
+        const offset = Math.max(parseInt(req.query.offset) || 0, 0);
         const articles = await articlesService.getArticles({
             category,
             tag,
             featured: featured !== undefined ? featured === 'true' : undefined,
-            limit: parseInt(limit),
-            offset: parseInt(offset)
+            limit,
+            offset
         });
         res.json({ success: true, data: articles });
     } catch (err) {
@@ -47,7 +49,7 @@ export const createArticle = async (req, res) => {
         res.status(201).json({ success: true, data: result });
     } catch (err) {
         console.error('ERROR creating article:', err.message);
-        res.status(500).json({ error: 'Error creando artículo: ' + err.message });
+        res.status(500).json({ error: 'Error creando artículo' });
     }
 };
 
@@ -55,6 +57,7 @@ export const updateArticle = async (req, res) => {
     try {
         const { id } = req.params;
         const keys = Object.keys(req.body);
+        if (!keys.length) return res.status(400).json({ error: 'El cuerpo de la solicitud no puede estar vacío.' });
 
         if (keys.length === 1 && keys[0] === 'published') {
             const publishing = req.body.published === true;

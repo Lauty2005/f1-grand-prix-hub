@@ -1,5 +1,11 @@
 export const SERVER_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
+export const escHtml = (s) => String(s ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+
 export const API = `${SERVER_URL}/api`;
 
 /**

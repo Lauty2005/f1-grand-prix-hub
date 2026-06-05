@@ -4,6 +4,7 @@ import { adminAuth } from '../middleware/auth.middleware.js';
 import * as articlesController from '../controllers/articles.controller.js';
 import { generateArticleHandler, generateBundleHandler } from '../controllers/aiArticle.controller.js';
 import { createUpload } from '../config/upload.js';
+import { validateArticle } from '../middleware/validate.middleware.js';
 import rateLimit from 'express-rate-limit';
 
 const router = Router();
@@ -53,8 +54,8 @@ router.get('/:slug', articlesController.getArticleBySlug);
 router.post('/admin/generate',        adminAuth, aiLimiter, generateArticleHandler);   // 1 artículo por tipo
 router.post('/admin/generate-bundle', adminAuth, aiLimiter, generateBundleHandler);    // 3 artículos post-carrera
 
-router.post('/',    adminAuth, articlesController.createArticle);
-router.put('/:id',  adminAuth, articlesController.updateArticle);
+router.post('/',    adminAuth, validateArticle, articlesController.createArticle);
+router.put('/:id',  adminAuth, validateArticle, articlesController.updateArticle);
 router.delete('/:id', adminAuth, articlesController.deleteArticle);
 
 export default router;

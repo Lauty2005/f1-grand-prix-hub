@@ -1,8 +1,5 @@
 import jwt from 'jsonwebtoken';
 
-const EXPIRATION = 24 * 60 * 60 * 1000;
-const IS_PROD = process.env.NODE_ENV === 'production';
-
 export const login = (req, res) => {
     const { password } = req.body;
     if (!password || password !== process.env.ADMIN_PASSWORD) {
@@ -19,6 +16,8 @@ export const login = (req, res) => {
     res.json({ success: true, token});
 };
 
+// JWT is stateless — the token remains valid until expiry on the client side.
+// The client is responsible for discarding the token on logout.
 export const logout = (req, res) => {
     res.json({ success: true, message: 'Logout exitoso' });
 };

@@ -80,14 +80,23 @@ export const createArticle = async (data) => {
 };
 
 export const updateArticle = async (id, data) => {
-    const { title, excerpt, content, author, cover_image_url, category, tags, published, featured } = data;
-    await query(
-        `UPDATE articles
-         SET title = $1, excerpt = $2, content = $3, author = $4, cover_image_url = $5,
-             category = $6, tags = $7, published = $8, featured = $9, updated_at = NOW()
-         WHERE id = $10`,
-        [title, excerpt || null, content, author, cover_image_url || null, category, tags, published, featured, id]
-    );
+    const ALLOWED = ['title', 'excerpt', 'content', 'author', 'cover_image_url', 'category', 'tags', 'published', 'featured'];
+    const sets = [];
+    const params = [];
+    let p = 1;
+
+    for (const col of ALLOWED) {
+        if (col in data) {
+            sets.push(`${col} = $${p++}`);
+            params.push(data[col] ?? null);
+        }
+    }
+
+    if (sets.length === 0) return;
+
+    sets.push(`updated_at = NOW()`);
+    params.push(id);
+    await query(`UPDATE articles SET ${sets.join(', ')} WHERE id = $${p}`, params);
 };
 
 export const updateCover = async (id, coverUrl) => {

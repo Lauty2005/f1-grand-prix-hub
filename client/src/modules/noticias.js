@@ -1,4 +1,4 @@
-import { API, SERVER_URL, resolveImgUrl } from './config.js';
+import { API, SERVER_URL, resolveImgUrl, escHtml } from './config.js';
 
 const CATEGORIES = [
     { value: '', label: 'Todo' },
@@ -80,11 +80,11 @@ function articleCardHTML(article) {
         <a class="article-card" href="/articulo.html?slug=${encodeURIComponent(article.slug)}">
             ${coverHTML(article, 'article-card__cover')}
             <div class="article-card__body">
-                <span class="article-card__category">${categoryLabel(article.category)}</span>
-                <h3 class="article-card__title">${article.title}</h3>
-                ${article.excerpt ? `<p class="article-card__excerpt">${article.excerpt}</p>` : ''}
+                <span class="article-card__category">${escHtml(categoryLabel(article.category))}</span>
+                <h3 class="article-card__title">${escHtml(article.title)}</h3>
+                ${article.excerpt ? `<p class="article-card__excerpt">${escHtml(article.excerpt)}</p>` : ''}
                 <div class="article-card__footer">
-                    <span class="article-card__author">${article.author}</span>
+                    <span class="article-card__author">${escHtml(article.author)}</span>
                     <span class="article-card__date">${formatDate(article.created_at)}</span>
                 </div>
             </div>
@@ -101,10 +101,10 @@ function heroHTML(article) {
             ${cover}
             <div class="news-hero__overlay"></div>
             <div class="news-hero__content">
-                <span class="news-hero__badge">${categoryLabel(article.category)}</span>
-                <h2 class="news-hero__title">${article.title}</h2>
+                <span class="news-hero__badge">${escHtml(categoryLabel(article.category))}</span>
+                <h2 class="news-hero__title">${escHtml(article.title)}</h2>
                 <div class="news-hero__meta">
-                    <span>${article.author}</span>
+                    <span>${escHtml(article.author)}</span>
                     <span>•</span>
                     <span>${formatDate(article.created_at)}</span>
                 </div>

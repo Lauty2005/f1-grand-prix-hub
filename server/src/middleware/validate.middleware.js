@@ -1,3 +1,14 @@
+export const validateArticle = (req, res, next) => {
+    const { title, content } = req.body;
+    if (!title || typeof title !== 'string' || !title.trim()) {
+        return res.status(400).json({ error: 'El título es requerido.' });
+    }
+    if (!content || typeof content !== 'string' || !content.trim()) {
+        return res.status(400).json({ error: 'El contenido es requerido.' });
+    }
+    next();
+};
+
 export const validateResult = (req, res, next) => {
     const { race_id, driver_id, position } = req.body;
 

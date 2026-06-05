@@ -1,5 +1,13 @@
 import './scss/styles.scss';
-import { API, resolveImgUrl } from './modules/config.js';
+import '@fontsource/barlow-condensed/latin-400.css';
+import '@fontsource/barlow-condensed/latin-600.css';
+import '@fontsource/barlow-condensed/latin-700.css';
+import '@fontsource/barlow-condensed/latin-800.css';
+import '@fontsource/barlow-condensed/latin-900.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import '@fontsource/jetbrains-mono/latin-600.css';
+import '@fontsource/jetbrains-mono/latin-700.css';
+import { API, resolveImgUrl, escHtml } from './modules/config.js';
 import { setPageMeta, createArticleMetaConfig } from './modules/metaTags.js';
 
 const CATEGORIES = {
@@ -44,11 +52,11 @@ function shareButtonsHTML(article) {
 function relatedHTML(related) {
     if (!related || related.length === 0) return '';
     const items = related.map(a => `
-        <div class="related-item" data-href="/articulo.html?slug=${a.slug}">
-            <span class="related-item__category">${categoryLabel(a.category)}</span>
-            <span class="related-item__title">${a.title}</span>
+        <a class="related-item" href="/articulo.html?slug=${encodeURIComponent(a.slug)}">
+            <span class="related-item__category">${escHtml(categoryLabel(a.category))}</span>
+            <span class="related-item__title">${escHtml(a.title)}</span>
             <span class="related-item__date">${formatDate(a.created_at)}</span>
-        </div>
+        </a>
     `).join('');
     return `
         <aside class="article-sidebar">
@@ -150,10 +158,6 @@ async function init() {
             } catch {
                 // fallback silencioso
             }
-        });
-
-        document.querySelectorAll('.related-item[data-href]').forEach(el => {
-            el.addEventListener('click', () => { window.location.href = el.dataset.href; });
         });
 
     } catch (err) {

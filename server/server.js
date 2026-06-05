@@ -73,7 +73,7 @@ app.use(cors({
     },
     credentials: true
 }));
-app.use(express.json());
+app.use(express.json({ limit: '512kb' }));
 app.use(cookieParser());
 
 // --- RUTAS ---
@@ -90,10 +90,6 @@ app.use('/api/newsletter', newsletterRouter);
 app.use('/api/cron', cronRoutes);
 app.use('/api/health', healthRoutes);
 
-// --- GLOBAL ERROR HANDLER ---
-import { errorHandler } from './src/middleware/error.middleware.js';
-app.use(errorHandler);
-
 app.get('/', (req, res) => {
     res.send(`
         <h1 style="font-family: sans-serif;">🏁 F1 API Funcionando</h1>
@@ -104,6 +100,10 @@ app.get('/', (req, res) => {
         </ul>
     `);
 });
+
+// --- GLOBAL ERROR HANDLER ---
+import { errorHandler } from './src/middleware/error.middleware.js';
+app.use(errorHandler);
 
 app.listen(port, '0.0.0.0', () => {
     console.log(`\n🏎️  Motor arrancado en puerto: ${port}`);
