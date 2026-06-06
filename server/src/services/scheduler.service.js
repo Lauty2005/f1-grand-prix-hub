@@ -7,8 +7,8 @@
 //   checkAndGenerateWeeklyStandings()   → lunes post-carrera
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { query }           from '../config/db.js';
-import { generateArticle } from './aiArticle.service.js';
+import { query }                                   from '../config/db.js';
+import { generateArticle, generatePostRaceBundle } from './aiArticle.service.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -235,5 +235,59 @@ export const checkAndGenerateWeeklyStandings = async () => {
         race:        race.name,
         article:     result.article,
         tokens_used: result.usage,
+    };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 4. POST-RACE BUNDLE — domingo/lunes tras la carrera
+//    Genera race_report + strategy + standings si hay resultados completos
+// ─────────────────────────────────────────────────────────────────────────────
+export const checkAndGeneratePostRaceBundle = async () => {
+    const today = getDateOffset(0);
+
+    console.log(`[PostRace] Buscando carrera reciente: ${today}`);
+
+    const { rows: races } = await query(`
+        SELECT r.id, r.name, r.round, r.date,
+               (SELECT COUNT(*) FROM results res WHERE res.race_id = r.id) AS result_count
+        FROM races r
+        WHERE r.date::date BETWEEN $1::date - INTERVAL '3 days' AND $1::date
+        ORDER BY r.date DESC LIMIT 1
+    `, [today]);
+
+    if (!races.length) {
+        return { triggered: false, message: 'No hay carrera reciente en los últimos 3 días.' };
+    }
+
+    const race        = races[0];
+    const resultCount = parseInt(race.result_count || 0);
+
+    if (resultCount < 10) {
+        return {
+            triggered: false,
+            race:      race.name,
+            message:   `Solo hay ${resultCount} resultados para "${race.name}". Esperando datos completos.`,
+        };
+    }
+
+    const existing = await articleAlreadyExists('noticias', race.name, 4);
+    if (existing) {
+        return {
+            triggered:           false,
+            race:                race.name,
+            message:             `Ya existe un artículo de carrera reciente: "${existing.title}"`,
+            existing_article_id: existing.id,
+        };
+    }
+
+    console.log(`[PostRace] Generando bundle para race_id: ${race.id} "${race.name}" (${resultCount} resultados)`);
+    const result = await generatePostRaceBundle(race.id, 'IA Redacción');
+
+    return {
+        triggered: true,
+        race:      race.name,
+        articles:  result.articles,
+        generated: result.generated,
+        errors:    result.errors,
     };
 };

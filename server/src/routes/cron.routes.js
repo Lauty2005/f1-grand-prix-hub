@@ -15,7 +15,9 @@ import {
     checkAndGenerateWeeklyPreview,
     checkAndGenerateQualyArticle,
     checkAndGenerateWeeklyStandings,
+    checkAndGeneratePostRaceBundle,
 } from '../services/scheduler.service.js';
+import { sendTelegram } from '../services/telegram.service.js';
 
 const router = Router();
 
@@ -42,6 +44,19 @@ function makeCronHandler(label, fn) {
             const result   = await fn();
             const duration = ((Date.now() - startTime) / 1000).toFixed(2);
             console.log(`[Cron] /${label} completado en ${duration}s. Triggered: ${result.triggered}`);
+
+            if (result.triggered) {
+                const articles = result.articles ?? (result.article ? [result.article] : []);
+                if (articles.length > 0) {
+                    const lines = articles.map(a => `• ${a.title || a.slug}`).join('\n');
+                    await sendTelegram(
+                        `🏎️ F1 Hub — Borrador listo para revisión\n\n` +
+                        `📋 ${label}\n\n${lines}\n\n` +
+                        `Revisá en: https://f1grandprixhub.com/admin.html`
+                    );
+                }
+            }
+
             return res.json({ success: true, duration_seconds: parseFloat(duration), ...result });
         } catch (err) {
             console.error(`[Cron] /${label} error:`, err.message);
@@ -67,6 +82,12 @@ router.post('/qualy-article', cronAuth, makeCronHandler('qualy-article', checkAn
 // GitHub Actions: lunes 10:00 UTC — día después de la carrera
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/weekly-standings', cronAuth, makeCronHandler('weekly-standings', checkAndGenerateWeeklyStandings));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /api/cron/post-race-bundle
+// Agente programado: domingo/lunes — genera race_report + strategy + standings
+// ─────────────────────────────────────────────────────────────────────────────
+router.post('/post-race-bundle', cronAuth, makeCronHandler('post-race-bundle', checkAndGeneratePostRaceBundle));
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GET /api/cron/status

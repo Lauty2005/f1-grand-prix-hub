@@ -1,0 +1,80 @@
+# .github/workflows/post-race-bundle.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# POST-RACE BUNDLE GENERATOR
+# Genera race_report + strategy + standings tras una carrera.
+# Corre dos veces: domingo 20:00 UTC (post-carrera) y lunes 08:00 UTC (backup).
+# El endpoint es idempotente — si ya existe un artículo reciente, no genera.
+#
+# Secrets requeridos (Settings → Secrets → Actions):
+#   - API_BASE_URL  → ej: https://f1grandprixhub.com
+#   - CRON_SECRET   → mismo valor que CRON_SECRET en el .env del server
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: 🏁 Post-Race Bundle Generator
+
+on:
+  schedule:
+    - cron: '0 20 * * 0'   # Domingo 20:00 UTC — tras la carrera
+    - cron: '0 8 * * 1'    # Lunes 08:00 UTC — backup si los datos llegan tarde
+  workflow_dispatch:
+
+jobs:
+  generate-post-race-bundle:
+    name: Generate Post-Race Bundle
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📅 Log info
+        run: |
+          echo "🏁 Post-Race Bundle Generator"
+          echo "📅 Fecha: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: 🚀 Call post-race-bundle endpoint
+        id: generate
+        run: |
+          RESPONSE=$(curl \
+            --silent --show-error --fail-with-body \
+            --retry 3 --retry-delay 30 --retry-all-errors \
+            --max-time 300 \
+            --write-out "\n__HTTP_STATUS__:%{http_code}" \
+            -X POST "${{ secrets.API_BASE_URL }}/api/cron/post-race-bundle" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | grep "__HTTP_STATUS__:" | cut -d: -f2)
+          BODY=$(echo "$RESPONSE" | grep -v "__HTTP_STATUS__:")
+
+          echo "📨 HTTP Status: $HTTP_STATUS"
+          echo "$BODY" | python3 -m json.tool 2>/dev/null || echo "$BODY"
+
+          echo "http_status=$HTTP_STATUS" >> $GITHUB_OUTPUT
+          echo "response_body=$BODY"      >> $GITHUB_OUTPUT
+
+          if [[ "$HTTP_STATUS" -lt 200 || "$HTTP_STATUS" -ge 300 ]]; then
+            echo "❌ HTTP $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: 📊 Summary
+        if: always()
+        run: |
+          BODY='${{ steps.generate.outputs.response_body }}'
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null || echo "?")
+          RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null || echo "N/A")
+          GENERATED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('generated',0))" 2>/dev/null || echo "0")
+          MESSAGE=$(echo "$BODY"   | python3 -c "import sys,json; print(json.load(sys.stdin).get('message',''))" 2>/dev/null || echo "")
+
+          echo ""
+          echo "════════════════════════════════════════"
+          echo "  RESULTADO POST-RACE BUNDLE"
+          echo "════════════════════════════════════════"
+          echo "  Carrera:        $RACE"
+          echo "  Triggered:      $TRIGGERED"
+          if [[ "$TRIGGERED" == "True" || "$TRIGGERED" == "true" ]]; then
+            echo "  Artículos gen: $GENERATED"
+            echo "  ✅ Bundle generado — revisá el admin para publicar"
+          else
+            echo "  ℹ️  $MESSAGE"
+          fi
+          echo "════════════════════════════════════════"
