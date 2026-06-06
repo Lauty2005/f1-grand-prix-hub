@@ -1,0 +1,41 @@
+[
+  {
+    "version": 1,
+    "file": "content_generator_v1.txt",
+    "author": "Lautaro Iezzi",
+    "date": "2026-06-06",
+    "status": "deprecated",
+    "changes": "Versión original. Prompt en inglés ('Eres'). Sin voz rioplatense. Mínimo 350 palabras. Sin reglas SEO. Sin anti-alucinación. Sin generación de título.",
+    "known_defects": [
+      "category_map: 'tecnico' y 'estrategia' no son categorías válidas en la DB",
+      "article_type enviado como campo extra ignorado por la API",
+      "F1_ADMIN_TOKEN documentado pero variable real es CRON_SECRET",
+      "Sin voz rioplatense — artículos suenan genéricos",
+      "350 palabras mínimo — muy por debajo del target de 800",
+      "Sin anti-alucinación — modelo puede inventar datos",
+      "El título se toma del RSS sin reescribir"
+    ]
+  },
+  {
+    "version": 2,
+    "file": "content_generator_v2.txt",
+    "author": "Lautaro Iezzi",
+    "date": "2026-06-06",
+    "status": "deprecated",
+    "changes": "Agrega voz rioplatense ('Sos', 'vos'). Sube mínimo a 800 palabras. Agrega reglas SEO: párrafo snapshot, H2 en forma de pregunta, dato numérico por sección. Corrige category_map y docstring de CRON_SECRET. Elimina article_type del payload.",
+    "known_defects": [
+      "El modelo NO genera el TITLE — se sigue usando el RSS title (Castilian, no argumentativo)",
+      "Sin regla anti-alucinación explícita",
+      "Formato usa [corchetes] que el modelo a veces reproduce literalmente"
+    ]
+  },
+  {
+    "version": 3,
+    "file": "content_generator_v3.txt",
+    "author": "Lautaro Iezzi",
+    "date": "2026-06-06",
+    "status": "active",
+    "changes": "Agrega campo TITLE al output — modelo genera título argumentativo en rioplatense. Agrega REGLA DE ORO anti-alucinación. Reemplaza formato [corchetes] por instrucciones en texto plano. Ejemplos de título correcto vs incorrecto. Parser actualizado para extraer TITLE.",
+    "known_defects": []
+  }
+]

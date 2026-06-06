@@ -1,0 +1,172 @@
+[
+  {
+    "id": "TC-001",
+    "description": "Fichaje con datos escasos — prueba anti-alucinación y voz rioplatense",
+    "input": {
+      "title": "Hamilton podría fichar por Ferrari en 2025",
+      "summary": "El heptacampeón Lewis Hamilton estaría en conversaciones avanzadas con Ferrari para unirse al equipo italiano la próxima temporada, según fuentes cercanas al paddock.",
+      "cat_label": "Fichajes y Rumores",
+      "article_type": "Noticia"
+    },
+    "expected_contains": [
+      "TITLE:",
+      "EXCERPT:",
+      "CONTENT:",
+      "<h2>",
+      "<p>",
+      "vos",
+      "Hamilton",
+      "Ferrari"
+    ],
+    "forbidden_contains": [
+      "vosotros",
+      "```",
+      "[Un párrafo",
+      "[El cuerpo",
+      "tú ",
+      "millones de euros",
+      "firmó un contrato",
+      "declaró Hamilton",
+      "dijo Hamilton"
+    ],
+    "expected_regex": [
+      "TITLE:.{10,80}",
+      "EXCERPT:.{100,200}",
+      "<h2>\\¿",
+      "<p>.{100,}"
+    ],
+    "scoring_notes": "El modelo NO debe inventar cifras del contrato ni citas textuales de Hamilton. El TITLE debe ser argumentativo."
+  },
+  {
+    "id": "TC-002",
+    "description": "Técnico/Desarrollo — debe usar categoría 'tecnica', no inventar datos de túnel de viento",
+    "input": {
+      "title": "Ferrari presenta actualización del suelo para el GP de España",
+      "summary": "La escudería italiana llevará al Circuit de Barcelona-Catalunya un nuevo suelo aerodinámico que busca mejorar la carga en curva.",
+      "cat_label": "Técnico y Desarrollo",
+      "article_type": "Técnica"
+    },
+    "expected_contains": [
+      "TITLE:",
+      "EXCERPT:",
+      "CONTENT:",
+      "¿",
+      "Ferrari",
+      "suelo",
+      "<h2>"
+    ],
+    "forbidden_contains": [
+      "vosotros",
+      "```",
+      "[",
+      "tú ",
+      "% de carga aerodinámica",
+      "declaró Vasseur",
+      "dijo el ingeniero"
+    ],
+    "expected_regex": [
+      "TITLE:.{10,80}",
+      "<h2>\\¿.+\\?",
+      "<p>.{80,}"
+    ],
+    "scoring_notes": "Debe explicar qué es el efecto suelo en términos generales sin inventar cifras de eficiencia específicas."
+  },
+  {
+    "id": "TC-003",
+    "description": "Polémica/Sanción — debe tomar posición editorial, no ser neutro",
+    "input": {
+      "title": "Verstappen recibe sanción de 5 segundos por incidente con Norris",
+      "summary": "Los comisarios de la FIA penalizaron a Max Verstappen con 5 segundos tras el contacto con Lando Norris en la vuelta 45 del Gran Premio de Austria.",
+      "cat_label": "Polémicas y Sanciones",
+      "article_type": "Análisis"
+    },
+    "expected_contains": [
+      "TITLE:",
+      "EXCERPT:",
+      "CONTENT:",
+      "Verstappen",
+      "Norris",
+      "5 segundos",
+      "<h2>"
+    ],
+    "forbidden_contains": [
+      "vosotros",
+      "```",
+      "[",
+      "tú ",
+      "declaró Verstappen",
+      "según fuentes exclusivas"
+    ],
+    "expected_regex": [
+      "TITLE:.{10,80}",
+      "<h2>\\¿",
+      "vuelta 45|GP de Austria|5 segundos"
+    ],
+    "scoring_notes": "El TITLE y el análisis deben tomar posición sobre si la sanción fue justa. No puede ser neutral. El dato '5 segundos' y 'vuelta 45' deben aparecer porque están en el fuente."
+  },
+  {
+    "id": "TC-004",
+    "description": "Resumen muy corto — prueba de expansión sin alucinación",
+    "input": {
+      "title": "Alonso renueva con Aston Martin",
+      "summary": "Fernando Alonso extiende su contrato con Aston Martin.",
+      "cat_label": "Fichajes y Rumores",
+      "article_type": "Noticia"
+    },
+    "expected_contains": [
+      "TITLE:",
+      "EXCERPT:",
+      "CONTENT:",
+      "Alonso",
+      "Aston Martin",
+      "<h2>"
+    ],
+    "forbidden_contains": [
+      "vosotros",
+      "```",
+      "[",
+      "por X temporadas",
+      "firmó por 2 años",
+      "firmó por 3 años",
+      "millones",
+      "declaró Alonso",
+      "dijo Alonso"
+    ],
+    "expected_regex": [
+      "TITLE:.{10,80}",
+      "<h2>\\¿"
+    ],
+    "scoring_notes": "Caso extremo: solo 7 palabras en el resumen. El modelo debe expandir con contexto general de la trayectoria de Alonso y Aston Martin SIN inventar términos del contrato."
+  },
+  {
+    "id": "TC-005",
+    "description": "Formato — verificar que no hay corchetes ni markdown en la salida",
+    "input": {
+      "title": "Red Bull introduce nuevo difusor para Monaco",
+      "summary": "El equipo austriaco llevará al Principado una actualización del difusor trasero diseñada específicamente para los lentos virajes del circuito urbano.",
+      "cat_label": "Técnico y Desarrollo",
+      "article_type": "Técnica"
+    },
+    "expected_contains": [
+      "TITLE:",
+      "EXCERPT:",
+      "CONTENT:"
+    ],
+    "forbidden_contains": [
+      "[Un párrafo",
+      "[El cuerpo",
+      "[aquí",
+      "```html",
+      "```",
+      "</html>",
+      "<html>",
+      "<body>",
+      "<head>"
+    ],
+    "expected_regex": [
+      "^TITLE:[^\\[]",
+      "^EXCERPT:[^\\[]"
+    ],
+    "scoring_notes": "Prueba pura de formato. Ningún corchete ni markdown debe aparecer en la salida real."
+  }
+]

@@ -7,7 +7,7 @@ directamente como borradores en la API REST de f1-grand-prix-hub.
 Variables de entorno requeridas:
   GEMINI_API_KEY   → API key de Google AI Studio
   F1_API_URL       → URL base del backend (ej: https://f1-grand-prix-hub.onrender.com)
-  F1_ADMIN_TOKEN   → JWT de admin (sin el prefijo "Bearer ")
+  CRON_SECRET      → secreto compartido para obtener el token de agente (sin el prefijo "Bearer ")
 
 Variables opcionales:
   DRY_RUN          → "true" para scrapear/generar sin publicar (default: "false")
@@ -45,10 +45,10 @@ MAX_ARTICLES_PER_RUN = int(os.getenv("MAX_ARTICLES", "5"))
 CATEGORY_MAP = {
     "Fichajes y Rumores":              "noticias",
     "Declaraciones":                   "noticias",
-    "Técnico y Desarrollo":            "tecnico",
+    "Técnico y Desarrollo":            "tecnica",
     "Internas de Equipos":             "noticias",
     "Polémicas y Sanciones":           "noticias",
-    "Noticias Generales / Estrategia": "estrategia",
+    "Noticias Generales / Estrategia": "noticias",
 }
 
 # Mapea la categoría temática del scraper → tipo de artículo legible
@@ -192,6 +192,9 @@ class F1Scraper:
 # GENERADOR DE CONTENIDO (GEMINI)
 # ─────────────────────────────────────────────────────────────────────────────
 
+_PROMPT_FILE = os.path.join(os.path.dirname(__file__), "prompts", "content_generator_v3.txt")
+
+
 class ContentGenerator:
     """Genera el cuerpo del artículo usando Gemini."""
 
@@ -205,83 +208,79 @@ class ContentGenerator:
         self.model = genai.GenerativeModel(model_name)
         log.info(f"Gemini configurado → modelo: {model_name}")
 
+        try:
+            with open(_PROMPT_FILE, "r", encoding="utf-8") as f:
+                self._prompt_template = f.read()
+            log.info(f"Prompt cargado desde: {_PROMPT_FILE}")
+        except FileNotFoundError:
+            raise EnvironmentError(f"Archivo de prompt no encontrado: {_PROMPT_FILE}")
+
     def generate(self, news: dict) -> dict:
         """
         Toma una noticia y devuelve un dict listo para POST /api/articles.
         El contenido HTML es compatible con el editor Quill del admin.
         """
-        title   = news["title"]
-        summary = news["summary"]
-        cat_label = news["category"]
-
+        source_title = news["title"]
+        summary      = news["summary"]
+        cat_label    = news["category"]
         article_type = ARTICLE_TYPE_MAP.get(cat_label, "Noticia")
+        db_category  = CATEGORY_MAP.get(cat_label, "noticias")
 
-        prompt = f"""
-Eres un periodista experto en Fórmula 1. Vas a generar dos cosas para un artículo de tipo "{article_type}".
+        prompt = self._prompt_template.format(
+            article_type=article_type,
+            title=source_title,
+            summary=summary,
+            cat_label=cat_label,
+        )
 
-Título: {title}
-Resumen fuente: {summary}
-Categoría temática: {cat_label}
-
-INSTRUCCIONES (devolvé EXACTAMENTE este formato, sin texto adicional):
-
-EXCERPT: [Un párrafo de 100 a 155 caracteres que resuma la noticia. Debe enganchar al lector y ser apto para meta description SEO.]
-
-CONTENT:
-[El cuerpo completo del artículo en HTML puro, sin head ni body.
-- Usa estas etiquetas: <p>, <h2>, <strong>, <em>, <ul>, <li>.
-- Estructura: párrafo de introducción (enganche), mínimo 2 secciones con <h2>, párrafo de conclusión/impacto.
-- Tono profesional, objetivo, accesible para fans hispanohablantes.
-- Mínimo 350 palabras. NO repitas el título. NO incluyas saludos.
-- Solo HTML puro, sin bloques de código ni backticks.]
-"""
-        # Valores de fallback
+        # Fallbacks — usados si Gemini falla o no devuelve una sección
+        generated_title   = source_title
         generated_excerpt = summary[:155] + "..." if len(summary) > 155 else summary
-        content_html = f"<p>{summary}</p>"
+        content_html      = f"<p>{summary}</p>"
 
         try:
-            log.info(f"Generando contenido para: '{title[:60]}...'")
+            log.info(f"Generando contenido para: '{source_title[:60]}...'")
             response = self.model.generate_content(prompt)
             raw = response.text.strip()
 
-            # Parsear las dos secciones: EXCERPT y CONTENT
+            # ── Parsear las tres secciones: TITLE, EXCERPT, CONTENT ──────────
+            title_match   = re.search(r"TITLE:\s*(.+?)(?=\nEXCERPT:)", raw, re.DOTALL)
             excerpt_match = re.search(r"EXCERPT:\s*(.+?)(?=\nCONTENT:)", raw, re.DOTALL)
             content_match = re.search(r"CONTENT:\s*(.+)$", raw, re.DOTALL)
 
+            if title_match:
+                generated_title = title_match.group(1).strip()[:80]
+
             if excerpt_match:
                 generated_excerpt = excerpt_match.group(1).strip()
-                # Recortar si Gemini se pasó del límite SEO
                 if len(generated_excerpt) > 160:
                     generated_excerpt = generated_excerpt[:157] + "..."
 
             if content_match:
                 content_html = content_match.group(1).strip()
-                # Limpiar posibles bloques de código que Gemini a veces agrega
+                # Limpiar bloques de código que Gemini a veces agrega
                 content_html = re.sub(r"^```html?\s*", "", content_html, flags=re.IGNORECASE)
                 content_html = re.sub(r"\s*```$", "", content_html)
+
+            log.info(f"  → Título generado: '{generated_title}'")
 
         except Exception as e:
             log.error(f"Error Gemini: {e}")
 
-        # Mapear la categoría del scraper a los campos de la DB
-        db_category  = CATEGORY_MAP.get(cat_label, "noticias")
-        article_type = ARTICLE_TYPE_MAP.get(cat_label, "Noticia")
-
-        # Extraer tags relevantes del título + agregar el tipo de artículo como tag
-        tags = _extract_tags(title, article_type)
+        # Tags se generan desde el título producido por el modelo (no el RSS)
+        tags = _extract_tags(generated_title, article_type)
 
         log.info(f"  → Tipo: {article_type} | Categoría DB: {db_category} | Tags: {tags}")
 
         return {
-            "title":        title,
-            "excerpt":      generated_excerpt,
-            "content":      content_html,
-            "author":       DEFAULT_AUTHOR,
-            "category":     db_category,
-            "article_type": article_type,
-            "tags":         tags,
-            "published":    False,   # siempre borrador → lo revisás vos en el admin
-            "featured":     False,
+            "title":     generated_title,
+            "excerpt":   generated_excerpt,
+            "content":   content_html,
+            "author":    DEFAULT_AUTHOR,
+            "category":  db_category,
+            "tags":      tags,
+            "published": False,
+            "featured":  False,
         }
 
 
