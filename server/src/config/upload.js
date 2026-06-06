@@ -1,17 +1,10 @@
 // server/src/config/upload.js
 import multer from 'multer';
 import { randomBytes } from 'crypto';
+import sharp from 'sharp';
 import { uploadToR2 } from './r2.js';
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/avif', 'image/gif'];
-
-const MIME_TO_EXT = {
-    'image/jpeg': '.jpg',
-    'image/png':  '.png',
-    'image/webp': '.webp',
-    'image/avif': '.avif',
-    'image/gif':  '.gif',
-};
 
 const fileFilter = (req, file, cb) => {
     ALLOWED_MIME.includes(file.mimetype)
@@ -26,15 +19,25 @@ const multerMemory = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
+// Converts any uploaded image to WebP (max 1200px wide, quality 82).
+// GIFs are passed through unchanged to preserve animation.
+async function toWebP(buffer, mimetype) {
+    if (mimetype === 'image/gif') return { buffer, mime: 'image/gif', ext: '.gif' };
+    const processed = await sharp(buffer)
+        .resize({ width: 1200, withoutEnlargement: true })
+        .webp({ quality: 82 })
+        .toBuffer();
+    return { buffer: processed, mime: 'image/webp', ext: '.webp' };
+}
+
 // ─── Middleware interno: sube el buffer a R2 ────────────────────────────────
 function makeR2SingleMiddleware(folderName, fieldName) {
     return async (req, res, next) => {
         if (!req.file) return next();
         try {
-            const ext = MIME_TO_EXT[req.file.mimetype] ?? '.bin';
+            const { buffer, mime, ext } = await toWebP(req.file.buffer, req.file.mimetype);
             const key = `${folderName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
-            // req.fileUrl queda disponible para el handler de la ruta
-            req.fileUrl = await uploadToR2(req.file.buffer, key, req.file.mimetype);
+            req.fileUrl = await uploadToR2(buffer, key, mime);
             next();
         } catch (err) {
             console.error(`[Upload R2] Error subiendo ${fieldName}:`, err.message);
@@ -50,9 +53,9 @@ function makeR2FieldsMiddleware(folderName) {
             req.fileUrls = {};
             for (const [fieldName, files] of Object.entries(req.files)) {
                 const file = files[0];
-                const ext = MIME_TO_EXT[file.mimetype] ?? '.bin';
-                const key  = `${folderName}/${fieldName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
-                req.fileUrls[fieldName] = await uploadToR2(file.buffer, key, file.mimetype);
+                const { buffer, mime, ext } = await toWebP(file.buffer, file.mimetype);
+                const key = `${folderName}/${fieldName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
+                req.fileUrls[fieldName] = await uploadToR2(buffer, key, mime);
             }
             next();
         } catch (err) {

@@ -18,6 +18,8 @@ build/
 # Archivos de sistema
 .DS_Store
 og-image-generator.html
+migration.sql
+migrate-images-to-webp.js
 
 # Archivos de los MCP y Agentes IA
 .mcp/

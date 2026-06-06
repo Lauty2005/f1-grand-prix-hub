@@ -67,7 +67,9 @@ function coverHTML(article, cls) {
         return `<img
             class="${cls}"
             src="${resolveImgUrl(article.cover_image_url)}"
-            alt="${article.title}"
+            alt="${escHtml(article.title)}"
+            width="300"
+            height="170"
             loading="lazy"
             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
         ><div class="${cls}-placeholder" style="display:none;">${fallback}</div>`;
