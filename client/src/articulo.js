@@ -104,8 +104,6 @@ async function init() {
                   class="article-header__cover"
                   src="${resolveImgUrl(article.cover_image_url)}"
                   alt="${escHtml(article.title)}"
-                  width="1200"
-                  height="630"
                   loading="lazy"
                   onerror="this.style.display='none';"
               >`
