@@ -1,4 +1,11 @@
 export const validateArticle = (req, res, next) => {
+    const keys = Object.keys(req.body);
+
+    // Partial updates (publish toggle, cover-only) don't need title/content
+    if (keys.length === 1 && (keys[0] === 'published' || keys[0] === 'cover_image_url')) {
+        return next();
+    }
+
     const { title, content } = req.body;
     if (!title || typeof title !== 'string' || !title.trim()) {
         return res.status(400).json({ error: 'El título es requerido.' });
