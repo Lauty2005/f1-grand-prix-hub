@@ -1,7 +1,7 @@
 # .github/workflows/weekly-gp-preview.yml
 # ─────────────────────────────────────────────────────────────────────────────
 # WEEKLY GP PREVIEW GENERATOR
-# Corre todos los lunes a las 9:00 AM UTC.
+# Corre todos los jueves a las 9:00 AM UTC.
 # Llama al endpoint de tu API que verifica si hay un GP en 7 días
 # y, si lo hay, genera automáticamente un artículo preview.
 #
@@ -14,9 +14,9 @@ name: 🏎️ Weekly GP Preview Generator
 
 on:
   schedule:
-    # Todos los lunes a las 9:00 AM UTC
+    # Todos los jueves a las 9:00 AM UTC
     # Ajustá la hora si preferís otro horario (formato: minuto hora * * día)
-    - cron: '0 9 * * 1'
+    - cron: '0 9 * * 4'
 
   # Permite correrlo manualmente desde la pestaña Actions en GitHub
   # Útil para testear sin esperar al lunes
