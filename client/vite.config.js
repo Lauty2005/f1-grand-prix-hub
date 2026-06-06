@@ -8,6 +8,7 @@ export default defineConfig({
         main:     resolve(__dirname, 'index.html'),
         admin:    resolve(__dirname, 'admin.html'),
         articulo: resolve(__dirname, 'articulo.html'),
+        sobre:    resolve(__dirname, 'sobre.html'),
       },
       output: {
         // Stable names for entry points so the SSR function can reference
@@ -15,7 +16,7 @@ export default defineConfig({
         entryFileNames: 'assets/[name].js',
         assetFileNames: (assetInfo) => {
           // Keep CSS for entries stable too; everything else stays hashed
-          const entries = ['main', 'admin', 'articulo', 'metaTags'];
+          const entries = ['main', 'admin', 'articulo', 'sobre', 'metaTags'];
           const name = assetInfo.name?.replace(/\.[^.]+$/, '') ?? '';
           if (entries.some(e => name.startsWith(e))) return 'assets/[name][extname]';
           return 'assets/[name]-[hash][extname]';
