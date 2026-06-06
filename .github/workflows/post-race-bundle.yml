@@ -6,8 +6,10 @@
 # El endpoint es idempotente — si ya existe un artículo reciente, no genera.
 #
 # Secrets requeridos (Settings → Secrets → Actions):
-#   - API_BASE_URL  → ej: https://f1grandprixhub.com
-#   - CRON_SECRET   → mismo valor que CRON_SECRET en el .env del server
+#   - API_BASE_URL         → ej: https://f1grandprixhub.com
+#   - CRON_SECRET          → mismo valor que CRON_SECRET en el .env del server
+#   - TELEGRAM_BOT_TOKEN   → token del bot de Telegram
+#   - TELEGRAM_CHAT_ID     → tu chat ID de Telegram
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: 🏁 Post-Race Bundle Generator
@@ -58,8 +60,9 @@ jobs:
 
       - name: 📊 Summary
         if: always()
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
         run: |
-          BODY='${{ steps.generate.outputs.response_body }}'
           TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null || echo "?")
           RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null || echo "N/A")
           GENERATED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('generated',0))" 2>/dev/null || echo "0")
@@ -78,3 +81,36 @@ jobs:
             echo "  ℹ️  $MESSAGE"
           fi
           echo "════════════════════════════════════════"
+
+      - name: 📬 Telegram — éxito
+        if: success()
+        continue-on-error: true
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null || echo "?")
+          RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null || echo "N/A")
+          GENERATED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('generated',0))" 2>/dev/null || echo "0")
+          MESSAGE=$(echo "$BODY"   | python3 -c "import sys,json; print(json.load(sys.stdin).get('message',''))" 2>/dev/null || echo "")
+          if [[ "$TRIGGERED" == "True" || "$TRIGGERED" == "true" ]]; then
+            TEXT="🏁 Post-Race Bundle generado%0A%0ACarrera: $RACE%0AArtículos: $GENERATED%0A%0ARevisá en: https://f1grandprixhub.com/admin.html"
+          else
+            TEXT="🏁 Post-Race Bundle: sin contenido hoy%0A%0A$MESSAGE"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$TEXT"
+
+      - name: 📬 Telegram — fallo
+        if: failure()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=❌ Post-Race Bundle FALLÓ%0A%0ARevisá el log: ${RUN_URL}"

@@ -78,9 +78,9 @@ jobs:
 
       - name: 📊 Log result summary
         if: always()
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
         run: |
-          BODY='${{ steps.generate.outputs.response_body }}'
-
           # Extraer campos clave del JSON para el summary
           TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('triggered', 'unknown'))" 2>/dev/null || echo "unknown")
           MESSAGE=$(echo "$BODY" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('message', ''))" 2>/dev/null || echo "")
@@ -114,3 +114,35 @@ jobs:
           echo "  2. CRON_SECRET incorrecto"
           echo "  3. Error en la generación de IA (API key inválida)"
           echo "  4. No hay datos de la carrera del año anterior en la DB"
+
+      - name: 📬 Telegram — éxito
+        if: success()
+        continue-on-error: true
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null || echo "?")
+          UPCOMING=$(echo "$BODY"  | python3 -c "import sys,json; print(json.load(sys.stdin).get('upcoming_race','N/A'))" 2>/dev/null || echo "N/A")
+          MESSAGE=$(echo "$BODY"   | python3 -c "import sys,json; print(json.load(sys.stdin).get('message',''))" 2>/dev/null || echo "")
+          if [[ "$TRIGGERED" == "True" || "$TRIGGERED" == "true" ]]; then
+            TEXT="🔮 Preview semanal generado%0A%0AGP: $UPCOMING%0A%0ARevisá en: https://f1grandprixhub.com/admin.html"
+          else
+            TEXT="🔮 Preview semanal: sin contenido hoy%0A%0A$MESSAGE"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$TEXT"
+
+      - name: 📬 Telegram — fallo
+        if: failure()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=❌ Weekly GP Preview FALLÓ%0A%0ARevisá el log: ${RUN_URL}"

@@ -53,8 +53,41 @@ jobs:
 
       - name: 📊 Summary
         if: always()
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
         run: |
-          BODY='${{ steps.generate.outputs.response_body }}'
           TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null)
           RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null)
           echo "GP: $RACE | Generado: $TRIGGERED"
+
+      - name: 📬 Telegram — éxito
+        if: success()
+        continue-on-error: true
+        env:
+          BODY: ${{ steps.generate.outputs.response_body }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          TRIGGERED=$(echo "$BODY" | python3 -c "import sys,json; print(json.load(sys.stdin).get('triggered','?'))" 2>/dev/null || echo "?")
+          RACE=$(echo "$BODY"      | python3 -c "import sys,json; print(json.load(sys.stdin).get('race','N/A'))" 2>/dev/null || echo "N/A")
+          MESSAGE=$(echo "$BODY"   | python3 -c "import sys,json; print(json.load(sys.stdin).get('message',''))" 2>/dev/null || echo "")
+          if [[ "$TRIGGERED" == "True" || "$TRIGGERED" == "true" ]]; then
+            TEXT="📊 Standings semanal generado%0A%0AGP: $RACE%0A%0ARevisá en: https://f1grandprixhub.com/admin.html"
+          else
+            TEXT="📊 Weekly Standings: sin contenido hoy%0A%0A$MESSAGE"
+          fi
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=$TEXT"
+
+      - name: 📬 Telegram — fallo
+        if: failure()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            -d "chat_id=${TELEGRAM_CHAT_ID}" \
+            -d "text=❌ Weekly Standings FALLÓ%0A%0ARevisá el log: ${RUN_URL}"
