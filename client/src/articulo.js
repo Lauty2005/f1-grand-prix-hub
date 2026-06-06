@@ -112,7 +112,7 @@ async function init() {
             : '';
 
         const tagsHTML = article.tags?.length
-            ? `<div class="article-tags">${article.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>`
+            ? `<div class="article-tags">${article.tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div>`
             : '';
 
         app.innerHTML = `
@@ -120,10 +120,10 @@ async function init() {
                 <main class="article-main">
                     <header class="article-header">
                         <span class="article-header__back" id="btnBack">← Volver a noticias</span>
-                        <p class="article-header__category">${categoryLabel(article.category)}</p>
-                        <h1 class="article-header__title">${article.title}</h1>
+                        <p class="article-header__category">${escHtml(categoryLabel(article.category))}</p>
+                        <h1 class="article-header__title">${escHtml(article.title)}</h1>
                         <div class="article-header__meta">
-                            <span>Por ${article.author}</span>
+                            <span>Por ${escHtml(article.author)}</span>
                             <span>•</span>
                             <span>${formatDate(article.created_at)}</span>
                             <span class="article-header__ai-badge" title="Este artículo fue generado con asistencia de inteligencia artificial y supervisión editorial">Generado con IA</span>
