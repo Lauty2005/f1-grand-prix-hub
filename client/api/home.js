@@ -102,8 +102,8 @@ export default async function handler(req, res) {
     <script type="application/ld+json">${schema}</script>
 
     <link rel="modulepreload" href="/assets/main.js" />
-    <link rel="preload" href="/assets/main.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
-    <noscript><link rel="stylesheet" href="/assets/main.css" /></noscript>
+    <link rel="preload" href="/assets/metaTags.css" as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href="/assets/metaTags.css" /></noscript>
   </head>
   <body>
     <!-- Pre-rendered shell for crawlers — JS hydrates the full SPA after load -->
