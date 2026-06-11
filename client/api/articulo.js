@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     let article;
     try {
-        const apiRes = await fetch(`${API_BASE}/articles/${encodeURIComponent(slug)}`);
+        const apiRes = await fetch(`${API_BASE}/api/articles/${encodeURIComponent(slug)}`);
         if (!apiRes.ok) throw new Error(`API ${apiRes.status}`);
         const json = await apiRes.json();
         article = json.data;
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
         return;
     }
 
-    const canonicalUrl = `${SITE_BASE}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
+    const canonicalUrl = `${SITE_BASE}/articulo/${encodeURIComponent(article.slug)}`;
     const imageUrl = article.cover_image_url || `${SITE_BASE}/og-image-home.jpg`;
     const excerpt = (article.excerpt || '').slice(0, 200);
     const section = CATEGORY_LABELS[article.category] || article.category || 'Noticias';
@@ -88,8 +88,8 @@ export default async function handler(req, res) {
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/-->/g, '--\\u003e')
-        .replace(/ /g, '\\u2028')
-        .replace(/ /g, '\\u2029');
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
 
     // Visually hidden pre-render block — crawlers read it, users see the JS-rendered version.
     // article.content is stripped to plain text (contentText) to eliminate the XSS surface.
