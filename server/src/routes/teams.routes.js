@@ -4,7 +4,7 @@ import { adminAuth } from '../middleware/auth.middleware.js';
 import * as teamsController from '../controllers/teams.controller.js';
 
 const router = Router();
-const upload = createUpload('teams');
+const upload = createUpload('teams', { square: true });
 
 router.get('/',       teamsController.listTeams);
 router.post('/',      adminAuth, ...upload.single('logo_image'), teamsController.addTeam);

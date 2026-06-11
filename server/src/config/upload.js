@@ -19,23 +19,33 @@ const multerMemory = multer({
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 });
 
-// Converts any uploaded image to WebP (max 1200px wide, quality 82).
-// GIFs are passed through unchanged to preserve animation.
-async function toWebP(buffer, mimetype) {
+// Converts any uploaded image to WebP.
+// opts.square → encuadra en canvas cuadrado transparente (fit:contain), para logos.
+// Por defecto → resize por ancho (1200px) preservando proporción, para fotos/portadas.
+// GIFs pasan sin cambios para preservar la animación.
+async function toWebP(buffer, mimetype, opts = {}) {
     if (mimetype === 'image/gif') return { buffer, mime: 'image/gif', ext: '.gif' };
-    const processed = await sharp(buffer)
-        .resize({ width: 1200, withoutEnlargement: true })
-        .webp({ quality: 82 })
+
+    const pipeline = opts.square
+        ? sharp(buffer).resize(opts.size ?? 256, opts.size ?? 256, {
+              fit: 'contain',
+              background: { r: 0, g: 0, b: 0, alpha: 0 },
+          })
+        : sharp(buffer).resize({ width: 1200, withoutEnlargement: true });
+
+    const processed = await pipeline
+        .webp({ quality: opts.square ? 90 : 82 })
         .toBuffer();
+
     return { buffer: processed, mime: 'image/webp', ext: '.webp' };
 }
 
 // ─── Middleware interno: sube el buffer a R2 ────────────────────────────────
-function makeR2SingleMiddleware(folderName, fieldName) {
+function makeR2SingleMiddleware(folderName, fieldName, opts) {
     return async (req, res, next) => {
         if (!req.file) return next();
         try {
-            const { buffer, mime, ext } = await toWebP(req.file.buffer, req.file.mimetype);
+            const { buffer, mime, ext } = await toWebP(req.file.buffer, req.file.mimetype, opts);
             const key = `${folderName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
             req.fileUrl = await uploadToR2(buffer, key, mime);
             next();
@@ -46,14 +56,14 @@ function makeR2SingleMiddleware(folderName, fieldName) {
     };
 }
 
-function makeR2FieldsMiddleware(folderName) {
+function makeR2FieldsMiddleware(folderName, opts) {
     return async (req, res, next) => {
         if (!req.files || Object.keys(req.files).length === 0) return next();
         try {
             req.fileUrls = {};
             for (const [fieldName, files] of Object.entries(req.files)) {
                 const file = files[0];
-                const { buffer, mime, ext } = await toWebP(file.buffer, file.mimetype);
+                const { buffer, mime, ext } = await toWebP(file.buffer, file.mimetype, opts);
                 const key = `${folderName}/${fieldName}/${Date.now()}-${randomBytes(3).toString('hex')}${ext}`;
                 req.fileUrls[fieldName] = await uploadToR2(buffer, key, mime);
             }
@@ -78,15 +88,15 @@ function makeR2FieldsMiddleware(folderName) {
  *   req.fileUrl   → URL absoluta (para .single)
  *   req.fileUrls  → { fieldName: url, ... } (para .fields)
  */
-export const createUpload = (folderName) => ({
+export const createUpload = (folderName, opts = {}) => ({
 
     single: (fieldName) => [
         multerMemory.single(fieldName),
-        makeR2SingleMiddleware(folderName, fieldName),
+        makeR2SingleMiddleware(folderName, fieldName, opts),
     ],
 
     fields: (fieldsConfig) => [
         multerMemory.fields(fieldsConfig),
-        makeR2FieldsMiddleware(folderName),
+        makeR2FieldsMiddleware(folderName, opts),
     ],
 });
