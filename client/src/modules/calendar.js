@@ -36,13 +36,18 @@ export async function loadCalendarView() {
             const monthCap = monthLong.charAt(0).toUpperCase() + monthLong.slice(1);
             const dateRange = `${weekendStart.getDate()} - ${day} ${monthCap}`;
 
-            // Badge de estado
+            // Badge de estado — "En vivo" solo durante el fin de semana real del GP:
+            // desde el inicio del fin de semana (weekendStart: vie normal / jue con sprint)
+            // hasta el final del día de carrera. Antes de eso → "Próximamente".
             const now = new Date();
-            const diffDays = (adjustedDate - now) / (1000 * 60 * 60 * 24);
+            const weekendStartDay = new Date(weekendStart);
+            weekendStartDay.setHours(0, 0, 0, 0);
+            const raceEndDay = new Date(adjustedDate);
+            raceEndDay.setHours(23, 59, 59, 999);
             let statusKey, statusLabel;
             if (race.status === 'suspended') { statusKey = 'suspended'; statusLabel = 'Suspendida'; }
-            else if (diffDays < -1)          { statusKey = 'done'; statusLabel = 'Finalizado'; }
-            else if (diffDays <= 4)          { statusKey = 'live'; statusLabel = '● En vivo'; }
+            else if (now > raceEndDay)       { statusKey = 'done'; statusLabel = 'Finalizado'; }
+            else if (now >= weekendStartDay) { statusKey = 'live'; statusLabel = '● En vivo'; }
             else                             { statusKey = 'soon'; statusLabel = 'Próximamente'; }
 
             // Imagen de mapa
