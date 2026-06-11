@@ -106,6 +106,7 @@ export default async function handler(req, res) {
     const html = `<!doctype html>
 <html lang="es">
   <head>
+    <meta name="google-site-verification" content="2NEyBZVpbufoM86aOSQedpasODb3lphxr3f5NfQS8h4" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>${esc(article.title)} | F1 Grand Prix Hub</title>
@@ -133,6 +134,25 @@ export default async function handler(req, res) {
     <meta name="twitter:image" content="${esc(imageUrl)}" />
 
     <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!-- GA4 deferred to idle — keeps it off the critical rendering path -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      const loadGA = () => {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-K7NYQYQ04P';
+        document.head.appendChild(s);
+        gtag('config', 'G-K7NYQYQ04P');
+      };
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(loadGA, { timeout: 4000 });
+      } else {
+        window.addEventListener('load', loadGA);
+      }
+    </script>
 
     <script type="application/ld+json">${safeSchema}</script>
 
