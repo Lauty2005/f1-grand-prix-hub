@@ -16,7 +16,7 @@ const CATEGORY_LABELS = {
 export default async function handler(req, res) {
     let articles = [];
     try {
-        const apiRes = await fetch(`${API_BASE}/articles?limit=12&offset=0`);
+        const apiRes = await fetch(`${API_BASE}/api/articles?limit=12&offset=0`);
         if (apiRes.ok) {
             const json = await apiRes.json();
             articles = json.data || [];
@@ -62,8 +62,8 @@ export default async function handler(req, res) {
         .replace(/</g, '\\u003c')
         .replace(/>/g, '\\u003e')
         .replace(/-->/g, '--\\u003e')
-        .replace(/ /g, '\\u2028')
-        .replace(/ /g, '\\u2029');
+        .replace(/\u2028/g, '\\u2028')
+        .replace(/\u2029/g, '\\u2029');
 
     const html = `<!doctype html>
 <html lang="es">
