@@ -1,11 +1,28 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 
+// In production the homepage is server-rendered by the Vercel function
+// `api/home.js` (vercel.json rewrites `/` -> `/api/home`). The SPA shell is
+// therefore built as `app.html`, NOT `index.html`, so a static `index.html`
+// never shadows the `/` rewrite on Vercel. This dev-only middleware keeps
+// `vite dev` serving the shell at `/` for local development.
+const serveAppAtRootInDev = {
+  name: 'serve-app-html-at-root-in-dev',
+  apply: 'serve',
+  configureServer(server) {
+    server.middlewares.use((req, _res, next) => {
+      if (req.url === '/' || req.url === '/index.html') req.url = '/app.html';
+      next();
+    });
+  },
+};
+
 export default defineConfig({
+  plugins: [serveAppAtRootInDev],
   build: {
     rollupOptions: {
       input: {
-        main:     resolve(__dirname, 'index.html'),
+        main:     resolve(__dirname, 'app.html'),
         admin:    resolve(__dirname, 'admin.html'),
         articulo: resolve(__dirname, 'articulo.html'),
         sobre:    resolve(__dirname, 'sobre.html'),
