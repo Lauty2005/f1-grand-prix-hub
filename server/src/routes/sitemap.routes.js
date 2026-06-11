@@ -27,7 +27,7 @@ router.get('/sitemap.xml', async (req, res) => {
             : new Date().toISOString().split('T')[0];
         const urls = [
             {
-                loc: baseURL,
+                loc: `${baseURL}/`,
                 lastmod: latestMod,
                 priority: '1.0',
                 changefreq: 'daily'
