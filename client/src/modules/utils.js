@@ -6,11 +6,14 @@ export const COUNTRY_NAMES = {
     'ATN': 'Austria', // Usé tu código ATN
     'AUS': 'Australia',
     'AZB': 'Azerbaiyán', // Usé tu código AZB
+    'BA': 'Bosnia y Herzegovina',
     'BEL': 'Bélgica',
     'BHR': 'Bahréin',
     'BRZ': 'Brasil', // Usé tu código BRZ
     'CAN': 'Canadá',
     'CHN': 'China',
+    'DK': 'Dinamarca',
+    'EE': 'Estonia',
     'ESP': 'España',
     'FRA': 'Francia',
     'GBR': 'Gran Bretaña',
@@ -36,7 +39,7 @@ const countryCodes = {
     'USA': 'us', 'ITA': 'it', 'ABU': 'ae', 'CAN': 'ca', 'ATN': 'at',
     'BEL': 'be', 'HUN': 'hu', 'AZB': 'az', 'SIN': 'sg', 'BRZ': 'br',
     'QAT': 'qa', 'TAI': 'th', 'NZE': 'nz', 'FRA': 'fr', 'GER': 'de',
-    'ARG': 'ar', 'FIN': 'fi'
+    'ARG': 'ar', 'FIN': 'fi', 'EE': 'ee', 'BA': 'ba', 'DK': 'dk'
 };
 
 export function getFlagEmoji(code) {
