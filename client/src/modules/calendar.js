@@ -131,22 +131,20 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
         // Horarios reales de las sesiones del fin de semana (hora local del visitante)
         const schedule = getSessionSchedule(race);
         const liveState = getRaceLiveState(race);
-        let scheduleHTML = '';
-        if (schedule.length > 0) {
-            const rows = schedule.map(s => {
-                const isLive = liveState.liveSession && liveState.liveSession.key === s.key;
-                return `
-                    <div class="session-schedule__row${isLive ? ' session-schedule__row--live' : ''}">
-                        <span class="session-schedule__label">${s.label}</span>
-                        <span class="session-schedule__time">${formatSessionTime(s.start)}${isLive ? ' <span class="session-schedule__live">● EN VIVO</span>' : ''}</span>
-                    </div>`;
-            }).join('');
-            scheduleHTML = `
-                <div class="session-schedule">
-                    <h4 class="session-schedule__title">Horarios (tu zona horaria)</h4>
-                    ${rows}
-                </div>`;
-        }
+        const hasSchedule = schedule.length > 0;
+        // Contenido que se muestra dentro de la pestaña "HORARIOS"
+        const scheduleTabHTML = hasSchedule
+            ? `<div class="session-schedule">
+                    ${schedule.map(s => {
+                        const isLive = liveState.liveSession && liveState.liveSession.key === s.key;
+                        return `
+                        <div class="session-schedule__row${isLive ? ' session-schedule__row--live' : ''}">
+                            <span class="session-schedule__label">${s.label}</span>
+                            <span class="session-schedule__time">${formatSessionTime(s.start)}${isLive ? ' <span class="session-schedule__live">● EN VIVO</span>' : ''}</span>
+                        </div>`;
+                    }).join('')}
+                </div>`
+            : '<p style="color:#aaa; text-align:center; padding:20px;">Horarios no disponibles.</p>';
 
         // Preparación de Tabs
         let tabsHTML = '';
@@ -154,10 +152,12 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
         const createBtn = (type, label) =>
             `<button class="tab-btn" data-type="${type}" data-id="${raceId}" style="${btnStyle}">${label}</button>`;
 
+        // "HORARIOS" va primero (a la izquierda de Prácticas/FP1), solo si hay horarios
+        const scheduleBtn = hasSchedule ? createBtn('schedule', 'HORARIOS') : '';
         if (hasSprint) {
-            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')}`;
+            tabsHTML = `${scheduleBtn} ${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')}`;
         } else {
-            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')}`;
+            tabsHTML = `${scheduleBtn} ${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')}`;
         }
 
         modalBody.innerHTML = `
@@ -193,8 +193,6 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 </div>
             </div>
 
-            ${scheduleHTML}
-
             <div class="tabs-container" style="overflow-x: auto; white-space: nowrap; padding-bottom:5px; border-bottom: 1px solid #333; text-align:center; margin-bottom:15px;">
                 ${tabsHTML}
             </div>
@@ -216,6 +214,7 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                     }
                 });
 
+                if (type === 'schedule') document.getElementById('tab-content').innerHTML = scheduleTabHTML;
                 if (type === 'race') loadRaceResults(id);
                 if (type === 'qualy') loadQualyResults(id);
                 if (type === 'sprint') loadSprintResults(id);
