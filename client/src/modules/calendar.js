@@ -2,6 +2,7 @@
 import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 import { getFlagEmoji, getPositionBadge } from './utils.js';
+import { getRaceLiveState, getSessionSchedule, formatSessionTime } from './sessions.js';
 
 export async function loadCalendarView() {
     const app = document.querySelector('#app');
@@ -36,19 +37,18 @@ export async function loadCalendarView() {
             const monthCap = monthLong.charAt(0).toUpperCase() + monthLong.slice(1);
             const dateRange = `${weekendStart.getDate()} - ${day} ${monthCap}`;
 
-            // Badge de estado — "En vivo" solo durante el fin de semana real del GP:
-            // desde el inicio del fin de semana (weekendStart: vie normal / jue con sprint)
-            // hasta el final del día de carrera. Antes de eso → "Próximamente".
-            const now = new Date();
-            const weekendStartDay = new Date(weekendStart);
-            weekendStartDay.setHours(0, 0, 0, 0);
-            const raceEndDay = new Date(adjustedDate);
-            raceEndDay.setHours(23, 59, 59, 999);
-            let statusKey, statusLabel;
-            if (race.status === 'suspended') { statusKey = 'suspended'; statusLabel = 'Suspendida'; }
-            else if (now > raceEndDay)       { statusKey = 'done'; statusLabel = 'Finalizado'; }
-            else if (now >= weekendStartDay) { statusKey = 'live'; statusLabel = '● En vivo'; }
-            else                             { statusKey = 'soon'; statusLabel = 'Próximamente'; }
+            // Badge de estado basado en horarios reales de sesión (con respaldo por
+            // fecha para carreras sin horarios cargados). "En vivo" solo durante la
+            // ventana real de una sesión; muestra cuál está corriendo.
+            const liveState = getRaceLiveState(race);
+            const statusKey = liveState.status;
+            let statusLabel;
+            if (statusKey === 'suspended')   statusLabel = 'Suspendida';
+            else if (statusKey === 'done')   statusLabel = 'Finalizado';
+            else if (statusKey === 'live')   statusLabel = liveState.liveSession
+                                                ? `● En vivo: ${liveState.liveSession.label}`
+                                                : '● En vivo';
+            else                             statusLabel = 'Próximamente';
 
             // Imagen de mapa
             let mapSrc = race.map_image_url;
@@ -128,6 +128,26 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
             displayImage = `${SERVER_URL}${displayImage}`;
         }
 
+        // Horarios reales de las sesiones del fin de semana (hora local del visitante)
+        const schedule = getSessionSchedule(race);
+        const liveState = getRaceLiveState(race);
+        let scheduleHTML = '';
+        if (schedule.length > 0) {
+            const rows = schedule.map(s => {
+                const isLive = liveState.liveSession && liveState.liveSession.key === s.key;
+                return `
+                    <div class="session-schedule__row${isLive ? ' session-schedule__row--live' : ''}">
+                        <span class="session-schedule__label">${s.label}</span>
+                        <span class="session-schedule__time">${formatSessionTime(s.start)}${isLive ? ' <span class="session-schedule__live">● EN VIVO</span>' : ''}</span>
+                    </div>`;
+            }).join('');
+            scheduleHTML = `
+                <div class="session-schedule">
+                    <h4 class="session-schedule__title">Horarios (tu zona horaria)</h4>
+                    ${rows}
+                </div>`;
+        }
+
         // Preparación de Tabs
         let tabsHTML = '';
         const btnStyle = "background:none; border:none; color:#aaa; padding:10px 15px; cursor:pointer; font-weight:bold; font-size:0.9rem; transition: color 0.3s;";
@@ -172,6 +192,8 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                     </div>
                 </div>
             </div>
+
+            ${scheduleHTML}
 
             <div class="tabs-container" style="overflow-x: auto; white-space: nowrap; padding-bottom:5px; border-bottom: 1px solid #333; text-align:center; margin-bottom:15px;">
                 ${tabsHTML}

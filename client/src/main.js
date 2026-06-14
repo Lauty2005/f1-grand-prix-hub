@@ -10,6 +10,7 @@ import '@fontsource/jetbrains-mono/latin-600.css';
 import '@fontsource/jetbrains-mono/latin-700.css';
 import { API } from './modules/config.js';
 import { state } from './modules/state.js';
+import { getSessionSchedule, getRaceLiveState } from './modules/sessions.js';
 import { setPageMeta, createHomeMetaConfig } from './modules/metaTags.js';
 import { loadNoticiasView } from './modules/noticias.js'; // eager — first view on load
 
@@ -181,30 +182,67 @@ async function initCountdown() {
     try {
         const res = await fetch(`${API}/races?year=${state.currentYear}`);
         const json = await res.json();
+        const races = (json.data || []).filter(r => r.status !== 'suspended');
 
-        const now = new Date();
-        const nextRace = json.data.find(race => new Date(race.date) > now && race.status !== 'suspended');
+        const render = () => {
+            const now = new Date();
 
-        if (!nextRace) {
-            container.innerHTML = '<span style="color:#aaa;">No hay más carreras esta temporada.</span>';
-            return;
-        }
+            // ¿Hay una sesión en vivo ahora mismo? (ventana real de la sesión)
+            for (const race of races) {
+                const live = getRaceLiveState(race, now);
+                if (live.status === 'live' && live.liveSession) {
+                    container.innerHTML = `
+                        <div class="countdown-inner countdown-inner--live">
+                            <span class="countdown-label">● EN VIVO &mdash; ${live.liveSession.label}</span>
+                            <span class="countdown-time">🔴</span>
+                            <span class="countdown-race-name">${race.name}</span>
+                        </div>`;
+                    return;
+                }
+            }
 
-        const updateTimer = () => {
-            const diff = new Date(nextRace.date) - new Date();
+            // Próxima sesión con horario real cargado en toda la temporada
+            let next = null;
+            for (const race of races) {
+                for (const s of getSessionSchedule(race)) {
+                    if (s.start > now && (!next || s.start < next.start)) {
+                        next = { ...s, raceName: race.name, countryCode: race.country_code };
+                    }
+                }
+            }
+
+            // Respaldo: si ninguna carrera tiene horarios, usar la fecha de carrera
+            let targetDate, label, raceName;
+            if (next) {
+                targetDate = next.start;
+                label = `Próxima sesión: ${next.label}`;
+                raceName = next.raceName;
+            } else {
+                const nextRace = races.find(r => new Date(r.date) > now);
+                if (!nextRace) {
+                    container.innerHTML = '<span style="color:#aaa;">No hay más carreras esta temporada.</span>';
+                    return;
+                }
+                targetDate = new Date(nextRace.date);
+                label = `Próxima carrera: ${nextRace.country_code}`;
+                raceName = nextRace.name;
+            }
+
+            const diff = targetDate - now;
             if (diff <= 0) { container.innerHTML = '¡ES HOY! 🏁'; return; }
             const d = Math.floor(diff / (1000 * 60 * 60 * 24));
             const h = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
             container.innerHTML = `
                 <div class="countdown-inner">
-                    <span class="countdown-label">Próxima carrera: ${nextRace.country_code}</span>
+                    <span class="countdown-label">${label}</span>
                     <span class="countdown-time">${d}d ${h}h ${m}m</span>
-                    <span class="countdown-race-name">${nextRace.name}</span>
+                    <span class="countdown-race-name">${raceName}</span>
                 </div>`;
         };
-        updateTimer();
-        countdownInterval = setInterval(updateTimer, 60000);
+
+        render();
+        countdownInterval = setInterval(render, 60000);
     } catch (error) { console.error("Error countdown:", error); }
 }
 

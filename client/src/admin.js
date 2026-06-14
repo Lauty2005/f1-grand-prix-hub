@@ -515,6 +515,15 @@ async function handleCreateRace(e) {
     formData.append('race_distance', document.getElementById('newDistance').value || '');
     formData.append('lap_record', document.getElementById('newRecord').value || '');
 
+    // 2b. Horarios de Sesión (datetime-local → ISO en hora local del navegador)
+    formData.append('fp1_time',          localInputToISO(document.getElementById('newFp1Time').value));
+    formData.append('fp2_time',          localInputToISO(document.getElementById('newFp2Time').value));
+    formData.append('fp3_time',          localInputToISO(document.getElementById('newFp3Time').value));
+    formData.append('sprint_quali_time', localInputToISO(document.getElementById('newSprintQualiTime').value));
+    formData.append('sprint_time',       localInputToISO(document.getElementById('newSprintTime').value));
+    formData.append('qualy_time',        localInputToISO(document.getElementById('newQualyTime').value));
+    formData.append('race_time',         localInputToISO(document.getElementById('newRaceTime').value));
+
     // ENVIAR SELECCIÓN EXISTENTE (Si el usuario eligió algo de la lista)
     const existingMap = document.getElementById('existingMapSelect').value;
     if (existingMap) formData.append('existing_map_image', existingMap);
@@ -555,6 +564,110 @@ async function handleCreateRace(e) {
     } finally {
         btn.disabled = false;
         btn.innerText = 'AGREGAR GP';
+    }
+}
+
+// ==================================================================================
+// --- HORARIOS DE SESIÓN ---
+// ==================================================================================
+
+// datetime-local (hora local) → ISO UTC para guardar. '' si está vacío.
+function localInputToISO(value) {
+    if (!value) return '';
+    const d = new Date(value); // el navegador interpreta el string como hora local
+    return isNaN(d.getTime()) ? '' : d.toISOString();
+}
+
+// ISO/timestamp → string para <input type="datetime-local"> en hora local. '' si null.
+function isoToLocalInput(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const off = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - off).toISOString().slice(0, 16);
+}
+
+// Muestra/oculta los campos de horario según sea fin de semana normal o con sprint.
+function toggleTimeFields(isSprint, normalSelector, sprintSelector) {
+    document.querySelectorAll(normalSelector).forEach(el => el.style.display = isSprint ? 'none' : '');
+    document.querySelectorAll(sprintSelector).forEach(el => el.style.display = isSprint ? '' : 'none');
+}
+
+// Pobla el <select> de la sección "Horarios de Sesión" con las carreras del año.
+async function loadScheduleRaces(year) {
+    const select = document.getElementById('scheduleRaceSelect');
+    if (!select) return;
+    try {
+        const res = await adminFetch(`${API}/races?year=${year}`);
+        const json = await res.json();
+        const races = json.data || [];
+        select.innerHTML = '<option value="" disabled selected>Selecciona carrera...</option>' +
+            races.map(r => `<option value="${r.id}" data-sprint="${r.has_sprint}">R${r.round}: ${r.name}</option>`).join('');
+        // Limpia los inputs al recargar la lista
+        loadRaceSchedule('');
+    } catch (e) { console.error(e); }
+}
+
+// Carga los horarios actuales de una carrera en los inputs del formulario.
+async function loadRaceSchedule(raceId) {
+    const ids = {
+        fp1_time: 'sched_fp1Time', fp2_time: 'sched_fp2Time', fp3_time: 'sched_fp3Time',
+        sprint_quali_time: 'sched_sprintQualiTime', sprint_time: 'sched_sprintTime',
+        qualy_time: 'sched_qualyTime', race_time: 'sched_raceTime',
+    };
+    if (!raceId) {
+        Object.values(ids).forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        return;
+    }
+    try {
+        const res = await adminFetch(`${API}/races/${raceId}`);
+        const json = await res.json();
+        const race = json.data || {};
+        toggleTimeFields(!!race.has_sprint, '.sched-time-normal', '.sched-time-sprint');
+        Object.entries(ids).forEach(([field, id]) => {
+            const el = document.getElementById(id);
+            if (el) el.value = isoToLocalInput(race[field]);
+        });
+    } catch (e) { console.error(e); }
+}
+
+async function handleSaveSchedule(e) {
+    e.preventDefault();
+    const raceId = document.getElementById('scheduleRaceSelect').value;
+    if (!raceId) { showError('Selecciona una carrera', 'errorMsgSchedule', 'errorTextSchedule'); return; }
+
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    btn.innerText = 'Guardando...';
+
+    const body = {
+        fp1_time:          localInputToISO(document.getElementById('sched_fp1Time').value),
+        fp2_time:          localInputToISO(document.getElementById('sched_fp2Time').value),
+        fp3_time:          localInputToISO(document.getElementById('sched_fp3Time').value),
+        sprint_quali_time: localInputToISO(document.getElementById('sched_sprintQualiTime').value),
+        sprint_time:       localInputToISO(document.getElementById('sched_sprintTime').value),
+        qualy_time:        localInputToISO(document.getElementById('sched_qualyTime').value),
+        race_time:         localInputToISO(document.getElementById('sched_raceTime').value),
+    };
+
+    try {
+        const res = await adminFetch(`${API}/races/${raceId}/schedule`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (res.ok) {
+            showSuccess('msgSchedule');
+        } else {
+            const data = await res.json();
+            showError(data.error || 'Error desconocido', 'errorMsgSchedule', 'errorTextSchedule');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Error de conexión.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'GUARDAR HORARIOS';
     }
 }
 
@@ -1244,6 +1357,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btnDelete').addEventListener('click', handleDelete);
     document.getElementById('btnDeleteDriver').addEventListener('click', handleDeleteDriver);
     document.getElementById('newRaceForm').addEventListener('submit', handleCreateRace);
+    // Alterna campos de horario (normal vs sprint) en el form de nueva carrera
+    document.getElementById('newHasSprint')?.addEventListener('change', (ev) => {
+        toggleTimeFields(ev.target.checked, '.race-time-normal', '.race-time-sprint');
+    });
+    // Sección "Horarios de Sesión" (carreras existentes)
+    document.getElementById('scheduleForm')?.addEventListener('submit', handleSaveSchedule);
+    document.getElementById('scheduleRaceSelect')?.addEventListener('change', (ev) => loadRaceSchedule(ev.target.value));
     document.getElementById('assignDriverSeasonForm')?.addEventListener('submit', handleAssignDriverSeason);
     document.getElementById('newTeamForm')?.addEventListener('submit', handleCreateTeam);
     document.getElementById('newDriverForm').addEventListener('submit', handleCreateDriver);
@@ -1253,9 +1373,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 👇 IMPORTANTE: Cuando cambias el año (2025 <-> 2026), recargar pilotos
     document.getElementById('seasonSelect').addEventListener('change', (e) => {
         const year = e.target.value;
-        loadRaces(year);   // Cargar carreras de ese año
-        loadDrivers();     // Cargar pilotos DE ESE AÑO
+        loadRaces(year);          // Cargar carreras de ese año
+        loadDrivers();            // Cargar pilotos DE ESE AÑO
+        loadScheduleRaces(year);  // Recargar carreras en la sección de horarios
     });
+
+    // Carga inicial de las carreras en la sección "Horarios de Sesión"
+    loadScheduleRaces(document.getElementById('seasonSelect').value);
 
     document.getElementById('sessionType').addEventListener('change', () => {
         updateFormFields();
