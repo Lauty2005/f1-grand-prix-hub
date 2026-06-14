@@ -335,9 +335,93 @@
                                 <input type="text" id="newRecord" class="form-control" placeholder="1:19.813...">
                             </div>
 
+                            <h4 class="span-full" style="color: #666; margin-top: 0; border-bottom: 1px solid #333;">
+                                🕒 Horarios de Sesión (tu hora local)</h4>
+
+                            <div>
+                                <label style="font-size: 75%;">Práctica 1:</label>
+                                <input type="datetime-local" id="newFp1Time" class="form-control">
+                            </div>
+                            <div class="race-time-normal">
+                                <label style="font-size: 75%;">Práctica 2:</label>
+                                <input type="datetime-local" id="newFp2Time" class="form-control">
+                            </div>
+                            <div class="race-time-normal">
+                                <label style="font-size: 75%;">Práctica 3:</label>
+                                <input type="datetime-local" id="newFp3Time" class="form-control">
+                            </div>
+                            <div class="race-time-sprint" style="display:none;">
+                                <label style="font-size: 75%;">Clasif. Sprint:</label>
+                                <input type="datetime-local" id="newSprintQualiTime" class="form-control">
+                            </div>
+                            <div class="race-time-sprint" style="display:none;">
+                                <label style="font-size: 75%;">Sprint:</label>
+                                <input type="datetime-local" id="newSprintTime" class="form-control">
+                            </div>
+                            <div>
+                                <label style="font-size: 75%;">Clasificación:</label>
+                                <input type="datetime-local" id="newQualyTime" class="form-control">
+                            </div>
+                            <div>
+                                <label style="font-size: 75%;">Carrera:</label>
+                                <input type="datetime-local" id="newRaceTime" class="form-control">
+                            </div>
+
                             <button type="submit" class="btn-create span-full">AGREGAR GP</button>
                             <div id="errorMsgRace" class="error-msg span-full">❌ <span id="errorTextRace"></span></div>
                             <p id="msgRace" class="success-msg span-full">✅ ¡Carrera creada!</p>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- ─── 1B. HORARIOS DE SESIÓN (carreras existentes) ─── -->
+                <div class="accordion-section">
+                    <button class="accordion-trigger" type="button">
+                        <span class="accordion-trigger__icon">🕒</span>
+                        <span class="accordion-trigger__title">Horarios de Sesión</span>
+                        <span class="accordion-trigger__arrow">▾</span>
+                    </button>
+                    <div class="accordion-body">
+                        <form id="scheduleForm" class="creation-form-grid">
+                            <div class="span-full">
+                                <label style="font-size: 75%;">Gran Premio</label>
+                                <select id="scheduleRaceSelect" class="form-control" required>
+                                    <option value="" disabled selected>Cargando carreras...</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label style="font-size: 75%;">Práctica 1:</label>
+                                <input type="datetime-local" id="sched_fp1Time" class="form-control">
+                            </div>
+                            <div class="sched-time-normal">
+                                <label style="font-size: 75%;">Práctica 2:</label>
+                                <input type="datetime-local" id="sched_fp2Time" class="form-control">
+                            </div>
+                            <div class="sched-time-normal">
+                                <label style="font-size: 75%;">Práctica 3:</label>
+                                <input type="datetime-local" id="sched_fp3Time" class="form-control">
+                            </div>
+                            <div class="sched-time-sprint" style="display:none;">
+                                <label style="font-size: 75%;">Clasif. Sprint:</label>
+                                <input type="datetime-local" id="sched_sprintQualiTime" class="form-control">
+                            </div>
+                            <div class="sched-time-sprint" style="display:none;">
+                                <label style="font-size: 75%;">Sprint:</label>
+                                <input type="datetime-local" id="sched_sprintTime" class="form-control">
+                            </div>
+                            <div>
+                                <label style="font-size: 75%;">Clasificación:</label>
+                                <input type="datetime-local" id="sched_qualyTime" class="form-control">
+                            </div>
+                            <div>
+                                <label style="font-size: 75%;">Carrera:</label>
+                                <input type="datetime-local" id="sched_raceTime" class="form-control">
+                            </div>
+
+                            <button type="submit" class="btn-create span-full">GUARDAR HORARIOS</button>
+                            <div id="errorMsgSchedule" class="error-msg span-full">❌ <span id="errorTextSchedule"></span></div>
+                            <p id="msgSchedule" class="success-msg span-full">✅ ¡Horarios guardados!</p>
                         </form>
                     </div>
                 </div>

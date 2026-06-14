@@ -82,8 +82,11 @@ export const postPractices = async (req, res) => {
 export const postRace = async (req, res) => {
     try {
         const {
-            name, round, date, circuit_name, country,
+            name, round, date, circuit_name, country, country_code,
+            circuit_length, race_distance, lap_record,
             total_laps, sprint, existing_map_image, existing_circuit_image,
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time,
         } = req.body;
 
         const map_image_url     = req.fileUrls?.['map_image']     ?? existing_map_image     ?? null;
@@ -94,11 +97,16 @@ export const postRace = async (req, res) => {
             round,
             date,
             circuit_name,
-            country,
+            country_code: country_code ?? country,
             map_image_url,
             circuit_image_url,
             hasSprint: sprint === 'true',
+            circuit_length,
             lapsInt:   total_laps ? parseInt(total_laps) : 0,
+            race_distance,
+            lap_record,
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time,
         };
 
         await racesService.insertRace(data);
@@ -106,6 +114,23 @@ export const postRace = async (req, res) => {
     } catch (e) {
         console.error('ERROR postRace:', e);
         res.status(500).json({ error: 'Error al crear carrera' });
+    }
+};
+
+export const patchRaceTimes = async (req, res) => {
+    try {
+        const {
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time,
+        } = req.body;
+        await racesService.updateRaceTimes(req.params.id, {
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time,
+        });
+        res.json({ success: true });
+    } catch (e) {
+        console.error('ERROR patchRaceTimes:', e);
+        res.status(500).json({ error: 'Error al guardar horarios' });
     }
 };
 

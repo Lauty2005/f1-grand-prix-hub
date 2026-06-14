@@ -38,6 +38,7 @@ router.post(
     validateRace,
     racesController.postRace
 );
+router.patch('/:id/schedule', adminAuth, racesController.patchRaceTimes);
 router.delete('/:id', adminAuth, racesController.deleteRace);
 
 // ── 4. POSTEO DE RESULTADOS DE SESIÓN ──────────────────────────────────────

@@ -11,11 +11,13 @@ export const getCalendar = async (year) => {
 
 export const getRaceById = async (id) => {
     const sql = `
-        SELECT 
-            id, name, round, circuit_name, country_code, date, 
+        SELECT
+            id, name, round, circuit_name, country_code, date,
             map_image_url, circuit_image_url, has_sprint,
-            circuit_length, total_laps, race_distance, lap_record 
-        FROM races 
+            circuit_length, total_laps, race_distance, lap_record,
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time
+        FROM races
         WHERE id = $1
     `;
     const result = await query(sql, [id]);
@@ -125,17 +127,43 @@ export const insertPractices = async (data) => {
 
 export const insertRace = async (data) => {
     const {
-        name, round, circuit_name, country_code, date, 
-        map_image_url, circuit_image_url, hasSprint, 
-        circuit_length, lapsInt, race_distance, lap_record
+        name, round, circuit_name, country_code, date,
+        map_image_url, circuit_image_url, hasSprint,
+        circuit_length, lapsInt, race_distance, lap_record,
+        fp1_time, fp2_time, fp3_time, sprint_quali_time,
+        sprint_time, qualy_time, race_time
     } = data;
+    const t = (v) => v || null; // string vacío → NULL
     await query(
         `INSERT INTO races (
-            name, round, circuit_name, country_code, date, 
+            name, round, circuit_name, country_code, date,
             map_image_url, circuit_image_url, has_sprint,
-            circuit_length, total_laps, race_distance, lap_record
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-        [name, round, circuit_name, country_code, date, map_image_url, circuit_image_url, hasSprint, circuit_length, lapsInt, race_distance, lap_record]
+            circuit_length, total_laps, race_distance, lap_record,
+            fp1_time, fp2_time, fp3_time, sprint_quali_time,
+            sprint_time, qualy_time, race_time
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)`,
+        [name, round, circuit_name, country_code, date, map_image_url, circuit_image_url, hasSprint, circuit_length, lapsInt, race_distance, lap_record,
+         t(fp1_time), t(fp2_time), t(fp3_time), t(sprint_quali_time), t(sprint_time), t(qualy_time), t(race_time)]
+    );
+};
+
+export const updateRaceTimes = async (id, times) => {
+    const t = (v) => v || null; // string vacío → NULL
+    const {
+        fp1_time, fp2_time, fp3_time, sprint_quali_time,
+        sprint_time, qualy_time, race_time
+    } = times;
+    await query(
+        `UPDATE races SET
+            fp1_time          = $2,
+            fp2_time          = $3,
+            fp3_time          = $4,
+            sprint_quali_time = $5,
+            sprint_time       = $6,
+            qualy_time        = $7,
+            race_time         = $8
+        WHERE id = $1`,
+        [id, t(fp1_time), t(fp2_time), t(fp3_time), t(sprint_quali_time), t(sprint_time), t(qualy_time), t(race_time)]
     );
 };
 

@@ -406,3 +406,62 @@
     gap: 8px;
     justify-content: center;
 }
+
+// ─────────────────────────────────────────────
+//  HORARIOS DE SESIÓN (zona horaria local)
+// ─────────────────────────────────────────────
+.session-schedule {
+    margin: 4px 0 18px;
+    padding: 12px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+
+    &__title {
+        margin: 0 0 10px;
+        color: #888;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    &__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        padding: 6px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+        &:last-child { border-bottom: none; }
+
+        &--live {
+            color: #ff5555;
+        }
+    }
+
+    &__label {
+        color: #ddd;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .session-schedule__row--live &__label { color: #ff5555; }
+
+    &__time {
+        color: #aaa;
+        font-size: 0.85rem;
+        text-transform: capitalize;
+        white-space: nowrap;
+    }
+
+    &__live {
+        margin-left: 8px;
+        color: #ff5555;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        animation: badge-pulse 2s ease-in-out infinite;
+    }
+}
