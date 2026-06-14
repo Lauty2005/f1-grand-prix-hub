@@ -4,7 +4,8 @@ import * as driversService from '../services/drivers.service.js';
 export const getAllDrivers = async (req, res) => {
     try {
         const year = req.query.year || String(new Date().getFullYear());
-        const drivers = await driversService.getDrivers(year);
+        const includePractice = req.query.includePractice === 'true';
+        const drivers = await driversService.getDrivers(year, includePractice);
         res.json({ success: true, data: drivers });
     } catch (err) {
         console.error('ERROR SQL DRIVERS:', err.message);

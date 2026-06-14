@@ -135,9 +135,9 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
             `<button class="tab-btn" data-type="${type}" data-id="${raceId}" style="${btnStyle}">${label}</button>`;
 
         if (hasSprint) {
-            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')}`;
+            tabsHTML = `${createBtn('practices', 'FP1')} ${createBtn('sprint-qualy', 'S. QUALY')} ${createBtn('sprint', 'SPRINT')} ${createBtn('qualy', 'CLASIF.')} ${createBtn('race', 'CARRERA')}`;
         } else {
-            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')} ${createBtn('strategy', 'ESTRATEGIA')}`;
+            tabsHTML = `${createBtn('practices', 'PRÁCTICAS')} ${createBtn('qualy', 'CLASIFICACIÓN')} ${createBtn('race', 'CARRERA')}`;
         }
 
         modalBody.innerHTML = `
@@ -199,7 +199,6 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 if (type === 'sprint') loadSprintResults(id);
                 if (type === 'practices') loadPracticesResults(id, hasSprint);
                 if (type === 'sprint-qualy') loadSprintQualyResults(id);
-                if (type === 'strategy') loadStrategyAnalysis(id);
             } catch (e) {
                 console.error('Error cargando tab:', e);
             }
@@ -699,163 +698,5 @@ async function loadSprintQualyResults(raceId) {
     } catch (e) {
         console.error(e);
         container.innerHTML = '<p style="color:red; text-align:center;">Error al cargar datos.</p>';
-    }
-}
-
-// ─────────────────────────────────────────────
-//  STRATEGY ANALYSIS TAB
-// ─────────────────────────────────────────────
-const COMPOUND_ABBR = { SOFT:'S', MEDIUM:'M', HARD:'H', INTER:'I', WET:'W', UNKNOWN:'?' };
-
-async function loadStrategyAnalysis(raceId) {
-    const container = document.getElementById('tab-content');
-    container.innerHTML = '<div style="text-align:center;color:rgba(255,255,255,0.3);padding:40px;font-family:\'Barlow Condensed\',sans-serif;letter-spacing:2px;font-size:0.9rem;">CARGANDO ESTRATEGIA...</div>';
-
-    try {
-        const res  = await fetch(`${API}/races/${raceId}/strategy`);
-        const json = await res.json();
-
-        if (!json.success || json.data.drivers.length === 0) {
-            container.innerHTML = `
-                <div class="strat">
-                    <p style="text-align:center;color:rgba(255,255,255,0.25);padding:40px 20px;font-family:'Barlow Condensed',sans-serif;letter-spacing:2px;font-size:0.85rem;">
-                        SIN DATOS DE ESTRATEGIA
-                    </p>
-                </div>`;
-            return;
-        }
-
-        const { race, stats } = json.data;
-        const drivers = [...json.data.drivers].sort((a, b) => {
-            if (a.final_position && b.final_position) return a.final_position - b.final_position;
-            if (a.final_position) return -1;
-            if (b.final_position) return 1;
-            return 0;
-        });
-        const totalLaps = race.total_laps || 1;
-
-        // ── KPI strip ────────────────────────────────
-        const fastestKPI = stats.fastestPitStop
-            ? `<div class="strat-kpi">
-                   <span class="strat-kpi__label">Pit más rápido</span>
-                   <span class="strat-kpi__value">${stats.fastestPitStop.time}s</span>
-                   <span class="strat-kpi__sub">${stats.fastestPitStop.driver}</span>
-               </div>`
-            : '';
-
-        const stopKPIs = Object.entries(stats.stopCounts)
-            .sort((a, b) => b[1] - a[1])
-            .map(([n, cnt]) => `
-                <div class="strat-kpi">
-                    <span class="strat-kpi__label">${n} parada${n > 1 ? 's' : ''}</span>
-                    <span class="strat-kpi__value">${cnt}</span>
-                    <span class="strat-kpi__sub">piloto${cnt > 1 ? 's' : ''}</span>
-                </div>`).join('');
-
-        // ── Compound legend ──────────────────────────
-        const CMP_NAMES = { SOFT:'Blando', MEDIUM:'Medio', HARD:'Duro', INTER:'Intermedio', WET:'Lluvia', UNKNOWN:'?' };
-        const activeCmps = [...new Set(drivers.flatMap(d => d.compounds))];
-        const legendHTML = activeCmps.map(c => `
-            <div class="strat-compound strat-compound--${c}">
-                <span class="strat-compound__circle"></span>
-                ${CMP_NAMES[c] || c}
-            </div>`).join('');
-
-        // ── Lap axis ─────────────────────────────────
-        const tickInterval = totalLaps <= 60 ? 10 : 20;
-        const ticks = [];
-        for (let lap = 0; lap <= totalLaps; lap += tickInterval) {
-            ticks.push(`<span class="strat-axis-tick" style="left:${(lap / totalLaps) * 100}%">${lap}</span>`);
-        }
-        if (totalLaps % tickInterval !== 0) {
-            ticks.push(`<span class="strat-axis-tick" style="left:100%">${totalLaps}</span>`);
-        }
-
-        // ── Gantt rows ───────────────────────────────
-        const ganttHTML = drivers.map((d, idx) => {
-            const pos = d.final_position ? `P${d.final_position}` : '—';
-            const stintsHTML = d.stints.map(s => {
-                const abbr    = COMPOUND_ABBR[s.tire_compound] || '?';
-                const pitAttr = s.pit_duration ? `data-pit="Pit: ${s.pit_duration}s"` : '';
-                return `<div class="strat-bar strat-bar--${s.tire_compound}"
-                              style="flex:${s.laps};"
-                              title="${s.tire_compound} · ${s.laps} vueltas (L${s.start_lap}–L${s.end_lap})"
-                              ${pitAttr}>
-                            <span class="strat-bar__label">${abbr}·${s.laps}</span>
-                        </div>`;
-            }).join('');
-
-            return `
-                <div class="strat-row" style="animation-delay:${idx * 35}ms">
-                    <div class="strat-driver-info">
-                        <div class="strat-team-bar" style="background:${d.primary_color};"></div>
-                        <span class="strat-pos">${pos}</span>
-                        <span class="strat-name">${d.shortName}</span>
-                    </div>
-                    <div class="strat-bars">${stintsHTML}</div>
-                    <span class="strat-stop-count">${d.stops}p</span>
-                </div>`;
-        }).join('');
-
-        // ── P1 vs P2 ─────────────────────────────────
-        let h2hHTML = '';
-        const top2 = drivers.filter(d => d.final_position <= 2).sort((a, b) => a.final_position - b.final_position);
-        if (top2.length === 2) {
-            const cardHTML = d => {
-                const pillsHTML = d.compounds.map((c, i) => {
-                    const arrow = i < d.compounds.length - 1 ? `<span class="strat-pill-arrow">›</span>` : '';
-                    return `<span class="strat-pill strat-pill--${c}">${COMPOUND_ABBR[c] || '?'}</span>${arrow}`;
-                }).join('');
-                const pitTimeStr = d.totalPitTime > 0 ? `${d.totalPitTime}s` : '—';
-                return `
-                    <div class="strat-h2h-card" style="--team-color:${d.primary_color};">
-                        <span class="strat-h2h-card__pos">P${d.final_position}</span>
-                        <span class="strat-h2h-card__name">${d.name}</span>
-                        <span class="strat-h2h-card__team">${d.team_name}</span>
-                        <span class="strat-h2h-card__stat-label">Paradas</span>
-                        <span class="strat-h2h-card__stat-value">${d.stops}</span>
-                        <span class="strat-h2h-card__stat-label">Estrategia</span>
-                        <span class="strat-h2h-card__stat-value">${pillsHTML}</span>
-                        <span class="strat-h2h-card__stat-label">Tiempo en pits</span>
-                        <span class="strat-h2h-card__stat-value">${pitTimeStr}</span>
-                        ${d.fastestPit ? `
-                        <span class="strat-h2h-card__stat-label">Mejor pit</span>
-                        <span class="strat-h2h-card__stat-value">${d.fastestPit}s</span>` : ''}
-                    </div>`;
-            };
-            h2hHTML = `
-                <p class="strat-section-label">P1 vs P2</p>
-                <div class="strat-h2h">
-                    ${cardHTML(top2[0])}
-                    <div class="strat-h2h-vs">VS</div>
-                    ${cardHTML(top2[1])}
-                </div>`;
-        }
-
-        container.innerHTML = `
-            <div class="strat">
-                <div class="strat-kpis">
-                    <div class="strat-kpi">
-                        <span class="strat-kpi__label">Pilotos</span>
-                        <span class="strat-kpi__value">${drivers.length}</span>
-                    </div>
-                    ${fastestKPI}
-                    ${stopKPIs}
-                </div>
-
-                <div class="strat-legend">${legendHTML}</div>
-
-                <p class="strat-section-label">Mapa de Estrategia · ${totalLaps} vueltas</p>
-                <div class="strat-gantt">
-                    <div class="strat-axis">${ticks.join('')}</div>
-                    ${ganttHTML}
-                </div>
-
-                ${h2hHTML}
-            </div>`;
-
-    } catch (e) {
-        console.error(e);
-        container.innerHTML = '<p style="color:#e10600;text-align:center;padding:20px;font-family:\'Barlow Condensed\',sans-serif;letter-spacing:1px;">ERROR AL CARGAR ESTRATEGIA</p>';
     }
 }

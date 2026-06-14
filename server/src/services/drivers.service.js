@@ -1,6 +1,7 @@
 import { query, pool } from '../config/db.js';
 
-export const getDrivers = async (year) => {
+export const getDrivers = async (year, includePractice = false) => {
+    const practiceFilter = includePractice ? '' : 'AND d.is_practice_only = false';
     const sql = `
         SELECT
             d.id, d.first_name, d.last_name,
@@ -26,6 +27,7 @@ export const getDrivers = async (year) => {
         ) sprint_stats ON d.id = sprint_stats.driver_id
         WHERE d.active_seasons::text LIKE $3
           AND (d.active = true OR $4::int < EXTRACT(YEAR FROM NOW())::int)
+          ${practiceFilter}
         ORDER BY points DESC, d.last_name ASC;
     `;
     const startDate = `${year}-01-01`;
@@ -175,6 +177,7 @@ export const compareDrivers = async (ids, year) => {
 
 export const createDriver = async (data, profileImageUrl) => {
     const { first_name, last_name, number, team_id, country, seasons } = data;
+    const isPracticeOnly = data.is_practice_only === 'true' || data.is_practice_only === true;
 
     // Si no se subió imagen, usamos el fallback oficial de F1
     const profile_image_url = profileImageUrl
@@ -185,9 +188,9 @@ export const createDriver = async (data, profileImageUrl) => {
         : ['2026'];
 
     const driverRes = await query(
-        `INSERT INTO drivers (first_name, last_name, permanent_number, constructor_id, country_code, profile_image_url, active_seasons)
-         VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
-        [first_name, last_name, number, team_id, country, profile_image_url, seasonsToSave]
+        `INSERT INTO drivers (first_name, last_name, permanent_number, constructor_id, country_code, profile_image_url, active_seasons, is_practice_only)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`,
+        [first_name, last_name, number, team_id, country, profile_image_url, seasonsToSave, isPracticeOnly]
     );
     const newDriverId = driverRes.rows[0].id;
 

@@ -206,7 +206,7 @@ async function loadDrivers() {
     const selectedYear = document.getElementById('seasonSelect').value;
 
     try {
-        const res = await adminFetch(`${API}/drivers?year=${selectedYear}`);
+        const res = await adminFetch(`${API}/drivers?year=${selectedYear}&includePractice=true`);
         const json = await res.json();
         const drivers = json.data;
 
@@ -231,7 +231,7 @@ async function loadDriversForDelete() {
     select.innerHTML = '<option>Cargando...</option>';
 
     try {
-        const res = await adminFetch(`${API}/drivers?year=${year}`);
+        const res = await adminFetch(`${API}/drivers?year=${year}&includePractice=true`);
         const json = await res.json();
         const drivers = json.data;
 
@@ -652,6 +652,9 @@ async function handleCreateDriver(e) {
 
     // Lo enviamos como texto separado por comas (ej: "2025" o "2025,2026")
     formData.append('seasons', activeSeasons.join(','));
+
+    // Piloto solo de práctica (Rookie FP1): no aparece en "Pilotos" ni "Comparar"
+    formData.append('is_practice_only', document.getElementById('newDriverPracticeOnly').checked);
 
     try {
         const res = await adminFetch(`${API}/drivers`, { method: 'POST', body: formData });
@@ -1284,7 +1287,7 @@ async function loadDriversForStint() {
     const select = document.getElementById('stintDriverSelect');
     if (!select) return;
     try {
-        const res = await adminFetch(`${API}/drivers?year=${year}`);
+        const res = await adminFetch(`${API}/drivers?year=${year}&includePractice=true`);
         const json = await res.json();
         const drivers = (json.data || []).sort((a, b) => a.last_name.localeCompare(b.last_name));
         select.innerHTML = '<option value="">Selecciona piloto...</option>' +
