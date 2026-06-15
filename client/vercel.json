@@ -1,8 +1,10 @@
 {
   "rewrites": [
-    { "source": "/sitemap.xml",    "destination": "https://f1-grand-prix-hub.onrender.com/sitemap.xml" },
-    { "source": "/llms.txt",       "destination": "https://f1-grand-prix-hub.onrender.com/llms.txt" },
+    { "source": "/sitemap.xml",      "destination": "https://f1-grand-prix-hub.onrender.com/sitemap.xml" },
+    { "source": "/sitemap-news.xml", "destination": "https://f1-grand-prix-hub.onrender.com/sitemap-news.xml" },
+    { "source": "/llms.txt",         "destination": "https://f1-grand-prix-hub.onrender.com/llms.txt" },
     { "source": "/articulo/:slug", "destination": "/api/articulo?slug=:slug" },
+    { "source": "/noticias/:topic", "destination": "/api/categoria?topic=:topic" },
     { "source": "/articulo.html",  "destination": "/api/articulo" },
     { "source": "/",               "destination": "/api/home" }
   ]

@@ -2,6 +2,7 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Sitemap: https://f1grandprixhub.com/sitemap.xml
+Sitemap: https://f1grandprixhub.com/sitemap-news.xml
 
 User-agent: GPTBot
 Allow: /

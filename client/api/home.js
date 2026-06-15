@@ -71,7 +71,7 @@ export default async function handler(req, res) {
     <meta name="google-site-verification" content="2NEyBZVpbufoM86aOSQedpasODb3lphxr3f5NfQS8h4" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>F1 Grand Prix Hub | Análisis y Predicciones de Fórmula 1 en Español</title>
+    <title>F1 Grand Prix Hub | Análisis F1 en Español</title>
     <meta name="description" content="Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Calendario, campeonato, comparativa de pilotos y crónicas de cada Gran Premio." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="${SITE_BASE}/" />
@@ -119,6 +119,24 @@ export default async function handler(req, res) {
         : '<link rel="preload" as="image" href="/logo.png" fetchpriority="high" />'
     }
 
+    <!-- Critical inline CSS for the above-fold hero so it renders on first paint,
+         before the async main stylesheet loads. -->
+    <style id="ssr-hero-css">
+      .home-hero{max-width:880px;margin:0 auto;padding:56px 20px 40px;text-align:center;color:#fff;font-family:'Barlow Condensed',system-ui,sans-serif}
+      .home-hero h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:900;line-height:1.05;margin:0 0 16px;text-transform:uppercase;letter-spacing:-.5px}
+      .home-hero h1 span{color:#e10600}
+      .home-hero__lead{font-size:clamp(1rem,2.5vw,1.2rem);color:#cfcfcf;line-height:1.5;margin:0 auto 12px;max-width:640px}
+      .home-hero__trust{font-size:.85rem;color:#888;margin:0 auto 28px;max-width:560px}
+      .home-hero__cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+      .home-hero__btn{display:inline-flex;align-items:center;padding:12px 24px;border-radius:8px;font-weight:700;font-size:.95rem;text-decoration:none;transition:transform .2s,background .2s}
+      .home-hero__btn--primary{background:#e10600;color:#fff}
+      .home-hero__btn--primary:hover{background:#c50500;transform:translateY(-2px)}
+      .home-hero__btn--ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25)}
+      .home-hero__btn--ghost:hover{border-color:#e10600;transform:translateY(-2px)}
+      .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+      @media (max-width:640px){.home-hero{padding:36px 16px 28px}}
+    </style>
+
     <script type="application/ld+json">${schema}</script>
 
     <link rel="modulepreload" href="/assets/main.js" />
@@ -126,18 +144,26 @@ export default async function handler(req, res) {
     <noscript><link rel="stylesheet" href="/assets/metaTags.css" /></noscript>
   </head>
   <body>
-    <!-- Pre-rendered shell for crawlers — JS hydrates the full SPA after load -->
-    <div id="ssr-home" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);" aria-hidden="true">
-      <h1>Análisis y Predicciones de Fórmula 1 en Español</h1>
-      <p>Análisis rioplatense de estrategia F1, predicciones de carreras y datos en vivo. Calendario, campeonato, comparativa de pilotos y crónicas de cada Gran Premio.</p>
-      ${articleListHtml ? `<nav aria-label="Últimas noticias"><ul>${articleListHtml}</ul></nav>` : ''}
-      <nav aria-label="Secciones">
+    <!-- Visible above-fold hero, server-rendered so users AND crawlers see content
+         on first byte. The SPA renders the interactive feed into #app below. -->
+    <header class="home-hero">
+      <h1>Análisis y Predicciones de <span>Fórmula 1</span> en Español</h1>
+      <p class="home-hero__lead">Análisis F1 en español rioplatense, con estrategia, predicciones y lectura crítica de cada Gran Premio.</p>
+      <p class="home-hero__trust">Escrito por Lautaro Iezzi. Análisis independiente de Fórmula 1 desde Argentina, con foco en estrategia, técnica y campeonato.</p>
+      <nav class="home-hero__cta" aria-label="Acciones principales">
+        <a class="home-hero__btn home-hero__btn--primary" href="#app">Ver últimas noticias</a>
+        <a class="home-hero__btn home-hero__btn--ghost" href="#newsletter-container">Recibir resumen semanal</a>
+      </nav>
+      <!-- Crawler-facing links: visually hidden to avoid duplicating the dynamic
+           feed the SPA renders into #app, while preserving internal-link signals. -->
+      ${articleListHtml ? `<nav class="sr-only" aria-label="Últimas noticias"><ul>${articleListHtml}</ul></nav>` : ''}
+      <nav class="sr-only" aria-label="Secciones">
         <a href="${SITE_BASE}/#noticias">Noticias F1</a>
         <a href="${SITE_BASE}/#pilotos">Pilotos</a>
         <a href="${SITE_BASE}/#campeonato">Campeonato</a>
         <a href="${SITE_BASE}/sobre.html">Sobre nosotros</a>
       </nav>
-    </div>
+    </header>
     <main id="app"></main>
     <div id="newsletter-container"></div>
     <script type="module" src="/assets/main.js"></script>

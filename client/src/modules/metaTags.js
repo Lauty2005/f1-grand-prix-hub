@@ -186,7 +186,7 @@ function setSchemaJSON(schema) {
  */
 export function createArticleMetaConfig(article) {
     const baseURL = 'https://f1grandprixhub.com';
-    const articleURL = `${baseURL}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
+    const articleURL = `${baseURL}/articulo/${encodeURIComponent(article.slug)}`;
 
     return {
         title: `${article.title} | F1 Grand Prix Hub`,

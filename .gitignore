@@ -33,3 +33,7 @@ CLAUDE.md
 docs/
 skills-lock.json
 .agents/
+
+# Codex files
+AGENTS.md
+WEBSITE_UPGRADE_FEEDBACK.md

@@ -195,7 +195,7 @@ export function validateArticleSEO(article) {
  */
 export function generateArticleSchema(article) {
     const BASE = 'https://f1grandprixhub.com';
-    const articleUrl = `${BASE}/articulo.html?slug=${encodeURIComponent(article.slug)}`;
+    const articleUrl = `${BASE}/articulo/${encodeURIComponent(article.slug)}`;
     const SECTION_MAP = {
         noticias: 'Noticias', analisis: 'Análisis', preview: 'Preview', tecnica: 'Técnica'
     };
