@@ -154,7 +154,7 @@ function buildScheduleHTML(schedule, liveState) {
     }).join('');
 
     return `
-        <div class="sched">
+        <div class="sched" style="max-width:75%;">
             <div class="sched__head">
                 <span class="sched__title">Cronograma del fin de semana</span>
                 <span class="sched__tz">🌐 ${tzName}</span>
@@ -244,7 +244,7 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
                 ${tabsHTML}
             </div>
 
-            <div id="tab-content" style="min-height: 200px;">
+            <div id="tab-content" style="display: flex; justify-content: center;">
                 <h3 style="color:white; padding:20px; text-align:center;">Cargando...</h3>
             </div>
         `;
