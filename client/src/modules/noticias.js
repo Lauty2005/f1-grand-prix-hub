@@ -79,7 +79,7 @@ function coverHTML(article, cls) {
 
 function articleCardHTML(article) {
     return `
-        <a class="article-card" href="/articulo.html?slug=${encodeURIComponent(article.slug)}">
+        <a class="article-card" href="/articulo/${encodeURIComponent(article.slug)}">
             ${coverHTML(article, 'article-card__cover')}
             <div class="article-card__body">
                 <span class="article-card__category">${escHtml(categoryLabel(article.category))}</span>
@@ -99,7 +99,7 @@ function heroHTML(article) {
         ? `<img class="news-hero__cover" src="${resolveImgUrl(article.cover_image_url)}" alt="${escHtml(article.title)}" width="1200" height="630" loading="eager" fetchpriority="high">`
         : '';
     return `
-        <a class="news-hero" href="/articulo.html?slug=${encodeURIComponent(article.slug)}">
+        <a class="news-hero" href="/articulo/${encodeURIComponent(article.slug)}">
             ${cover}
             <div class="news-hero__overlay"></div>
             <div class="news-hero__content">

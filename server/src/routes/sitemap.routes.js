@@ -14,9 +14,16 @@ router.get('/sitemap.xml', async (req, res) => {
         const baseURL = 'https://f1grandprixhub.com';
 
         // 1. Obtener artículos (con prioridad alta)
+        //    Usar las mismas reglas de visibilidad que el endpoint público de artículos
+        //    (articles.service.js filtra `published = true`). De lo contrario el sitemap
+        //    incluye URLs que la API responde con 404 y Vercel sirve un fallback 307.
+        //    Además se excluyen artículos sin slug/título para no emitir URLs inválidas.
         const articlesRes = await query(
-            `SELECT slug, created_at, updated_at
+            `SELECT slug, title, created_at, updated_at
              FROM articles
+             WHERE published = true
+               AND slug IS NOT NULL AND slug <> ''
+               AND title IS NOT NULL AND title <> ''
              ORDER BY updated_at DESC
              LIMIT 500`
         );
@@ -33,6 +40,18 @@ router.get('/sitemap.xml', async (req, res) => {
                 changefreq: 'daily'
             }
         ];
+
+        // Páginas de tema/categoría (landing pages indexables /noticias/:topic).
+        // Editoriales (category) + temas frecuentes (tags) con búsqueda long-tail.
+        const topicPages = ['noticias', 'analisis', 'preview', 'tecnica', 'ferrari', 'red-bull', 'mclaren', 'mercedes', 'colapinto', 'estrategia', 'f1-2026'];
+        topicPages.forEach(topic => {
+            urls.push({
+                loc: `${baseURL}/noticias/${encodeURIComponent(topic)}`,
+                lastmod: latestMod,
+                priority: '0.6',
+                changefreq: 'weekly'
+            });
+        });
 
         // Agregar artículos (única sub-ruta real del frontend)
         articlesRes.rows.forEach(article => {
@@ -68,6 +87,57 @@ router.get('/sitemap.xml', async (req, res) => {
     } catch (error) {
         console.error('Error generando sitemap:', error);
         res.status(500).send('Error al generar sitemap');
+    }
+});
+
+// ────────────────────────────────────────────────────────────────
+// NEWS SITEMAP: Google News sitemap para descubrimiento rápido de
+// artículos recientes. Solo incluye artículos publicados de las
+// últimas 48 horas (ventana recomendada por Google News).
+// ────────────────────────────────────────────────────────────────
+router.get('/sitemap-news.xml', async (req, res) => {
+    try {
+        const baseURL = 'https://f1grandprixhub.com';
+        const publicationName = 'F1 Grand Prix Hub';
+
+        const articlesRes = await query(
+            `SELECT slug, title, created_at
+             FROM articles
+             WHERE published = true
+               AND slug IS NOT NULL AND slug <> ''
+               AND title IS NOT NULL AND title <> ''
+               AND created_at >= NOW() - INTERVAL '48 hours'
+             ORDER BY created_at DESC
+             LIMIT 1000`
+        );
+
+        const xmlUrls = articlesRes.rows.map(article => `
+  <url>
+    <loc>${escapeXml(`${baseURL}/articulo/${encodeURIComponent(article.slug)}`)}</loc>
+    <news:news>
+      <news:publication>
+        <news:name>${escapeXml(publicationName)}</news:name>
+        <news:language>es</news:language>
+      </news:publication>
+      <news:publication_date>${new Date(article.created_at).toISOString()}</news:publication_date>
+      <news:title>${escapeXml(article.title)}</news:title>
+    </news:news>
+  </url>`).join('');
+
+        const xmlContent =
+            '<?xml version="1.0" encoding="UTF-8"?>\n' +
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" ' +
+            'xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">' +
+            xmlUrls +
+            '\n</urlset>';
+
+        res.setHeader('Content-Type', 'application/xml; charset=UTF-8');
+        // Ventana corta: las noticias caducan rápido, revalidar cada 15 min.
+        res.setHeader('Cache-Control', 'public, max-age=900');
+        res.send(xmlContent);
+    } catch (error) {
+        console.error('Error generando sitemap-news:', error);
+        res.status(500).send('Error al generar sitemap de noticias');
     }
 });
 

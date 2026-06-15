@@ -9,6 +9,7 @@ import '@fontsource/jetbrains-mono/latin-600.css';
 import '@fontsource/jetbrains-mono/latin-700.css';
 import { API, resolveImgUrl, escHtml } from './modules/config.js';
 import { setPageMeta, createArticleMetaConfig } from './modules/metaTags.js';
+import { renderNewsletterForm, NEWSLETTER_STYLES } from './modules/newsletter.js';
 
 const CATEGORIES = {
     noticias: 'Noticias',
@@ -52,7 +53,7 @@ function shareButtonsHTML(article) {
 function relatedHTML(related) {
     if (!related || related.length === 0) return '';
     const items = related.map(a => `
-        <a class="related-item" href="/articulo.html?slug=${encodeURIComponent(a.slug)}">
+        <a class="related-item" href="/articulo/${encodeURIComponent(a.slug)}">
             <span class="related-item__category">${escHtml(categoryLabel(a.category))}</span>
             <span class="related-item__title">${escHtml(a.title)}</span>
             <span class="related-item__date">${formatDate(a.created_at)}</span>
@@ -68,9 +69,110 @@ function relatedHTML(related) {
     `;
 }
 
+// Engagement block rendered at the end of an article: a clear "read next" link,
+// a topic page link, and a newsletter CTA framed around the article's topic.
+function articleEndHTML(article) {
+    const related = article.related || [];
+    const next = related[0];
+    const catLabel = categoryLabel(article.category);
+
+    const nextHTML = next
+        ? `<a class="article-end__next" href="/articulo/${encodeURIComponent(next.slug)}">
+                <span class="article-end__next-label">Leer siguiente</span>
+                <span class="article-end__next-title">${escHtml(next.title)}</span>
+           </a>`
+        : '';
+
+    return `
+        <section class="article-end" aria-label="Seguir leyendo">
+            ${nextHTML}
+            <a class="article-end__topic" href="/noticias/${encodeURIComponent(article.category)}">
+                Más sobre ${escHtml(catLabel)} →
+            </a>
+            <div class="article-end__newsletter" id="article-newsletter"></div>
+        </section>
+    `;
+}
+
+// Self-contained styles for the engagement block (mirrors the newsletter module's
+// approach of shipping its own CSS, so no SCSS rebuild is required).
+const ARTICLE_END_STYLES = `
+.article-end {
+    margin: 40px auto 0;
+    max-width: 760px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.article-end__next {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px 20px;
+    border: 1px solid rgba(225, 6, 0, 0.25);
+    border-left: 3px solid #e10600;
+    border-radius: 8px;
+    background: rgba(225, 6, 0, 0.05);
+    text-decoration: none;
+    transition: background 0.2s, transform 0.2s;
+}
+.article-end__next:hover {
+    background: rgba(225, 6, 0, 0.1);
+    transform: translateY(-2px);
+}
+.article-end__next-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #e10600;
+    font-weight: 700;
+}
+.article-end__next-title {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+}
+.article-end__topic {
+    align-self: flex-start;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #aaa;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+.article-end__topic:hover { color: #fff; }
+.article-end__newsletter {
+    margin-top: 8px;
+    display: flex;
+    justify-content: center;
+}
+.article-end__newsletter .newsletter-box {
+    width: 100%;
+    margin: 0;
+}
+`;
+
+// Inject the newsletter + engagement-block styles once (the article page does
+// not import the home stylesheet for these components).
+function injectEngagementStyles() {
+    if (document.getElementById('article-engagement-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'article-engagement-styles';
+    style.textContent = NEWSLETTER_STYLES + ARTICLE_END_STYLES;
+    document.head.appendChild(style);
+}
+
 async function init() {
+    injectEngagementStyles();
     const app = document.getElementById('app');
-    const slug = new URLSearchParams(window.location.search).get('slug');
+    // Canonical URLs are /articulo/:slug (no query string). Legacy/fallback URLs
+    // use /articulo.html?slug=…. Support both so internal links and direct hits
+    // to the canonical URL both resolve.
+    const pathMatch = window.location.pathname.match(/^\/articulo\/([^/?#]+)/);
+    const slug = pathMatch
+        ? decodeURIComponent(pathMatch[1])
+        : new URLSearchParams(window.location.search).get('slug');
 
     // Navbar mínimo
     app.insertAdjacentHTML('beforebegin', `
@@ -134,6 +236,8 @@ async function init() {
                     <div class="article-content"></div>
 
                     ${tagsHTML}
+
+                    ${articleEndHTML(article)}
                 </main>
 
                 ${relatedHTML(article.related)}
@@ -145,6 +249,13 @@ async function init() {
         // del DOM exterior. Esto es especialmente importante con contenido
         // generado por Quill que puede incluir tags inesperados.
         app.querySelector('.article-content').innerHTML = article.content;
+
+        // Render the topic-framed newsletter CTA inside the engagement block.
+        renderNewsletterForm('article-newsletter', {
+            title: `⚡ Más análisis de ${categoryLabel(article.category)}`,
+            subtitle: 'Recibí el resumen F1 semanal: estrategia, predicciones y claves del campeonato.',
+            buttonText: 'Suscribirme',
+        });
 
         document.getElementById('btnBack').addEventListener('click', () => {
             history.length > 1 ? history.back() : (window.location.href = '/');

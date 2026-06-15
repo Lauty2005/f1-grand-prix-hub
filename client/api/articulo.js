@@ -36,13 +36,19 @@ export default async function handler(req, res) {
 
     const canonicalUrl = `${SITE_BASE}/articulo/${encodeURIComponent(article.slug)}`;
     const imageUrl = article.cover_image_url || `${SITE_BASE}/og-image-home.jpg`;
-    const excerpt = (article.excerpt || '').slice(0, 200);
     const section = CATEGORY_LABELS[article.category] || article.category || 'Noticias';
 
     // Fix 1 (HIGH): strip all HTML from article.content before injecting into the
     // pre-render block. The block is hidden from users and only exists for crawler
     // text extraction, so plain text is sufficient and eliminates the XSS surface.
     const contentText = stripHtml(article.content || '');
+
+    // Prevent empty meta descriptions: fall back to a snippet of the stripped
+    // content when the article has no excerpt. An empty <meta description> hurts
+    // article SEO and produces weak social previews. The same value feeds the
+    // <meta description>, og:description, twitter:description and NewsArticle.description.
+    const description = (article.excerpt || contentText).slice(0, 200).trim();
+    const excerpt = description;
 
     // Fix 2 (MEDIUM): escape sequences that could break out of a <script> block.
     // JSON.stringify values may contain </script>, <!-- or Unicode line terminators.
@@ -53,7 +59,7 @@ export default async function handler(req, res) {
                 '@type': 'NewsArticle',
                 '@id': `${canonicalUrl}#article`,
                 headline: article.title,
-                description: article.excerpt || '',
+                description,
                 url: canonicalUrl,
                 mainEntityOfPage: { '@type': 'WebPage', '@id': canonicalUrl },
                 image: { '@type': 'ImageObject', url: imageUrl, width: 1200, height: 630 },
@@ -97,7 +103,7 @@ export default async function handler(req, res) {
 <div id="ssr-prerender" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;" aria-hidden="true">
   <h1>${esc(article.title)}</h1>
   ${article.cover_image_url ? `<img src="${esc(article.cover_image_url)}" alt="${esc(article.title)}" width="1200" height="630" />` : ''}
-  <p>${esc(article.excerpt || '')}</p>
+  <p>${esc(excerpt)}</p>
   <span>Por ${esc(article.author || 'F1 Grand Prix Hub')}</span>
   <time datetime="${esc(article.created_at)}">${new Date(article.created_at).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}</time>
   <p>${esc(contentText)}</p>
