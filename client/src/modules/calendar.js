@@ -2,7 +2,7 @@
 import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
 import { getFlagEmoji, getPositionBadge } from './utils.js';
-import { getRaceLiveState, getSessionSchedule, formatSessionTime } from './sessions.js';
+import { getRaceLiveState, getSessionSchedule } from './sessions.js';
 
 export async function loadCalendarView() {
     const app = document.querySelector('#app');
@@ -106,6 +106,63 @@ export async function loadCalendarView() {
     }
 }
 
+// --- HORARIOS (schedule tab) ---
+
+// Iconos por tipo de sesión (a la izquierda del nombre)
+const SESSION_ICONS = {
+    fp1_time: '🏎️', fp2_time: '🏎️', fp3_time: '🏎️',
+    sprint_quali_time: '⚡', sprint_time: '🏁', qualy_time: '⏱️', race_time: '🏆',
+};
+
+// Construye el panel de horarios como una línea de tiempo del fin de semana.
+function buildScheduleHTML(schedule, liveState) {
+    const now = new Date();
+    const liveKey = liveState.liveSession?.key;
+    // Primera sesión futura que no esté en vivo → "Próxima"
+    const nextKey = (!liveKey && schedule.find(s => s.start > now)?.key) || null;
+
+    const dayFmt  = new Intl.DateTimeFormat('es-AR', { weekday: 'short', day: '2-digit' });
+    const monFmt  = new Intl.DateTimeFormat('es-AR', { month: 'short' });
+    const timeFmt = new Intl.DateTimeFormat('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone || 'tu zona horaria';
+
+    const rows = schedule.map(s => {
+        let state, pill;
+        if (s.key === liveKey)      { state = 'live';  pill = '<span class="sched-pill sched-pill--live">● EN VIVO</span>'; }
+        else if (now > s.end)       { state = 'done';  pill = '<span class="sched-pill sched-pill--done">Finalizada</span>'; }
+        else if (s.key === nextKey) { state = 'next';  pill = '<span class="sched-pill sched-pill--next">Próxima</span>'; }
+        else                        { state = 'upcoming'; pill = '<span class="sched-pill sched-pill--upcoming">Programada</span>'; }
+
+        const [wd, dd] = dayFmt.format(s.start).replace(/[.,]/g, '').trim().split(/\s+/);
+        const mon = monFmt.format(s.start).replace(/[.,]/g, '');
+
+        return `
+            <li class="sched-item sched-item--${state}">
+                <span class="sched-item__rail"><span class="sched-item__dot"></span></span>
+                <span class="sched-date">
+                    <span class="sched-date__wd">${wd}</span>
+                    <span class="sched-date__dd">${dd}</span>
+                    <span class="sched-date__mon">${mon}</span>
+                </span>
+                <span class="sched-main">
+                    <span class="sched-main__name"><span class="sched-main__icon">${SESSION_ICONS[s.key] || '•'}</span>${s.label}</span>
+                    ${pill}
+                </span>
+                <span class="sched-time">${timeFmt.format(s.start)}</span>
+            </li>`;
+    }).join('');
+
+    return `
+        <div class="sched">
+            <div class="sched__head">
+                <span class="sched__title">Cronograma del fin de semana</span>
+                <span class="sched__tz">🌐 ${tzName}</span>
+            </div>
+            <ul class="sched__list">${rows}</ul>
+        </div>`;
+}
+
 // --- MODAL ---
 
 async function openRaceModal(raceId, mapUrl, hasSprint) {
@@ -132,19 +189,9 @@ async function openRaceModal(raceId, mapUrl, hasSprint) {
         const schedule = getSessionSchedule(race);
         const liveState = getRaceLiveState(race);
         const hasSchedule = schedule.length > 0;
-        // Contenido que se muestra dentro de la pestaña "HORARIOS"
         const scheduleTabHTML = hasSchedule
-            ? `<div class="session-schedule">
-                    ${schedule.map(s => {
-                        const isLive = liveState.liveSession && liveState.liveSession.key === s.key;
-                        return `
-                        <div class="session-schedule__row${isLive ? ' session-schedule__row--live' : ''}">
-                            <span class="session-schedule__label">${s.label}</span>
-                            <span class="session-schedule__time">${formatSessionTime(s.start)}${isLive ? ' <span class="session-schedule__live">● EN VIVO</span>' : ''}</span>
-                        </div>`;
-                    }).join('')}
-                </div>`
-            : '<p style="color:#aaa; text-align:center; padding:20px;">Horarios no disponibles.</p>';
+            ? buildScheduleHTML(schedule, liveState)
+            : '<p style="color:#aaa; text-align:center; padding:24px;">Horarios no disponibles.</p>';
 
         // Preparación de Tabs
         let tabsHTML = '';
