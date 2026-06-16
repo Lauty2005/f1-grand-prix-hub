@@ -2093,3 +2093,238 @@ function initSchedulerStatus() {
         btnRefresh.addEventListener('click', loadSchedulerStatus);
     }
 }
+
+// ── IMPORTACIÓN RÁPIDA ────────────────────────────────────────────────────────
+
+let bulkDataCache = [];
+
+document.getElementById('csvImportFile')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            const csv = evt.target.result;
+            parseBulkCSV(csv);
+        } catch (err) {
+            showBulkMessage('❌ Error al leer CSV: ' + err.message, true);
+        }
+    };
+    reader.readAsText(file);
+});
+
+document.getElementById('jsonImportFile')?.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+            const data = JSON.parse(evt.target.result);
+            parseBulkJSON(data);
+        } catch (err) {
+            showBulkMessage('❌ JSON inválido: ' + err.message, true);
+        }
+    };
+    reader.readAsText(file);
+});
+
+function parseBulkCSV(csv) {
+    const lines = csv.trim().split('\n');
+    const sessionType = document.getElementById('sessionType')?.value || 'race';
+    const raceId = allRacesData.find(r => r.name.includes('MIAMI'))?.id;
+
+    if (!raceId) {
+        showBulkMessage('❌ MIAMI no encontrada. Primero seleccioná MIAMI en el dropdown.', true);
+        return;
+    }
+
+    bulkDataCache = lines.slice(1).map((line, idx) => {
+        const [driver, value, status] = line.split(',').map(s => s.trim());
+        return { idx, driver, value, status: status || '', session: sessionType, raceId };
+    }).filter(d => d.driver && d.value);
+
+    displayBulkPreview();
+}
+
+function parseBulkJSON(data) {
+    const sessionType = document.getElementById('sessionType')?.value || 'race';
+    const raceId = allRacesData.find(r => r.name.includes('MIAMI'))?.id;
+
+    if (!raceId) {
+        showBulkMessage('❌ MIAMI no encontrada.', true);
+        return;
+    }
+
+    let items = [];
+
+    if (Array.isArray(data.results)) {
+        items = data.results.map((item, idx) => ({
+            idx,
+            driver: item.driver,
+            value: item.position || item.time || item.gap,
+            status: item.status || '',
+            session: item.session || sessionType,
+            raceId
+        }));
+    } else if (Array.isArray(data.sessions)) {
+        const sessionTypeMap = {
+            'race': 'race',
+            'qualy': 'qualifying',
+            'practices': 'practices',
+            'sprint': 'sprint',
+            'sprint-qualy': 'sprint-qualifying'
+        };
+        const targetType = sessionTypeMap[sessionType] || sessionType;
+        const session = data.sessions.find(s => s.type === targetType);
+
+        if (!session) {
+            showBulkMessage(`❌ No se encontró sesión de tipo "${targetType}" en el JSON.`, true);
+            return;
+        }
+
+        items = session.data.map((item, idx) => {
+            let value, status = '';
+            if (sessionType === 'race') {
+                value = item.position;
+                if (item.dnf) status = 'DNF';
+                else if (item.dsq) status = 'DSQ';
+                else if (item.dns) status = 'DNS';
+                else if (item.dnq) status = 'DNQ';
+            } else if (sessionType === 'qualy') {
+                value = item.position || item.q3 || item.q2 || item.q1;
+            } else if (sessionType === 'practices') {
+                value = item.p1 || item.p2 || item.p3;
+            } else {
+                value = item.position || item.time || item.gap;
+                status = item.status || '';
+            }
+            return { idx, driver: item.driver, value, status, session: sessionType, raceId };
+        });
+    } else {
+        showBulkMessage('❌ JSON debe tener estructura: { results: [...] } o { sessions: [...] }', true);
+        return;
+    }
+
+    bulkDataCache = items;
+    displayBulkPreview();
+}
+
+function displayBulkPreview() {
+    const preview = document.getElementById('bulkPreview');
+    const tbody = document.getElementById('bulkPreviewBody');
+    const btnImport = document.getElementById('btnBulkImport');
+    const btnCancel = document.getElementById('btnCancelImport');
+
+    tbody.innerHTML = bulkDataCache.map(d => `
+        <tr style="border-bottom:1px solid #333;">
+            <td style="padding:8px; color:#00ff88;">${d.driver}</td>
+            <td style="padding:8px; text-align:center; color:#aaa;">${d.value}</td>
+            <td style="padding:8px; text-align:center; color:#${d.status ? 'ff4444' : '00ff88'};">${d.status || 'OK'}</td>
+        </tr>
+    `).join('');
+
+    preview.style.display = 'block';
+    btnImport.style.display = 'block';
+    btnCancel.style.display = 'block';
+}
+
+async function saveBulkData() {
+    const btnImport = document.getElementById('btnBulkImport');
+    const originalText = btnImport.textContent;
+    btnImport.disabled = true;
+    btnImport.textContent = '⏳ Guardando...';
+
+    let saved = 0;
+    let failed = 0;
+
+    for (const item of bulkDataCache) {
+        try {
+            // Buscar el driver_id
+            const driverId = (await adminFetch(`${API}/drivers?year=2026`)
+                .then(r => r.json()))
+                .data?.find(d =>
+                    d.first_name.toLowerCase().includes(item.driver.toLowerCase()) ||
+                    d.last_name.toLowerCase().includes(item.driver.toLowerCase())
+                )?.id;
+
+            if (!driverId) {
+                console.warn(`Driver no encontrado: ${item.driver}`);
+                failed++;
+                continue;
+            }
+
+            const payload = {
+                race_id: item.raceId,
+                driver_id: driverId,
+                position: parseInt(item.value) || undefined,
+                time_gap: isNaN(item.value) ? item.value : undefined,
+                dnf: item.status === 'DNF',
+                dsq: item.status === 'DSQ',
+                dns: item.status === 'DNS'
+            };
+
+            const endpoint = {
+                'race': '/results',
+                'sprint': '/sprint',
+                'qualy': '/qualifying',
+                'sprint-qualy': '/sprint-qualifying',
+                'practices': '/practices'
+            }[item.session] || '/results';
+
+            const res = await adminFetch(`${API}/races${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) saved++;
+            else failed++;
+        } catch (err) {
+            console.error(err);
+            failed++;
+        }
+    }
+
+    btnImport.disabled = false;
+    btnImport.textContent = originalText;
+    showBulkMessage(`✅ ${saved} guardado${saved !== 1 ? 's' : ''} ${failed > 0 ? `| ❌ ${failed} falló` : ''}`, false);
+}
+
+function showBulkMessage(msg, isError) {
+    const msgDiv = document.getElementById('bulkMessage');
+    msgDiv.textContent = msg;
+    msgDiv.style.display = 'block';
+    msgDiv.style.background = isError ? 'rgba(255,68,68,0.1)' : 'rgba(0,255,136,0.1)';
+    msgDiv.style.borderLeft = `3px solid ${isError ? '#ff4444' : '#00ff88'}`;
+}
+
+document.getElementById('btnBulkImport')?.addEventListener('click', saveBulkData);
+
+document.getElementById('btnCancelImport')?.addEventListener('click', () => {
+    bulkDataCache = [];
+    document.getElementById('bulkPreview').style.display = 'none';
+    document.getElementById('btnBulkImport').style.display = 'none';
+    document.getElementById('btnCancelImport').style.display = 'none';
+    document.getElementById('csvImportFile').value = '';
+    document.getElementById('jsonImportFile').value = '';
+});
+
+document.getElementById('downloadTemplate')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const template = {
+        race: "MIAMI",
+        session: "race",
+        results: [
+            { driver: "Verstappen", position: 1, status: "" },
+            { driver: "Leclerc", position: 2, status: "" },
+            { driver: "Sainz", position: 3, status: "" }
+        ]
+    };
+    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'miami_template.json';
+    a.click();
+    URL.revokeObjectURL(url);
+});
