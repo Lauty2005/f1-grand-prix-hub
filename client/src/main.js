@@ -152,6 +152,10 @@ function updateButtons(activeId) {
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active-btn'));
     const activeBtn = document.getElementById(`btn-${activeId}`);
     if (activeBtn) activeBtn.classList.add('active-btn');
+
+    // El hero SSR (header.home-hero) solo corresponde a la vista NOTICIAS.
+    const hero = document.querySelector('header.home-hero');
+    if (hero) hero.style.display = activeId === 'noticias' ? '' : 'none';
 }
 
 // 1. MODIFICAMOS EL ANCHO DEL MODAL PARA QUE QUEPAN LAS DOS COLUMNAS
