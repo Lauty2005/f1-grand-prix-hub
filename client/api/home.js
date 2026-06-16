@@ -122,8 +122,9 @@ export default async function handler(req, res) {
     <!-- Critical inline CSS for the above-fold hero so it renders on first paint,
          before the async main stylesheet loads. -->
     <style id="ssr-hero-css">
-      .home-hero{max-width:880px;margin:0 auto;padding:56px 20px 40px;text-align:center;color:#fff;font-family:'Barlow Condensed',system-ui,sans-serif}
-      .home-hero h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:900;line-height:1.05;margin:0 0 16px;text-transform:uppercase;letter-spacing:-.5px}
+      .home-hero{position:relative;padding:72px 20px 56px;text-align:center;color:#fff;font-family:'Barlow Condensed',system-ui,sans-serif;background-image:linear-gradient(180deg,rgba(21,21,30,.60) 0%,rgba(21,21,30,.86) 100%),linear-gradient(135deg,rgba(225,6,0,.42) 0%,#15151e 70%),url('/hero-home.jpg');background-size:cover;background-position:center}
+      .home-hero__inner{max-width:880px;margin:0 auto}
+      .home-hero h1{font-size:clamp(2rem,6vw,3.4rem);font-weight:900;line-height:1.05;margin:0 0 16px;text-transform:uppercase;letter-spacing:-.5px;text-shadow:0 2px 12px rgba(0,0,0,.55)}
       .home-hero h1 span{color:#e10600}
       .home-hero__lead{font-size:clamp(1rem,2.5vw,1.2rem);color:#cfcfcf;line-height:1.5;margin:0 auto 12px;max-width:640px}
       .home-hero__trust{font-size:.85rem;color:#888;margin:0 auto 28px;max-width:560px}
@@ -134,7 +135,7 @@ export default async function handler(req, res) {
       .home-hero__btn--ghost{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.25)}
       .home-hero__btn--ghost:hover{border-color:#e10600;transform:translateY(-2px)}
       .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
-      @media (max-width:640px){.home-hero{padding:36px 16px 28px}}
+      @media (max-width:640px){.home-hero{padding:48px 16px 36px}}
     </style>
 
     <script type="application/ld+json">${schema}</script>
@@ -147,13 +148,15 @@ export default async function handler(req, res) {
     <!-- Visible above-fold hero, server-rendered so users AND crawlers see content
          on first byte. The SPA renders the interactive feed into #app below. -->
     <header class="home-hero">
-      <h1>Análisis y Predicciones de <span>Fórmula 1</span> en Español</h1>
-      <p class="home-hero__lead">Análisis F1 en español rioplatense, con estrategia, predicciones y lectura crítica de cada Gran Premio.</p>
-      <p class="home-hero__trust">Escrito por Lautaro Iezzi. Análisis independiente de Fórmula 1 desde Argentina, con foco en estrategia, técnica y campeonato.</p>
-      <nav class="home-hero__cta" aria-label="Acciones principales">
-        <a class="home-hero__btn home-hero__btn--primary" href="#app">Ver últimas noticias</a>
-        <a class="home-hero__btn home-hero__btn--ghost" href="#newsletter-container">Recibir resumen semanal</a>
-      </nav>
+      <div class="home-hero__inner">
+        <h1>Análisis y Predicciones de <span>Fórmula 1</span> en Español</h1>
+        <p class="home-hero__lead">Análisis F1 en español rioplatense, con estrategia, predicciones y lectura crítica de cada Gran Premio.</p>
+        <p class="home-hero__trust">Escrito por Lautaro Iezzi. Análisis independiente de Fórmula 1 desde Argentina, con foco en estrategia, técnica y campeonato.</p>
+        <nav class="home-hero__cta" aria-label="Acciones principales">
+          <a class="home-hero__btn home-hero__btn--primary" href="#app">Ver últimas noticias</a>
+          <a class="home-hero__btn home-hero__btn--ghost" href="#newsletter-container">Recibir resumen semanal</a>
+        </nav>
+      </div>
       <!-- Crawler-facing links: visually hidden to avoid duplicating the dynamic
            feed the SPA renders into #app, while preserving internal-link signals. -->
       ${articleListHtml ? `<nav class="sr-only" aria-label="Últimas noticias"><ul>${articleListHtml}</ul></nav>` : ''}

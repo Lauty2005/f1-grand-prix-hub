@@ -204,6 +204,7 @@ export const NEWSLETTER_STYLES = `
 #newsletter-container {
     display: flex;
     justify-content: center;
+    min-height: 200px;
 }
 
 .newsletter-box {

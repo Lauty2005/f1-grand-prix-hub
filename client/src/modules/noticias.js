@@ -52,9 +52,6 @@ function skeletonHTML() {
                 100% { background-position: -200% 0; }
             }
         </style>
-        <div style="height:380px; border-radius:12px; margin-bottom:24px;
-            background: linear-gradient(90deg, #1a1a2e 25%, #252540 50%, #1a1a2e 75%);
-            background-size:200% 100%; animation: f1-shimmer 1.4s infinite;"></div>
         <div class="news-grid">${skeletonCard.repeat(6)}</div>
     `;
 }
@@ -88,27 +85,6 @@ function articleCardHTML(article) {
                 <div class="article-card__footer">
                     <span class="article-card__author">${escHtml(article.author)}</span>
                     <span class="article-card__date">${formatDate(article.created_at)}</span>
-                </div>
-            </div>
-        </a>
-    `;
-}
-
-function heroHTML(article) {
-    const cover = article.cover_image_url
-        ? `<img class="news-hero__cover" src="${resolveImgUrl(article.cover_image_url)}" alt="${escHtml(article.title)}" width="1200" height="630" loading="eager" fetchpriority="high">`
-        : '';
-    return `
-        <a class="news-hero" href="/articulo/${encodeURIComponent(article.slug)}">
-            ${cover}
-            <div class="news-hero__overlay"></div>
-            <div class="news-hero__content">
-                <span class="news-hero__badge">${escHtml(categoryLabel(article.category))}</span>
-                <h2 class="news-hero__title">${escHtml(article.title)}</h2>
-                <div class="news-hero__meta">
-                    <span>${escHtml(article.author)}</span>
-                    <span>•</span>
-                    <span>${formatDate(article.created_at)}</span>
                 </div>
             </div>
         </a>
@@ -190,14 +166,8 @@ async function fetchAndRender(reset) {
                 return;
             }
 
-            // Separar featured/hero del resto
-            const featured = articles.find(a => a.featured);
-            const rest = featured ? articles.filter(a => a.id !== featured.id) : articles;
-
-            let html = '';
-            if (featured) html += heroHTML(featured);
-            if (rest.length) html += `<div class="news-grid">${rest.map(articleCardHTML).join('')}</div>`;
-            feed.innerHTML = html;
+            // Render uniforme: todos los artículos como cards (sin hero de artículo).
+            feed.innerHTML = `<div class="news-grid">${articles.map(articleCardHTML).join('')}</div>`;
         } else {
             // Append mode: buscar o crear grid
             let grid = feed.querySelector('.news-grid');
