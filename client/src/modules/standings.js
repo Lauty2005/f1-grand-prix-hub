@@ -1,12 +1,19 @@
 import { API, SERVER_URL } from './config.js';
 import { state } from './state.js';
+import { getFlagEmoji } from './utils.js';
+
+// Normaliza una URL de logo (relativa o absoluta) al dominio del servidor.
+function resolveLogo(url) {
+    if (!url) return '';
+    return url.startsWith('http') ? url : `${SERVER_URL}${url}`;
+}
 
 export async function loadStandingsView() {
     const app = document.querySelector('#app');
-    
+
     // Configuración según la pestaña activa
     const isDrivers = state.currentStandingsTab === 'drivers';
-    const endpoint = isDrivers 
+    const endpoint = isDrivers
         ? `${API}/drivers?year=${state.currentYear}`
         : `${API}/constructors-standings?year=${state.currentYear}`; // Usamos la ruta nueva
 
@@ -17,86 +24,72 @@ export async function loadStandingsView() {
         const result = await res.json();
         const data = result.data || [];
 
-        // Generar filas de la tabla
+        // Generar filas de la tabla (diseño Stitch)
         const rows = data.map((item, index) => {
             const position = index + 1;
-            
-            // Estilos dinámicos para el Top 3
-            let posColor = 'white';
-            if (position === 1) posColor = '#FFD700'; // Oro
-            if (position === 2) posColor = '#C0C0C0'; // Plata
-            if (position === 3) posColor = '#CD7F32'; // Bronce
+            const posClass = position <= 3 ? `st-pos st-pos--${position}` : 'st-pos';
+            const leaderClass = position === 1 ? ' standings-row--leader' : '';
+            const teamColor = item.primary_color || 'transparent';
 
-            // Contenido de la celda "Participante"
-            let participantInfo = '';
-            
+            // Celdas centrales según el tipo de tabla
+            let middleCells = '';
             if (isDrivers) {
-                // Diseño Piloto
-                participantInfo = `
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="color:white; font-weight:700; font-size:1.1rem;">
-                            ${item.first_name} ${item.last_name}
+                middleCells = `
+                    <td class="st-col-name">
+                        <span class="st-driver">
+                            <span class="st-driver__flag">${getFlagEmoji(item.country_code)}</span>
+                            <span class="st-driver__name">${item.first_name} <b>${item.last_name}</b></span>
                         </span>
-                        <span style="color:${item.primary_color}; font-size:0.8rem; letter-spacing:1px;">
-                            ${item.team_name}
+                    </td>
+                    <td class="st-col-team">
+                        <span class="st-team">
+                            <span class="teamLogo st-team__logo" style="background:${teamColor}22; border:1px solid ${teamColor};">
+                                <img src="${resolveLogo(item.logo_url)}" alt="${item.team_name || ''}" loading="lazy">
+                            </span>
+                            <span class="st-team__name" style="color:${teamColor};">${item.team_name || ''}</span>
                         </span>
-                    </div>`;
+                    </td>`;
             } else {
-                // Diseño Constructor
-                participantInfo = `
-                    <div style="display:flex; align-items:center; gap:15px;">
-                        <span class="teamLogo" style="background: ${item.primary_color}22; border: 1px solid ${item.primary_color};">
-                            <img src="${item.logo_url.startsWith('http') ? item.logo_url : SERVER_URL + item.logo_url}" style="width:30px; height:30px; object-fit:contain;">
+                middleCells = `
+                    <td class="st-col-team">
+                        <span class="st-team">
+                            <span class="teamLogo st-team__logo" style="background:${teamColor}22; border:1px solid ${teamColor};">
+                                <img src="${resolveLogo(item.logo_url)}" alt="${item.name || ''}" loading="lazy">
+                            </span>
+                            <span class="st-team__name">${item.name || ''}</span>
                         </span>
-                        <span style="color:white; font-weight:800; font-size:1.2rem; letter-spacing:0.5px;">
-                            ${item.name}
-                        </span>
-                    </div>`;
+                    </td>`;
             }
 
             return `
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); height: 70px; transition: background 0.2s;">
-                <td style="text-align:center; font-weight:900; font-size:1.2rem; color:${posColor}; width: 60px;">
-                    ${position}
-                </td>
-                <td style="padding-left: 20px;">
-                    ${participantInfo}
-                </td>
-                <td style="text-align:right;">
-                    <span style="font-weight:900; font-size:1.4rem; color:#e10600;">${item.points}</span>
-                    <span style="font-size:0.7rem; color:#666; font-weight:bold;">PTS</span>
-                </td>
-            </tr>`;
+                <tr class="standings-row${leaderClass}" style="--team-color:${teamColor};">
+                    <td class="st-col-pos"><span class="${posClass}">${position}</span></td>
+                    ${middleCells}
+                    <td class="st-col-pts">
+                        <span class="st-points"><b>${item.points}</b><span>PTS</span></span>
+                    </td>
+                </tr>`;
         }).join('');
+
+        // Cabecera de columnas según el tipo de tabla
+        const headCells = isDrivers
+            ? `<th class="st-col-pos">Pos</th><th class="st-col-name">Piloto</th><th class="st-col-team">Equipo</th><th class="st-col-pts">Puntos</th>`
+            : `<th class="st-col-pos">Pos</th><th class="st-col-team">Escudería</th><th class="st-col-pts">Puntos</th>`;
 
         // Renderizar vista completa
         app.innerHTML = `
-            <div style="max-width: 900px; margin: 0 auto; padding-bottom: 60px; animation: fadeIn 0.5s ease;">
-                
-                <div style="text-align:center; margin-bottom: 40px;">
-                    <h1 style="color:white; font-size: 2.5rem; font-weight:900; letter-spacing:-1px; margin-bottom: 20px;">
-                        CAMPEONATO ${state.currentYear}
-                    </h1>
-                    
+            <div class="standings-view">
+                <div class="standings-header">
+                    <h1>CAMPEONATO ${state.currentYear}</h1>
                     <div class="tab-container">
-                        <button id="tab-drivers" class="tab-btn ${isDrivers ? 'active-tab' : ''}">
-                            PILOTOS
-                        </button>
-                        <button id="tab-constructors" class="tab-btn ${!isDrivers ? 'active-tab' : ''}">
-                            CONSTRUCTORES
-                        </button>
+                        <button id="tab-drivers" class="tab-btn ${isDrivers ? 'active-tab' : ''}">PILOTOS</button>
+                        <button id="tab-constructors" class="tab-btn ${!isDrivers ? 'active-tab' : ''}">CONSTRUCTORES</button>
                     </div>
                 </div>
 
-                <div class="table-card">
-                    <table style="width:100%; border-collapse: collapse;">
-                        <thead>
-                            <tr style="border-bottom: 2px solid #333; color:#666; font-size:0.75rem; text-transform:uppercase; letter-spacing:1px;">
-                                <th style="padding:15px; width:60px;">Pos</th>
-                                <th style="text-align:left; padding:15px 20px;">${isDrivers ? 'Piloto / Equipo' : 'Escudería'}</th>
-                                <th style="text-align:right; padding:15px 25px;">Puntos</th>
-                            </tr>
-                        </thead>
+                <div class="standings-card">
+                    <table class="standings-table standings-table--${isDrivers ? 'drivers' : 'constructors'}">
+                        <thead><tr>${headCells}</tr></thead>
                         <tbody>${rows}</tbody>
                     </table>
                 </div>

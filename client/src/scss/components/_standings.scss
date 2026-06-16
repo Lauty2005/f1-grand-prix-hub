@@ -1,0 +1,199 @@
+@use '../abstracts/variables' as *;
+
+// ─────────────────────────────────────────────
+//  STANDINGS — Tabla estilo Stitch (Hub de campeonato)
+// ─────────────────────────────────────────────
+.standings-view {
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+    animation: fadeIn 0.5s ease;
+}
+
+.standings-header {
+    text-align: center;
+    margin-bottom: 36px;
+
+    h1 {
+        color: #fff;
+        font-size: 2.5rem;
+        font-weight: 900;
+        letter-spacing: -1px;
+        margin-bottom: 20px;
+    }
+}
+
+// Tarjeta contenedora de la tabla
+.standings-card {
+    background:
+        radial-gradient(ellipse 60% 100% at 0% 0%, rgba(225, 6, 0, 0.08) 0%, transparent 55%),
+        linear-gradient(180deg, #1c1c28 0%, #15151e 100%);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.40);
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+
+    // ── Cabecera ──
+    thead th {
+        padding: 16px 20px;
+        color: #7a7a88;
+        font-size: 0.72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.015);
+    }
+
+    // ── Columnas ──
+    .st-col-pos { width: 64px; text-align: center; padding-left: 14px; padding-right: 14px; }
+    .st-col-pts { width: 120px; text-align: right; }
+    th.st-col-pts { padding-right: 26px; }
+
+    tbody td {
+        padding: 0 20px;
+        height: 64px;
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+}
+
+// ── Fila ──
+.standings-row {
+    transition: background 0.2s ease;
+
+    // Acento del color del equipo en el borde izquierdo
+    .st-col-pos { box-shadow: inset 3px 0 0 var(--team-color, transparent); }
+
+    &:hover { background: rgba(255, 255, 255, 0.035); }
+
+    &:last-child td { border-bottom: none; }
+
+    // Líder del campeonato → resaltado rojo F1
+    &--leader {
+        background: linear-gradient(90deg, rgba(225, 6, 0, 0.14) 0%, rgba(225, 6, 0, 0.03) 60%, transparent 100%);
+
+        &:hover { background: linear-gradient(90deg, rgba(225, 6, 0, 0.20) 0%, rgba(225, 6, 0, 0.05) 60%, transparent 100%); }
+    }
+}
+
+// ── Badge de posición ──
+.st-pos {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+
+    &--1 {
+        color: #fff;
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        border-color: rgba(225, 6, 0, 0.6);
+        box-shadow: 0 2px 8px rgba(225, 6, 0, 0.4);
+    }
+    &--2 { color: #15151e; background: #c9ccd1; border-color: #d8dade; }
+    &--3 { color: #15151e; background: #cd7f47; border-color: #d8915c; }
+}
+
+// ── Piloto (bandera + nombre) ──
+.st-driver {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+
+    &__flag {
+        flex-shrink: 0;
+        line-height: 0;
+        img { width: 28px; height: auto; border-radius: 3px; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); display: block; }
+    }
+    &__name {
+        color: #fff;
+        font-size: 1.05rem;
+        font-weight: 500;
+
+        b { font-weight: 800; }
+    }
+}
+
+// ── Equipo (logo + nombre) ──
+.st-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+
+    &__logo {
+        width: 34px;
+        height: 34px;
+        padding: 4px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    }
+    &__name {
+        color: #fff;
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.3px;
+    }
+}
+
+// Constructores: nombre un poco más prominente
+.standings-table--constructors .st-team__name {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+// ── Puntos ──
+.st-points {
+    b {
+        font-weight: 900;
+        font-size: 1.45rem;
+        color: $color-primary;
+    }
+    span {
+        margin-left: 4px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #666;
+    }
+}
+
+// ── Responsive ──
+@media (max-width: 600px) {
+    .standings-header h1 { font-size: 1.8rem; }
+
+    .standings-table {
+        thead th { padding: 12px 10px; font-size: 0.62rem; letter-spacing: 0.6px; }
+        tbody td { padding: 0 10px; height: 58px; }
+        .st-col-pos { width: 46px; padding-left: 8px; padding-right: 8px; }
+        .st-col-pts { width: 78px; }
+        th.st-col-pts { padding-right: 14px; }
+
+        // El logo del equipo se oculta en pilotos para ganar espacio
+        &--drivers .st-team__logo { display: none; }
+    }
+
+    .st-driver__name { font-size: 0.92rem; }
+    .st-driver__flag img { width: 24px; }
+    .st-team__name { font-size: 0.9rem; }
+    .st-points b { font-size: 1.2rem; }
+    .st-points span { display: none; }
+}

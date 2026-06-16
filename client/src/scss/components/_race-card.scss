@@ -283,19 +283,56 @@
         flex-shrink: 0;
     }
 
-    &__cta {
-        padding: 0 20px 0 4px;
-        font-size: 1.5rem;
-        font-weight: 300;
-        color: rgba(255, 255, 255, 0.18);
+    // ── ACCIÓN (botón derecho, estilo Stitch) ──
+    &__action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         flex-shrink: 0;
-        transition: color 0.22s ease, transform 0.22s ease;
-        line-height: 1;
+        margin: 0 18px 0 4px;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        transition: background 0.22s ease, border-color 0.22s ease, color 0.22s ease, transform 0.22s ease;
+
+        &-arrow {
+            font-size: 1rem;
+            font-weight: 300;
+            line-height: 1;
+            transition: transform 0.22s ease;
+        }
+
+        // Próximas carreras → acento F1
+        &--soon,
+        &--suspended {
+            color: #fff;
+            background: rgba(225, 6, 0, 0.16);
+            border-color: rgba(225, 6, 0, 0.40);
+        }
+
+        // En vivo → rojo intenso
+        &--live {
+            color: #ff5555;
+            background: rgba(225, 6, 0, 0.20);
+            border-color: rgba(225, 6, 0, 0.45);
+        }
     }
 
-    &:hover &__cta {
-        color: $color-primary;
-        transform: translateX(4px);
+    &:hover &__action {
+        color: #fff;
+        background: rgba(225, 6, 0, 0.22);
+        border-color: $color-primary;
+    }
+
+    &:hover &__action-arrow {
+        transform: translateX(3px);
     }
 }
 
@@ -399,14 +436,156 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 24px;
 
     h1 {
         text-align: center;
         color: white;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
         font-size: 2rem;
     }
+
+    &__subtitle {
+        margin: 0;
+        color: $color-text-dim;
+        font-size: 0.9rem;
+        letter-spacing: 0.5px;
+    }
+}
+
+// ─────────────────────────────────────────────
+//  CALENDAR VIEW SHELL
+// ─────────────────────────────────────────────
+.calendar-view {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 8px;
+}
+
+// ─────────────────────────────────────────────
+//  NEXT-RACE BANNER — Cuenta regresiva (estilo Stitch)
+// ─────────────────────────────────────────────
+.next-race-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin: 0 auto 34px;
+    padding: 16px 24px;
+    border-radius: 10px;
+    text-align: center;
+
+    background:
+        radial-gradient(ellipse 70% 130% at 0% 50%, rgba(225, 6, 0, 0.22) 0%, transparent 60%),
+        linear-gradient(100deg, #201018 0%, #18121c 55%, #14141e 100%);
+    border: 1px solid rgba(225, 6, 0, 0.30);
+    box-shadow:
+        0 4px 18px rgba(0, 0, 0, 0.45),
+        -3px 0 22px rgba(225, 6, 0, 0.12);
+
+    &__label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: $color-primary;
+    }
+
+    &__name {
+        font-size: 1.05rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #fff;
+    }
+
+    &__countdown {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: $color-text-dim;
+        font-variant-numeric: tabular-nums;
+
+        b {
+            color: #fff;
+            font-weight: 900;
+            font-size: 1.3rem;
+        }
+
+        &--live {
+            color: #ff5555;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+    }
+
+    // Variante en vivo: glow rojo animado
+    &--live {
+        border-color: rgba(225, 6, 0, 0.55);
+        animation: badge-pulse 2.4s ease-in-out infinite;
+    }
+
+    // Variante temporada finalizada: apagada
+    &--done {
+        background: linear-gradient(100deg, #1a1a24 0%, #15151e 100%);
+        border-color: rgba(255, 255, 255, 0.08);
+
+        .next-race-banner__label { color: $color-text-dim; }
+    }
+
+    @media (max-width: 480px) {
+        gap: 4px 12px;
+        padding: 14px 14px;
+        margin-bottom: 24px;
+
+        &__countdown { font-size: 0.95rem; b { font-size: 1.1rem; } }
+    }
+}
+
+// ─────────────────────────────────────────────
+//  RACE SECTIONS — Completadas / Próximas
+// ─────────────────────────────────────────────
+.race-section {
+    margin-bottom: 38px;
+
+    &__head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        max-width: 1000px;
+        margin: 0 auto 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    &__title {
+        margin: 0;
+        font-size: 1.15rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #fff;
+    }
+
+    &__count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 26px;
+        height: 22px;
+        padding: 0 8px;
+        border-radius: 11px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: $color-text-dim;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+    }
+
+    // La sección "Próximas" recibe el acento F1 en su título.
+    &--upcoming &__title { color: $color-primary; }
+
+    .race-list { padding-bottom: 0; }
 }
 
 // ─────────────────────────────────────────────
@@ -443,10 +622,15 @@
         // Ocultar imagen del mapa en pantallas muy pequeñas
         &__map-col { display: none; }
 
-        // Reducir flecha CTA
-        &__cta {
-            font-size: 1.1rem;
-            padding: 0 10px 0 2px;
+        // Compactar el botón de acción
+        &__action {
+            margin: 0 8px 0 2px;
+            padding: 5px 9px;
+            font-size: 0.6rem;
+
+            // El texto se oculta; queda solo la flecha como CTA
+            span:not(.race-card-wide__action-arrow) { display: none; }
+            &-arrow { font-size: 1rem; }
         }
     }
 }

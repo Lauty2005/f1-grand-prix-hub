@@ -33,6 +33,7 @@ CLAUDE.md
 docs/
 skills-lock.json
 .agents/
+stitch-export/
 
 # Codex files
 AGENTS.md

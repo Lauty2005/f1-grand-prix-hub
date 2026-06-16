@@ -4,9 +4,96 @@ import { state } from './state.js';
 import { getFlagEmoji, getPositionBadge } from './utils.js';
 import { getRaceLiveState, getSessionSchedule } from './sessions.js';
 
+// Cuenta regresiva del banner "Próxima carrera". Se guarda a nivel de módulo
+// para poder limpiarla cuando la vista se vuelve a renderizar o se cambia de pestaña.
+let calendarCountdownInterval = null;
+
+// Etiqueta de la acción (botón derecho de la tarjeta) según el estado de la carrera.
+function actionLabelFor(statusKey) {
+    if (statusKey === 'done')      return 'Resultados';
+    if (statusKey === 'live')      return '● En vivo';
+    if (statusKey === 'suspended') return 'Info';
+    return 'Race Hub';
+}
+
+// Construye el HTML de una tarjeta de carrera + devuelve su estado para agrupar.
+function buildRaceCard(race) {
+    const dateObj = new Date(race.date);
+    const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
+    const adjustedDate = new Date(dateObj.getTime() + userTimezoneOffset);
+
+    const month = adjustedDate.toLocaleString('es-ES', { month: 'short' }).toUpperCase().replace('.', '');
+    const day = adjustedDate.getDate();
+
+    // Rango del fin de semana (Sprint: -3 días, Normal: -2 días)
+    const weekendDaysBack = race.has_sprint ? 3 : 2;
+    const weekendStart = new Date(adjustedDate);
+    weekendStart.setDate(weekendStart.getDate() - weekendDaysBack);
+    const monthLong = adjustedDate.toLocaleString('es-ES', { month: 'long' });
+    const monthCap = monthLong.charAt(0).toUpperCase() + monthLong.slice(1);
+    const dateRange = `${weekendStart.getDate()} - ${day} ${monthCap}`;
+
+    // Badge de estado basado en horarios reales de sesión (con respaldo por
+    // fecha para carreras sin horarios cargados). "En vivo" solo durante la
+    // ventana real de una sesión; muestra cuál está corriendo.
+    const liveState = getRaceLiveState(race);
+    const statusKey = liveState.status;
+    let statusLabel;
+    if (statusKey === 'suspended')   statusLabel = 'Suspendida';
+    else if (statusKey === 'done')   statusLabel = 'Finalizado';
+    else if (statusKey === 'live')   statusLabel = liveState.liveSession
+                                        ? `● En vivo: ${liveState.liveSession.label}`
+                                        : '● En vivo';
+    else                             statusLabel = 'Próximamente';
+
+    // Imagen de mapa
+    let mapSrc = race.map_image_url;
+    if (mapSrc && !mapSrc.startsWith('http')) {
+        mapSrc = `${SERVER_URL}${mapSrc}`;
+    }
+
+    const html = `
+        <div class="race-card-wide race-card-wide--${statusKey}" data-id="${race.id}" data-sprint="${race.has_sprint || false}">
+            <div class="race-card-wide__date-col">
+                <span class="race-card-wide__date-col-month">${month}</span>
+                <span class="race-card-wide__date-col-day">${day}</span>
+            </div>
+            <div class="race-card-wide__info">
+                <div class="race-card-wide__info-header">
+                    <h3>R${race.round} &mdash; ${race.name}</h3>
+                    <span class="race-status-badge race-status-badge--${statusKey}">${statusLabel}</span>
+                </div>
+                <p>
+                    <span class="race-circuit-name">
+                        <span class="race-circuit-name__flag">${getFlagEmoji(race.country_code)}</span>
+                        <span>${race.circuit_name}</span>
+                    </span>
+                    <span class="race-dates">${dateRange}</span>
+                    ${race.has_sprint ? '<span class="sprint-badge">SPRINT</span>' : ''}
+                </p>
+            </div>
+            <div class="race-card-wide__map-col">
+                <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy">
+            </div>
+            <div class="race-card-wide__action race-card-wide__action--${statusKey}">
+                <span>${actionLabelFor(statusKey)}</span>
+                <span class="race-card-wide__action-arrow">›</span>
+            </div>
+        </div>
+    `;
+
+    return { html, statusKey };
+}
+
 export async function loadCalendarView() {
     const app = document.querySelector('#app');
     app.innerHTML = '<h2 style="text-align:center; color:white; margin-top:50px;">Cargando calendario...</h2>';
+
+    // Frenar cualquier cuenta regresiva previa antes de re-renderizar la vista.
+    if (calendarCountdownInterval) {
+        clearInterval(calendarCountdownInterval);
+        calendarCountdownInterval = null;
+    }
 
     try {
         const res = await fetch(`${API}/races?year=${state.currentYear}`);
@@ -21,75 +108,36 @@ export async function loadCalendarView() {
             return;
         }
 
-        const cardsHtml = result.data.map(race => {
-            const dateObj = new Date(race.date);
-            const userTimezoneOffset = dateObj.getTimezoneOffset() * 60000;
-            const adjustedDate = new Date(dateObj.getTime() + userTimezoneOffset);
+        const races = result.data;
 
-            const month = adjustedDate.toLocaleString('es-ES', { month: 'short' }).toUpperCase().replace('.', '');
-            const day = adjustedDate.getDate();
+        // Agrupar en Completadas vs Próximas (en vivo / próximas / suspendidas).
+        const completed = [];
+        const upcoming = [];
+        races.forEach(race => {
+            const { html, statusKey } = buildRaceCard(race);
+            (statusKey === 'done' ? completed : upcoming).push(html);
+        });
 
-            // Rango del fin de semana (Sprint: -3 días, Normal: -2 días)
-            const weekendDaysBack = race.has_sprint ? 3 : 2;
-            const weekendStart = new Date(adjustedDate);
-            weekendStart.setDate(weekendStart.getDate() - weekendDaysBack);
-            const monthLong = adjustedDate.toLocaleString('es-ES', { month: 'long' });
-            const monthCap = monthLong.charAt(0).toUpperCase() + monthLong.slice(1);
-            const dateRange = `${weekendStart.getDate()} - ${day} ${monthCap}`;
-
-            // Badge de estado basado en horarios reales de sesión (con respaldo por
-            // fecha para carreras sin horarios cargados). "En vivo" solo durante la
-            // ventana real de una sesión; muestra cuál está corriendo.
-            const liveState = getRaceLiveState(race);
-            const statusKey = liveState.status;
-            let statusLabel;
-            if (statusKey === 'suspended')   statusLabel = 'Suspendida';
-            else if (statusKey === 'done')   statusLabel = 'Finalizado';
-            else if (statusKey === 'live')   statusLabel = liveState.liveSession
-                                                ? `● En vivo: ${liveState.liveSession.label}`
-                                                : '● En vivo';
-            else                             statusLabel = 'Próximamente';
-
-            // Imagen de mapa
-            let mapSrc = race.map_image_url;
-            if (mapSrc && !mapSrc.startsWith('http')) {
-                mapSrc = `${SERVER_URL}${mapSrc}`;
-            }
-
-            return `
-                <div class="race-card-wide" data-id="${race.id}" data-sprint="${race.has_sprint || false}">
-                    <div class="race-card-wide__date-col">
-                        <span class="race-card-wide__date-col-month">${month}</span>
-                        <span class="race-card-wide__date-col-day">${day}</span>
-                    </div>
-                    <div class="race-card-wide__info">
-                        <div class="race-card-wide__info-header">
-                            <h3>R${race.round} &mdash; ${race.name}</h3>
-                            <span class="race-status-badge race-status-badge--${statusKey}">${statusLabel}</span>
-                        </div>
-                        <p>
-                            <span class="race-circuit-name">
-                                <span class="race-circuit-name__flag">${getFlagEmoji(race.country_code)}</span>
-                                <span>${race.circuit_name}</span>
-                            </span>
-                            <span class="race-dates">${dateRange}</span>
-                            ${race.has_sprint ? '<span class="sprint-badge">SPRINT</span>' : ''}
-                        </p>
-                    </div>
-                    <div class="race-card-wide__map-col">
-                        <img src="${mapSrc}" class="race-card__map" alt="Map" loading="lazy">
-                    </div>
-                    <div class="race-card-wide__cta">›</div>
-                </div>
-            `;
-        }).join('');
+        const section = (title, cards, modifier) => cards.length === 0 ? '' : `
+            <section class="race-section race-section--${modifier}">
+                <header class="race-section__head">
+                    <h2 class="race-section__title">${title}</h2>
+                    <span class="race-section__count">${cards.length}</span>
+                </header>
+                <div class="race-list">${cards.join('')}</div>
+            </section>`;
 
         app.innerHTML = `
-            <div class="calendar-header">
-                <h1>CALENDARIO ${state.currentYear}</h1>
+            <div class="calendar-view">
+                <div class="calendar-header">
+                    <h1>CALENDARIO ${state.currentYear}</h1>
+                    <p class="calendar-header__subtitle">Temporada ${state.currentYear} de Fórmula 1</p>
+                </div>
+                <div id="calendar-next-banner" class="next-race-banner"></div>
+                ${section('Completadas', completed, 'done')}
+                ${section('Próximas', upcoming, 'upcoming')}
             </div>
-            <div class="race-list">${cardsHtml}</div>
-         `;
+        `;
 
         document.querySelectorAll('.race-card-wide').forEach(card => {
             card.addEventListener('click', () => {
@@ -100,10 +148,100 @@ export async function loadCalendarView() {
             });
         });
 
+        startCalendarCountdown(races);
+
     } catch (e) {
         console.error(e);
         app.innerHTML = '<h3 style="color:red; text-align:center; margin-top:50px;">Error cargando calendario.</h3>';
     }
+}
+
+// Banner "Próxima carrera": cuenta regresiva en vivo (d/h/m/s) hacia la próxima
+// sesión real de la temporada, replicando la lógica del contador de la portada.
+function startCalendarCountdown(races) {
+    const valid = races.filter(r => r.status !== 'suspended');
+
+    const render = () => {
+        const banner = document.getElementById('calendar-next-banner');
+        // La vista cambió de pestaña → el banner ya no existe: frenamos el timer.
+        if (!banner) {
+            clearInterval(calendarCountdownInterval);
+            calendarCountdownInterval = null;
+            return;
+        }
+
+        const now = new Date();
+
+        // 1. ¿Hay una sesión en vivo ahora mismo?
+        for (const race of valid) {
+            const live = getRaceLiveState(race, now);
+            if (live.status === 'live' && live.liveSession) {
+                banner.className = 'next-race-banner next-race-banner--live';
+                banner.innerHTML = `
+                    <span class="next-race-banner__label">● En vivo &mdash; ${live.liveSession.label}</span>
+                    <span class="next-race-banner__name">${race.name}</span>
+                    <span class="next-race-banner__countdown next-race-banner__countdown--live">🔴 EN PISTA</span>`;
+                return;
+            }
+        }
+
+        // 2. Próxima sesión con horario real en toda la temporada.
+        let next = null;
+        for (const race of valid) {
+            for (const s of getSessionSchedule(race)) {
+                if (s.start > now && (!next || s.start < next.start)) {
+                    next = { start: s.start, name: race.name };
+                }
+            }
+        }
+
+        // 3. Respaldo: si ninguna carrera tiene horarios, usar la fecha de carrera.
+        let targetDate, raceName;
+        if (next) {
+            targetDate = next.start;
+            raceName = next.name;
+        } else {
+            const nextRace = valid.find(r => new Date(r.date) > now);
+            if (!nextRace) {
+                banner.className = 'next-race-banner next-race-banner--done';
+                banner.innerHTML = '<span class="next-race-banner__label">Temporada finalizada 🏁</span>';
+                clearInterval(calendarCountdownInterval);
+                calendarCountdownInterval = null;
+                return;
+            }
+            targetDate = new Date(nextRace.date);
+            raceName = nextRace.name;
+        }
+
+        const diff = targetDate - now;
+        if (diff <= 0) {
+            banner.className = 'next-race-banner next-race-banner--live';
+            banner.innerHTML = `
+                <span class="next-race-banner__label">Próxima carrera</span>
+                <span class="next-race-banner__name">${raceName}</span>
+                <span class="next-race-banner__countdown next-race-banner__countdown--live">¡ES HOY! 🏁</span>`;
+            return;
+        }
+
+        const d = Math.floor(diff / 86400000);
+        const h = Math.floor((diff % 86400000) / 3600000);
+        const m = Math.floor((diff % 3600000) / 60000);
+        const s = Math.floor((diff % 60000) / 1000);
+
+        banner.className = 'next-race-banner';
+        banner.innerHTML = `
+            <span class="next-race-banner__label">Próxima carrera</span>
+            <span class="next-race-banner__name">${raceName}</span>
+            <span class="next-race-banner__countdown">
+                <b>${String(d).padStart(2, '0')}</b>d
+                <b>${String(h).padStart(2, '0')}</b>h
+                <b>${String(m).padStart(2, '0')}</b>m
+                <b>${String(s).padStart(2, '0')}</b>s
+            </span>`;
+    };
+
+    render();
+    calendarCountdownInterval = setInterval(render, 1000);
 }
 
 // --- HORARIOS (schedule tab) ---
