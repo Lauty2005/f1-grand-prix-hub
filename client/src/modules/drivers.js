@@ -22,27 +22,30 @@ export async function loadDriversView() {
 
         state.driversList = result.data;
 
-        const html = result.data.map(d => `
-            <article class="driver-card" data-id="${d.id}" style="--team-color: ${d.primary_color}; cursor: pointer;">
+        const html = result.data.map(d => {
+            const profileSrc = d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url;
+            const logoSrc = d.logo_url.startsWith('http') ? d.logo_url : SERVER_URL + d.logo_url;
+            return `
+            <article class="driver-card" data-id="${d.id}" style="--team-color: ${d.primary_color};">
                 <div class="driver-card__image-container">
-                    <img src="${d.profile_image_url.startsWith('http') ? d.profile_image_url : SERVER_URL + d.profile_image_url}" class="driver-card__image" alt="${d.last_name}" width="200" height="200" loading="lazy">
+                    <img src="${profileSrc}" class="driver-card__image" alt="${d.first_name} ${d.last_name}" width="200" height="200" loading="lazy">
                 </div>
-                <div class="driver-card__info" style="position: relative;">
-                    <h3>${d.first_name} ${d.last_name}</h3>
-                    <div style="display: flex; justify-content: space-between;">
-                        <p style="color:${d.primary_color}; display: flex; align-items: center; gap: 8px;">
-                            <span class="teamLogo" style="background-color: ${d.primary_color};">
-                                <img src="${d.logo_url.startsWith('http') ? d.logo_url : SERVER_URL + d.logo_url}" alt="${d.team_name}" width="24" height="24" loading="lazy" role="presentation">
+                <div class="driver-card__info">
+                    <p class="driver-card__firstname">${d.first_name}</p>
+                    <h3 class="driver-card__lastname">${d.last_name}</h3>
+                    <div class="driver-card__footer">
+                        <span class="driver-card__team">
+                            <span class="teamLogo">
+                                <img src="${logoSrc}" alt="${d.team_name}" width="24" height="24" loading="lazy" role="presentation">
                             </span>
                             ${d.team_name}
-                        </p>
-                        <span class="driver-number-display" style="color: ${d.primary_color};">
-                                ${d.permanent_number /* El backend ya trae la suma total aquí */}
                         </span>
+                        <span class="driver-number-display">${d.permanent_number /* El backend ya trae la suma total aquí */}</span>
                     </div>
                 </div>
             </article>
-        `).join('');
+        `;
+        }).join('');
 
         app.innerHTML = `<div class="driver-grid">${html}</div>`;
 
