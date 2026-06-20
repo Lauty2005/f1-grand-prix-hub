@@ -380,6 +380,25 @@
 
         &:hover { background: $color-primary; color: white; }
     }
+
+    /* selector de piloto para slots extra (C/D) */
+    &__select {
+        margin-top: 10px;
+        width: 100%;
+        padding: 6px 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: #1f1f27;
+        color: white;
+        font-size: 0.78rem;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: border-color 0.2s ease;
+
+        &:hover { border-color: var(--team-color, $color-primary); }
+        &:focus { border-color: var(--team-color, $color-primary); }
+    }
 }
 
 /* ----- EXTRA ACTIONS ----- */

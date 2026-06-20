@@ -218,18 +218,35 @@ async function fetchAndCompare(ids) {
 }
 
 // ─── VS HERO CARD ─────────────────────────────────────────────────────────────
-function heroCardHTML(driver, slot, removable) {
+// Los slots A/B se eligen desde los rails. Los slots extra (C/D) son removibles
+// y traen su propio <select> para poder cambiar el piloto (los rails no los cubren).
+function heroPickerHTML(slot, selectedId, allDrivers) {
+    const opts = (allDrivers || []).map(d =>
+        `<option value="${esc(d.id)}" ${d.id == selectedId ? 'selected' : ''}>${esc(d.first_name)} ${esc(d.last_name)}</option>`
+    ).join('');
+    return `
+        <select class="cmp-hero-card__select" data-select-slot="${slot}" aria-label="Elegir piloto ${SLOT_LABELS[slot] || ''}">
+            ${opts}
+        </select>`;
+}
+
+function heroCardHTML(driver, slot, removable, allDrivers) {
     const label = SLOT_LABELS[slot] || '';
-    if (!driver) {
-        return `
-            <div class="cmp-hero-card cmp-hero-card--empty" data-slot="${slot}">
-                <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
-                <span class="cmp-hero-card__placeholder">Elegí un piloto</span>
-            </div>`;
-    }
     const removeBtn = removable
         ? `<button class="cmp-hero-card__remove" data-remove-slot="${slot}" aria-label="Quitar piloto ${label}">×</button>`
         : '';
+
+    if (!driver) {
+        // Sólo ocurre en slots extra sin piloto resuelto → mostramos el picker igual
+        return `
+            <div class="cmp-hero-card cmp-hero-card--empty" data-slot="${slot}">
+                ${removeBtn}
+                <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
+                <span class="cmp-hero-card__placeholder">Elegí un piloto</span>
+                ${removable ? heroPickerHTML(slot, null, allDrivers) : ''}
+            </div>`;
+    }
+
     return `
         <div class="cmp-hero-card" style="--team-color:${esc(driver.primary_color)};" data-slot="${slot}">
             ${removeBtn}
@@ -244,6 +261,7 @@ function heroCardHTML(driver, slot, removable) {
                 ${esc(driver.team_name)}
             </span>
             <span class="cmp-hero-card__num">${esc(driver.permanent_number)}</span>
+            ${removable ? heroPickerHTML(slot, driver.id, allDrivers) : ''}
         </div>`;
 }
 
@@ -364,8 +382,8 @@ export async function loadCompararView() {
         const cards = [];
         cmp.ids.forEach((id, i) => {
             const d = drivers.find(x => x.id == id) || null;
-            // Slots A y B nunca removibles; los extras (C, D) sí
-            cards.push(heroCardHTML(d, i, i >= 2));
+            // Slots A y B nunca removibles; los extras (C, D) sí, con su propio selector
+            cards.push(heroCardHTML(d, i, i >= 2, drivers));
             if (i < cmp.ids.length - 1) cards.push(`<span class="cmp-vs-badge">VS</span>`);
         });
         hero.innerHTML = cards.join('');
@@ -418,6 +436,18 @@ export async function loadCompararView() {
         if (!rm) return;
         const slot = Number(rm.dataset.removeSlot);
         cmp.ids.splice(slot, 1);
+        renderHero();
+        runCompare();
+    });
+
+    // Cambiar el piloto de un slot extra (C/D) desde su propio selector
+    document.getElementById('cmpHero').addEventListener('change', (e) => {
+        const sel = e.target.closest('[data-select-slot]');
+        if (!sel) return;
+        const slot = Number(sel.dataset.selectSlot);
+        const id = Number(sel.value);
+        if (!id || cmp.ids[slot] == id) return;
+        cmp.ids[slot] = id;
         renderHero();
         runCompare();
     });
