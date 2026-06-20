@@ -28,30 +28,18 @@ function imgSrc(url) {
     return url.startsWith('http') ? url : SERVER_URL + url;
 }
 
+// Etiqueta del slot: A, B, C, D
+const SLOT_LABELS = ['A', 'B', 'C', 'D'];
+
 // ─── STAT BOX ─────────────────────────────────────────────────────────────────
 function statBox(label, values, colors) {
     const cells = values.map((v, i) => `
-        <span class="cmp-stat__value" style="color:${colors[i]};">${v}</span>
+        <span class="cmp-stat__value" style="color:${colors[i]};">${esc(v)}</span>
     `).join('<span class="cmp-stat__sep">vs</span>');
     return `
         <div class="cmp-stat">
-            <span class="cmp-stat__label">${label}</span>
+            <span class="cmp-stat__label">${esc(label)}</span>
             <div class="cmp-stat__row">${cells}</div>
-        </div>`;
-}
-
-// ─── DRIVER SELECTOR ──────────────────────────────────────────────────────────
-function selectorHTML(slot, selectedId, drivers) {
-    const options = drivers.map(d =>
-        `<option value="${esc(d.id)}" ${d.id == selectedId ? 'selected' : ''}>${esc(d.first_name)} ${esc(d.last_name)}</option>`
-    ).join('');
-    return `
-        <div class="cmp-selector" data-slot="${slot}">
-            <label for="cmpSelect${slot}" class="sr-only">Piloto ${slot}</label>
-            <select class="f1-select cmp-select" id="cmpSelect${slot}" aria-label="Seleccionar piloto ${slot}">
-                <option value="">— Elige piloto —</option>
-                ${options}
-            </select>
         </div>`;
 }
 
@@ -76,16 +64,16 @@ function h2hTableHTML(h2h, drivers) {
 
     return `
         <div class="cmp-h2h">
-            <div class="cmp-section-title">HEAD TO HEAD</div>
+            <div class="cmp-section-title">Head to Head</div>
             <div class="cmp-h2h__scoreboard">
                 <div class="cmp-h2h__score">
-                    <span style="color:${esc(dA.primary_color)}; font-size:2.5rem; font-weight:900;">${esc(h2h.wins_a)}</span>
-                    <span style="color:rgba(255,255,255,0.35); font-size:0.75rem;">VICTORIAS</span>
+                    <span class="cmp-h2h__score-val" style="color:${esc(dA.primary_color)};">${esc(h2h.wins_a)}</span>
+                    <span class="cmp-h2h__score-lbl">Victorias</span>
                 </div>
                 <span class="cmp-h2h__vs">VS</span>
                 <div class="cmp-h2h__score">
-                    <span style="color:${esc(dB.primary_color)}; font-size:2.5rem; font-weight:900;">${esc(h2h.wins_b)}</span>
-                    <span style="color:rgba(255,255,255,0.35); font-size:0.75rem;">VICTORIAS</span>
+                    <span class="cmp-h2h__score-val" style="color:${esc(dB.primary_color)};">${esc(h2h.wins_b)}</span>
+                    <span class="cmp-h2h__score-lbl">Victorias</span>
                 </div>
             </div>
             <div class="table-responsive">
@@ -93,7 +81,7 @@ function h2hTableHTML(h2h, drivers) {
                     <thead>
                         <tr>
                             <th style="color:${esc(dA.primary_color)};">${esc(dA.last_name)}</th>
-                            <th>CARRERA</th>
+                            <th>Carrera</th>
                             <th style="color:${esc(dB.primary_color)};">${esc(dB.last_name)}</th>
                         </tr>
                     </thead>
@@ -103,7 +91,7 @@ function h2hTableHTML(h2h, drivers) {
         </div>`;
 }
 
-// ─── RENDER RESULTS ───────────────────────────────────────────────────────────
+// ─── RENDER RESULTS (stats + charts + h2h) ─────────────────────────────────────
 function renderResults(data) {
     const { drivers, perRace, h2h } = data;
     const colors = drivers.map(d => d.primary_color);
@@ -120,91 +108,77 @@ function renderResults(data) {
 
     perRace.forEach(r => {
         if (pointsByDriver[r.driver_id] !== undefined) {
-            // ✅ FIX 1: parseFloat() — pg devuelve strings para resultados
-            // de operaciones aritméticas en SQL (e.g. res.points + sp.points)
+            // pg devuelve strings para sumas SQL → parseFloat
             pointsByDriver[r.driver_id][r.round] = parseFloat(r.points) || 0;
         }
     });
 
     const cumulativeDatasets = drivers.map(d => {
         let acc = 0;
-        const data = rounds.map(round => {
-            // ✅ Doble seguridad: Number() garantiza suma numérica
+        const dd = rounds.map(round => {
             acc += Number(pointsByDriver[d.id][round] || 0);
             return acc;
         });
         return {
             label: `${d.first_name} ${d.last_name}`,
-            data,
+            data: dd,
             borderColor: d.primary_color,
             backgroundColor: d.primary_color + '22',
             borderWidth: 2.5,
-            pointRadius: 4,
+            pointRadius: 3,
             pointHoverRadius: 6,
             tension: 0.3,
             fill: false,
         };
     });
 
-    // Points per race (individual, not cumulative)
-    const perRaceDatasets = drivers.map(d => ({
-        label: `${d.first_name} ${d.last_name}`,
-        // ✅ También parseFloat aquí para consistencia
-        data: rounds.map(round => Number(pointsByDriver[d.id][round] || 0)),
-        backgroundColor: d.primary_color,
-        borderRadius: 4,
-        barPercentage: 0.6,
-    }));
-
-    // Bar chart stats: wins, podiums, top10, dnfs
+    // Bar chart stats: wins, podiums, top5, top10, dnfs
     const statLabels = ['Victorias', 'Podios', 'Top 5', 'Top 10', 'DNF'];
     const statDatasets = drivers.map(d => ({
         label: `${d.first_name} ${d.last_name}`,
         data: [d.wins, d.podiums, d.top5, d.top10, d.dnfs].map(Number),
         backgroundColor: d.primary_color,
         borderRadius: 4,
-        barPercentage: 0.5,
+        barPercentage: 0.7,
+        categoryPercentage: 0.7,
     }));
 
     const statsHTML = `
         <div class="cmp-stats-grid">
-            ${statBox('Puntos',   drivers.map(d => d.points),   colors)}
-            ${statBox('Carreras', drivers.map(d => d.races),    colors)}
-            ${statBox('Victorias',drivers.map(d => d.wins),     colors)}
-            ${statBox('Podios',   drivers.map(d => d.podiums),  colors)}
-            ${statBox('Top 10',   drivers.map(d => d.top10),    colors)}
-            ${statBox('DNF',      drivers.map(d => d.dnfs),     colors)}
-            ${statBox('VR',       drivers.map(d => d.fastest_laps), colors)}
+            ${statBox('Puntos',    drivers.map(d => d.points),       colors)}
+            ${statBox('Carreras',  drivers.map(d => d.races),        colors)}
+            ${statBox('Victorias', drivers.map(d => d.wins),         colors)}
+            ${statBox('Podios',    drivers.map(d => d.podiums),      colors)}
+            ${statBox('Top 10',    drivers.map(d => d.top10),        colors)}
+            ${statBox('DNF',       drivers.map(d => d.dnfs),         colors)}
+            ${statBox('V. Rápida', drivers.map(d => d.fastest_laps), colors)}
         </div>`;
 
     const resultsContainer = document.getElementById('cmpResults');
     resultsContainer.innerHTML = `
+        <div class="cmp-section-title">Estadísticas de la temporada</div>
         ${statsHTML}
 
-        <div class="cmp-section-title">PUNTOS ACUMULADOS</div>
-        <div class="cmp-chart-wrap"><canvas id="chartCumulative"></canvas></div>
-
-        <div class="cmp-section-title">PUNTOS POR CARRERA</div>
-        <div class="cmp-chart-wrap"><canvas id="chartPerRace"></canvas></div>
-
-        <div class="cmp-section-title">ESTADÍSTICAS</div>
+        <div class="cmp-section-title">Victorias, podios y posiciones</div>
         <div class="cmp-chart-wrap"><canvas id="chartStats"></canvas></div>
+
+        <div class="cmp-section-title">Puntos acumulados</div>
+        <div class="cmp-chart-wrap"><canvas id="chartCumulative"></canvas></div>
 
         ${h2hTableHTML(h2h, drivers)}
     `;
 
-    // ✅ FIX 2: chartScaleDefaults como función para evitar objeto compartido
-    // entre los 3 charts (shallow copy de { ...chartDefaults } no es suficiente
-    // porque chartDefaults.scales sigue siendo la misma referencia)
+    // Función (no objeto compartido) para evitar que los charts compartan
+    // la misma referencia de `scales`
     const makeChartOptions = () => ({
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-            legend: { labels: { color: '#aaa', font: { size: 12 } } },
+            legend: { labels: { color: '#aeb4bb', font: { size: 12 }, usePointStyle: true, boxWidth: 8 } },
             tooltip: {
                 backgroundColor: '#1f1f27',
                 titleColor: '#fff',
-                bodyColor: '#aaa',
+                bodyColor: '#aeb4bb',
                 borderColor: '#333',
                 borderWidth: 1,
             },
@@ -215,19 +189,14 @@ function renderResults(data) {
         },
     });
 
-    charts.cumulative = new Chart(
-        document.getElementById('chartCumulative').getContext('2d'),
-        { type: 'line', data: { labels, datasets: cumulativeDatasets }, options: makeChartOptions() }
-    );
-
-    charts.perRace = new Chart(
-        document.getElementById('chartPerRace').getContext('2d'),
-        { type: 'bar', data: { labels, datasets: perRaceDatasets }, options: makeChartOptions() }
-    );
-
     charts.stats = new Chart(
         document.getElementById('chartStats').getContext('2d'),
         { type: 'bar', data: { labels: statLabels, datasets: statDatasets }, options: makeChartOptions() }
+    );
+
+    charts.cumulative = new Chart(
+        document.getElementById('chartCumulative').getContext('2d'),
+        { type: 'line', data: { labels, datasets: cumulativeDatasets }, options: makeChartOptions() }
     );
 }
 
@@ -244,22 +213,54 @@ async function fetchAndCompare(ids) {
         renderResults(json.data);
     } catch (err) {
         console.error(err);
-        resultsContainer.innerHTML = `<div class="cmp-loading" style="color:#e10600;">Error cargando datos.</div>`;
+        resultsContainer.innerHTML = `<div class="cmp-loading cmp-loading--error">No se pudo cargar la comparación. Intentá de nuevo.</div>`;
     }
 }
 
-// ─── DRIVER CARD (selector header) ────────────────────────────────────────────
-function driverCardHeaderHTML(driver) {
-    if (!driver) return `<div class="cmp-driver-card cmp-driver-card--empty">Selecciona un piloto</div>`;
+// ─── VS HERO CARD ─────────────────────────────────────────────────────────────
+function heroCardHTML(driver, slot, removable) {
+    const label = SLOT_LABELS[slot] || '';
+    if (!driver) {
+        return `
+            <div class="cmp-hero-card cmp-hero-card--empty" data-slot="${slot}">
+                <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
+                <span class="cmp-hero-card__placeholder">Elegí un piloto</span>
+            </div>`;
+    }
+    const removeBtn = removable
+        ? `<button class="cmp-hero-card__remove" data-remove-slot="${slot}" aria-label="Quitar piloto ${label}">×</button>`
+        : '';
     return `
-        <div class="cmp-driver-card" style="--team-color: ${driver.primary_color};">
-            <img class="cmp-driver-card__img" src="${imgSrc(driver.profile_image_url)}" alt="${driver.last_name}" width="200" height="200" loading="lazy">
-            <div class="cmp-driver-card__info">
-                <span class="cmp-driver-card__name">${driver.first_name} <strong>${driver.last_name}</strong></span>
-                <span class="cmp-driver-card__team" style="color:${driver.primary_color};">${driver.team_name}</span>
+        <div class="cmp-hero-card" style="--team-color:${esc(driver.primary_color)};" data-slot="${slot}">
+            ${removeBtn}
+            <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
+            <div class="cmp-hero-card__photo">
+                <img src="${imgSrc(driver.profile_image_url)}" alt="${esc(driver.first_name)} ${esc(driver.last_name)}" width="200" height="200" loading="lazy">
             </div>
-            <span class="cmp-driver-card__number" style="color:${driver.primary_color};">#${driver.permanent_number}</span>
+            <span class="cmp-hero-card__first">${esc(driver.first_name)}</span>
+            <span class="cmp-hero-card__last">${esc(driver.last_name)}</span>
+            <span class="cmp-hero-card__team">
+                <span class="cmp-hero-card__logo"><img src="${imgSrc(driver.logo_url)}" alt="" width="20" height="20" loading="lazy" role="presentation"></span>
+                ${esc(driver.team_name)}
+            </span>
+            <span class="cmp-hero-card__num">${esc(driver.permanent_number)}</span>
         </div>`;
+}
+
+// ─── RAIL ITEM ────────────────────────────────────────────────────────────────
+function railItemHTML(driver, slot, active) {
+    return `
+        <button class="cmp-rail__item ${active ? 'is-active' : ''}"
+                style="--team-color:${esc(driver.primary_color)};"
+                data-driver-id="${esc(driver.id)}" data-slot="${slot}"
+                aria-pressed="${active}">
+            <span class="cmp-rail__logo"><img src="${imgSrc(driver.logo_url)}" alt="" width="22" height="22" loading="lazy" role="presentation"></span>
+            <span class="cmp-rail__names">
+                <span class="cmp-rail__driver">${esc(driver.first_name)} ${esc(driver.last_name)}</span>
+                <span class="cmp-rail__team">${esc(driver.team_name)}</span>
+            </span>
+            <span class="cmp-rail__num">${esc(driver.permanent_number)}</span>
+        </button>`;
 }
 
 // ─── MAIN ENTRY POINT ─────────────────────────────────────────────────────────
@@ -267,112 +268,173 @@ export async function loadCompararView() {
     const app = document.getElementById('app');
     destroyCharts();
 
-    // ✅ FIX 3: Re-fetch si la lista es de otro año o está vacía
+    // Re-fetch si la lista es de otro año o está vacía
     let drivers = state.driversList;
     if (!drivers.length || state.driversListYear !== state.currentYear) {
+        app.innerHTML = `<div class="cmp-loading">Cargando pilotos...</div>`;
         try {
             const res = await fetch(`${API}/drivers?year=${state.currentYear}`);
             const json = await res.json();
             drivers = json.data || [];
             state.driversList = drivers;
-            state.driversListYear = state.currentYear; // ← marcar el año del caché
+            state.driversListYear = state.currentYear;
         } catch (e) {
-            app.innerHTML = `<div class="cmp-loading" style="color:#e10600;">Error cargando pilotos.</div>`;
+            app.innerHTML = `<div class="cmp-loading cmp-loading--error">No se pudieron cargar los pilotos.</div>`;
             return;
         }
     }
 
-    // Default: first two drivers
-    let selectedIds = drivers.length >= 2 ? [drivers[0].id, drivers[1].id] : [];
+    if (drivers.length < 2) {
+        app.innerHTML = `<div class="cmp-loading">Todavía no hay pilotos suficientes para comparar esta temporada.</div>`;
+        return;
+    }
+
+    // Estado local del comparador
+    const cmp = {
+        ids: [drivers[0].id, drivers[1].id],   // slot 0 (A) y slot 1 (B) por defecto
+        railSearch: ['', ''],                  // texto de búsqueda por rail
+        railTeam: ['', ''],                    // filtro de equipo por rail
+    };
+
+    // Lista de equipos únicos (para el filtro de cada rail)
+    const teams = [...new Set(drivers.map(d => d.team_name))].sort();
+    const teamOptions = teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+
+    function railHTML(slot) {
+        const label = SLOT_LABELS[slot];
+        return `
+            <aside class="cmp-rail cmp-rail--${slot === 0 ? 'a' : 'b'}" data-slot="${slot}">
+                <div class="cmp-rail__head">Piloto ${label}</div>
+                <input type="search" class="cmp-rail__search" placeholder="Buscar piloto..."
+                       data-rail-search="${slot}" aria-label="Buscar piloto ${label}">
+                <select class="cmp-rail__filter f1-select" data-rail-team="${slot}" aria-label="Filtrar por equipo ${label}">
+                    <option value="">Todos los equipos</option>
+                    ${teamOptions}
+                </select>
+                <div class="cmp-rail__list" data-rail-list="${slot}"></div>
+            </aside>`;
+    }
 
     app.innerHTML = `
         <div class="cmp-page">
             <div class="cmp-header">
-                <h1 class="cmp-title">COMPARADOR DE PILOTOS</h1>
-                <p class="cmp-subtitle">Seleccioná hasta 4 pilotos para comparar</p>
+                <h1 class="cmp-title">Comparador <span>Mano a Mano</span></h1>
+                <p class="cmp-subtitle">Elegí dos pilotos para enfrentarlos — o sumá hasta cuatro.</p>
             </div>
 
-            <div class="cmp-selector-area" id="cmpSelectorArea">
-                <div class="cmp-selectors-row" id="cmpSelectorsRow">
-                    ${selectedIds.map((id, i) => selectorHTML(i, id, drivers)).join('')}
-                </div>
+            <div class="cmp-layout">
+                ${railHTML(0)}
 
-                <div class="cmp-driver-cards-row" id="cmpDriverCards">
-                    ${selectedIds.map(id => driverCardHeaderHTML(drivers.find(d => d.id == id))).join('')}
-                </div>
+                <section class="cmp-center">
+                    <div class="cmp-hero" id="cmpHero"></div>
+                    <div class="cmp-extra-actions">
+                        <button class="cmp-add-btn" id="btnAddSlot">+ Agregar piloto</button>
+                    </div>
+                    <div id="cmpResults"></div>
+                </section>
 
-                <div class="cmp-actions">
-                    <button class="nav-btn active-btn" id="btnCompare">COMPARAR</button>
-                    <button class="nav-btn" id="btnAddSlot" ${selectedIds.length >= 4 ? 'disabled' : ''}>+ Agregar piloto</button>
-                    <button class="nav-btn" id="btnRemoveSlot" ${selectedIds.length <= 2 ? 'disabled' : ''}>− Quitar</button>
-                </div>
+                ${railHTML(1)}
             </div>
-
-            <div id="cmpResults"></div>
         </div>
     `;
 
-    // ── State local del comparador ──
-    const compareState = { ids: [...selectedIds] };
-
-    function getSelectedIds() {
-        return compareState.ids.map((_, i) => {
-            const sel = document.getElementById(`cmpSelect${i}`);
-            return sel ? parseInt(sel.value) || null : null;
-        }).filter(Boolean);
-    }
-
-    function rebuildSelectors() {
-        const row = document.getElementById('cmpSelectorsRow');
-        const cards = document.getElementById('cmpDriverCards');
-        const btnAdd = document.getElementById('btnAddSlot');
-        const btnRemove = document.getElementById('btnRemoveSlot');
-
-        row.innerHTML = compareState.ids.map((id, i) => selectorHTML(i, id, drivers)).join('');
-        cards.innerHTML = compareState.ids.map(id => driverCardHeaderHTML(drivers.find(d => d.id == id))).join('');
-
-        if (btnAdd) btnAdd.disabled = compareState.ids.length >= 4;
-        if (btnRemove) btnRemove.disabled = compareState.ids.length <= 2;
-
-        // Re-attach listeners
-        compareState.ids.forEach((_, i) => {
-            document.getElementById(`cmpSelect${i}`)?.addEventListener('change', (e) => {
-                compareState.ids[i] = parseInt(e.target.value) || null;
-                const card = document.getElementById('cmpDriverCards').children[i];
-                if (card) card.outerHTML = driverCardHeaderHTML(drivers.find(d => d.id == compareState.ids[i]));
-                // Rebuild just the cards column
-                document.getElementById('cmpDriverCards').innerHTML =
-                    compareState.ids.map(id => driverCardHeaderHTML(drivers.find(d => d.id == id))).join('');
-            });
+    // ── Render helpers ──────────────────────────────────────────────────────────
+    function filteredDrivers(slot) {
+        const q = cmp.railSearch[slot].trim().toLowerCase();
+        const team = cmp.railTeam[slot];
+        return drivers.filter(d => {
+            if (team && d.team_name !== team) return false;
+            if (!q) return true;
+            return `${d.first_name} ${d.last_name} ${d.team_name}`.toLowerCase().includes(q);
         });
     }
 
-    // Initial listener attachment
-    rebuildSelectors();
+    function renderRail(slot) {
+        const list = app.querySelector(`[data-rail-list="${slot}"]`);
+        if (!list) return;
+        const activeId = cmp.ids[slot];
+        const items = filteredDrivers(slot);
+        list.innerHTML = items.length
+            ? items.map(d => railItemHTML(d, slot, d.id == activeId)).join('')
+            : `<div class="cmp-rail__empty">Sin resultados</div>`;
+    }
 
-    document.getElementById('btnCompare').addEventListener('click', () => {
-        const ids = getSelectedIds();
-        if (ids.length < 2) {
-            document.getElementById('cmpResults').innerHTML =
-                `<div class="cmp-loading">Seleccioná al menos 2 pilotos.</div>`;
-            return;
-        }
+    function renderHero() {
+        const hero = document.getElementById('cmpHero');
+        const cards = [];
+        cmp.ids.forEach((id, i) => {
+            const d = drivers.find(x => x.id == id) || null;
+            // Slots A y B nunca removibles; los extras (C, D) sí
+            cards.push(heroCardHTML(d, i, i >= 2));
+            if (i < cmp.ids.length - 1) cards.push(`<span class="cmp-vs-badge">VS</span>`);
+        });
+        hero.innerHTML = cards.join('');
+        hero.classList.toggle('cmp-hero--multi', cmp.ids.length > 2);
+
+        const addBtn = document.getElementById('btnAddSlot');
+        if (addBtn) addBtn.disabled = cmp.ids.length >= 4;
+    }
+
+    function runCompare() {
+        const ids = cmp.ids.filter(Boolean);
+        if (ids.length < 2) return;
         fetchAndCompare(ids);
+    }
+
+    // ── Eventos: selección en rails (delegación) ────────────────────────────────
+    app.querySelectorAll('[data-rail-list]').forEach(listEl => {
+        listEl.addEventListener('click', (e) => {
+            const btn = e.target.closest('.cmp-rail__item');
+            if (!btn) return;
+            const slot = Number(btn.dataset.slot);
+            const id = Number(btn.dataset.driverId);
+            if (cmp.ids[slot] == id) return;
+            cmp.ids[slot] = id;
+            renderRail(slot);
+            renderHero();
+            runCompare();
+        });
     });
 
+    // Búsqueda y filtro por rail
+    app.querySelectorAll('[data-rail-search]').forEach(input => {
+        input.addEventListener('input', (e) => {
+            const slot = Number(e.target.dataset.railSearch);
+            cmp.railSearch[slot] = e.target.value;
+            renderRail(slot);
+        });
+    });
+    app.querySelectorAll('[data-rail-team]').forEach(sel => {
+        sel.addEventListener('change', (e) => {
+            const slot = Number(e.target.dataset.railTeam);
+            cmp.railTeam[slot] = e.target.value;
+            renderRail(slot);
+        });
+    });
+
+    // Quitar slot extra (delegación en el hero)
+    document.getElementById('cmpHero').addEventListener('click', (e) => {
+        const rm = e.target.closest('[data-remove-slot]');
+        if (!rm) return;
+        const slot = Number(rm.dataset.removeSlot);
+        cmp.ids.splice(slot, 1);
+        renderHero();
+        runCompare();
+    });
+
+    // Agregar slot extra (toma el primer piloto no usado)
     document.getElementById('btnAddSlot').addEventListener('click', () => {
-        if (compareState.ids.length >= 4) return;
-        const unused = drivers.find(d => !compareState.ids.includes(d.id));
-        compareState.ids.push(unused ? unused.id : null);
-        rebuildSelectors();
+        if (cmp.ids.length >= 4) return;
+        const unused = drivers.find(d => !cmp.ids.includes(d.id));
+        if (!unused) return;
+        cmp.ids.push(unused.id);
+        renderHero();
+        runCompare();
     });
 
-    document.getElementById('btnRemoveSlot').addEventListener('click', () => {
-        if (compareState.ids.length <= 2) return;
-        compareState.ids.pop();
-        rebuildSelectors();
-    });
-
-    // Auto-compare on load
-    if (selectedIds.length >= 2) fetchAndCompare(selectedIds);
+    // ── Render inicial ──────────────────────────────────────────────────────────
+    renderRail(0);
+    renderRail(1);
+    renderHero();
+    runCompare();
 }

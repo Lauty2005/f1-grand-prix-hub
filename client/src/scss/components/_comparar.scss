@@ -1,11 +1,11 @@
 @use '../abstracts/variables' as *;
 
 /* ============================================================
-   COMPARADOR DE PILOTOS
+   COMPARADOR DE PILOTOS — Head-to-Head
    ============================================================ */
 
 .cmp-page {
-    max-width: 1100px;
+    max-width: 1280px;
     margin: 0 auto;
     padding: 20px 16px 80px;
 }
@@ -13,98 +13,166 @@
 /* ----- HEADER ----- */
 .cmp-header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 24px;
 }
 
 .cmp-title {
-    font-size: 2rem;
-    font-weight: 900;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 0.95;
     color: white;
-    letter-spacing: -1px;
     margin: 0 0 6px;
 
-    @include mobile { font-size: 1.4rem; }
+    span { color: $color-primary; }
+
+    @include mobile { font-size: 1.8rem; }
 }
 
 .cmp-subtitle {
-    color: rgba(255, 255, 255, 0.4);
-    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.9rem;
     margin: 0;
 }
 
-/* ----- SELECTOR AREA ----- */
-.cmp-selector-area {
+/* ----- 3-COLUMN LAYOUT ----- */
+.cmp-layout {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr) 250px;
+    gap: 18px;
+    align-items: start;
+
+    @media (max-width: 1080px) {
+        grid-template-columns: 200px minmax(0, 1fr) 200px;
+        gap: 12px;
+    }
+
+    @media (max-width: 860px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ----- SIDE RAILS ----- */
+.cmp-rail {
     background: $color-surface;
-    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.07);
-    padding: 20px;
-    margin-bottom: 28px;
-}
-
-.cmp-selectors-row {
+    border-radius: 14px;
+    padding: 14px;
+    position: sticky;
+    top: 86px;
     display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 16px;
-
-    .cmp-selector {
-        flex: 1;
-        min-width: 180px;
-    }
-
-    .cmp-select {
-        width: 100%;
-        font-size: 0.85rem;
-    }
-}
-
-/* ----- DRIVER CARD HEADER ----- */
-.cmp-driver-cards-row {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 18px;
-}
-
-.cmp-driver-card {
-    flex: 1;
-    min-width: 160px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid var(--team-color, rgba(255,255,255,0.1));
-    border-radius: 10px;
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 10px;
-    box-shadow: 0 0 12px rgba(0,0,0,0.3);
 
-    &--empty {
-        color: rgba(255,255,255,0.25);
+    @media (max-width: 860px) {
+        position: static;
+    }
+
+    &__head {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: white;
+        padding-bottom: 8px;
+        border-bottom: 2px solid $color-primary;
+    }
+
+    &--b &__head { border-bottom-color: rgba(255, 255, 255, 0.25); }
+
+    &__search {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #1f1f27;
+        color: white;
         font-size: 0.82rem;
-        justify-content: center;
-        border-style: dashed;
+        outline: none;
+        transition: border-color 0.2s ease;
+
+        &::placeholder { color: rgba(255, 255, 255, 0.35); }
+        &:focus { border-color: $color-primary; }
     }
 
-    &__img {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        object-fit: cover;
-        object-position: top;
-        border: 2px solid var(--team-color, #333);
-        background: rgba(255,255,255,0.05);
-        flex-shrink: 0;
+    /* el filtro reusa .f1-select pero más compacto */
+    &__filter.f1-select {
+        width: 100%;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 8px 28px 8px 12px;
     }
 
-    &__info {
+    &__list {
         display: flex;
         flex-direction: column;
-        gap: 2px;
-        min-width: 0;
+        gap: 4px;
+        max-height: 560px;
+        overflow-y: auto;
+        margin: 0 -6px;
+        padding: 0 6px;
+
+        @media (max-width: 860px) { max-height: 280px; }
+
+        /* scrollbar discreto */
+        &::-webkit-scrollbar { width: 6px; }
+        &::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 3px;
+        }
     }
 
-    &__name {
-        font-size: 0.88rem;
+    &__item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        text-align: left;
+        padding: 8px 10px;
+        border-radius: 9px;
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.03);
+        cursor: pointer;
+        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.07);
+            transform: translateX(2px);
+        }
+
+        &.is-active {
+            background: color-mix(in srgb, var(--team-color, #{$color-primary}) 22%, transparent);
+            border-color: var(--team-color, $color-primary);
+        }
+    }
+
+    &__logo {
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        padding: 5px;
+        background: color-mix(in srgb, var(--team-color, #{$color-primary}) 28%, #1a1a24);
+
+        img { width: 100%; height: 100%; object-fit: contain; }
+    }
+
+    &__names {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        line-height: 1.2;
+    }
+
+    &__driver {
+        font-size: 0.82rem;
+        font-weight: 700;
         color: white;
         white-space: nowrap;
         overflow: hidden;
@@ -112,32 +180,230 @@
     }
 
     &__team {
-        font-size: 0.7rem;
-        font-weight: 700;
+        font-size: 0.66rem;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.4px;
+        color: rgba(255, 255, 255, 0.4);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
-    &__number {
+    &__num {
         margin-left: auto;
-        font-size: 1.1rem;
-        font-weight: 900;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.15rem;
+        font-weight: 800;
+        color: var(--team-color, $color-primary);
         flex-shrink: 0;
+    }
+
+    &__empty {
+        text-align: center;
+        padding: 24px 8px;
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.8rem;
     }
 }
 
-/* ----- ACTIONS ----- */
-.cmp-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: center;
+/* ----- CENTER COLUMN ----- */
+.cmp-center {
+    min-width: 0;
 
-    button:disabled {
-        opacity: 0.3;
-        cursor: not-allowed;
-        transform: none !important;
+    @media (max-width: 860px) { order: -1; }   /* el duelo arriba en mobile */
+}
+
+/* ----- VS HERO ----- */
+.cmp-hero {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 18px;
+
+    &--multi {
+        flex-wrap: wrap;
+        gap: 10px;
     }
+}
+
+.cmp-vs-badge {
+    align-self: center;
+    flex-shrink: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: white;
+    background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+    padding: 8px 12px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(225, 6, 0, 0.45);
+    margin: 0 -10px;
+    z-index: 3;
+    letter-spacing: 1px;
+
+    .cmp-hero--multi & {
+        margin: 0;
+        font-size: 0.95rem;
+        padding: 5px 9px;
+    }
+}
+
+.cmp-hero-card {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 320px;
+    background:
+        radial-gradient(ellipse 120% 70% at 50% 0%, color-mix(in srgb, var(--team-color, #{$color-primary}) 22%, transparent) 0%, transparent 70%),
+        $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 3px solid var(--team-color, $color-primary);
+    border-radius: 14px;
+    padding: 16px 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    overflow: hidden;
+
+    .cmp-hero--multi & { flex-basis: 180px; max-width: 220px; }
+
+    &--empty {
+        justify-content: center;
+        gap: 8px;
+        border-top-color: rgba(255, 255, 255, 0.15);
+        min-height: 220px;
+    }
+
+    &__eyebrow {
+        font-size: 0.66rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: var(--team-color, $color-primary);
+        margin-bottom: 8px;
+    }
+
+    &__placeholder {
+        color: rgba(255, 255, 255, 0.3);
+        font-size: 0.85rem;
+    }
+
+    &__photo {
+        width: 110px;
+        height: 110px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid var(--team-color, $color-primary);
+        background: #1a1a24;
+        box-shadow: 0 0 22px color-mix(in srgb, var(--team-color, #{$color-primary}) 35%, transparent);
+        margin-bottom: 10px;
+
+        img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    }
+
+    &__first {
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: rgba(255, 255, 255, 0.55);
+    }
+
+    &__last {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.7rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        line-height: 1;
+        color: white;
+        margin-bottom: 8px;
+
+        .cmp-hero--multi & { font-size: 1.3rem; }
+    }
+
+    &__team {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: rgba(255, 255, 255, 0.7);
+        max-width: 100%;
+    }
+
+    &__logo {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        padding: 4px;
+        background: color-mix(in srgb, var(--team-color, #{$color-primary}) 25%, #1a1a24);
+
+        img { width: 100%; height: 100%; object-fit: contain; }
+    }
+
+    &__num {
+        position: absolute;
+        top: 6px;
+        right: 12px;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.6rem;
+        font-weight: 800;
+        line-height: 1;
+        color: var(--team-color, $color-primary);
+        opacity: 0.28;
+        pointer-events: none;
+    }
+
+    &__remove {
+        position: absolute;
+        top: 6px;
+        left: 8px;
+        z-index: 2;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(0, 0, 0, 0.4);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 1rem;
+        line-height: 1;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+
+        &:hover { background: $color-primary; color: white; }
+    }
+}
+
+/* ----- EXTRA ACTIONS ----- */
+.cmp-extra-actions {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.cmp-add-btn {
+    background: transparent;
+    border: 1px dashed rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 7px 18px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: border-color 0.2s ease, color 0.2s ease;
+
+    &:hover:not(:disabled) { border-color: $color-primary; color: white; }
+    &:disabled { opacity: 0.3; cursor: not-allowed; }
 }
 
 /* ----- SECTION TITLE ----- */
@@ -146,8 +412,8 @@
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: rgba(255, 255, 255, 0.3);
-    margin: 28px 0 14px;
+    color: rgba(255, 255, 255, 0.35);
+    margin: 26px 0 14px;
     padding-bottom: 8px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -155,18 +421,15 @@
 /* ----- STATS GRID ----- */
 .cmp-stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 10px;
-    margin-bottom: 8px;
 
-    @include mobile {
-        grid-template-columns: repeat(2, 1fr);
-    }
+    @include mobile { grid-template-columns: repeat(2, 1fr); }
 }
 
 .cmp-stat {
     background: $color-surface;
-    border: 1px solid rgba(255,255,255,0.07);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 10px;
     padding: 12px 14px;
     display: flex;
@@ -175,7 +438,7 @@
     text-align: center;
 
     &__label {
-        font-size: 0.65rem;
+        font-size: 0.64rem;
         font-weight: 800;
         text-transform: uppercase;
         letter-spacing: 1px;
@@ -190,15 +453,17 @@
     }
 
     &__value {
-        font-size: 1.4rem;
-        font-weight: 900;
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
         line-height: 1;
     }
 
     &__sep {
-        font-size: 0.65rem;
-        color: rgba(255,255,255,0.2);
+        font-size: 0.6rem;
+        color: rgba(255, 255, 255, 0.2);
         font-weight: 700;
+        text-transform: uppercase;
     }
 }
 
@@ -208,28 +473,22 @@
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     padding: 18px;
-    height: 280px;
-    margin-bottom: 4px;
+    height: 300px;
 
-    canvas {
-        width: 100% !important;
-        height: 100% !important;
-    }
+    canvas { width: 100% !important; height: 100% !important; }
 
-    @include mobile { height: 220px; }
+    @include mobile { height: 240px; padding: 12px; }
 }
 
 /* ----- HEAD TO HEAD ----- */
-.cmp-h2h {
-    margin-top: 8px;
-}
+.cmp-h2h { margin-top: 8px; }
 
 .cmp-h2h__scoreboard {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 24px;
-    margin-bottom: 20px;
+    gap: 28px;
+    margin-bottom: 18px;
     padding: 20px;
     background: $color-surface;
     border-radius: 12px;
@@ -244,10 +503,26 @@
     min-width: 80px;
 }
 
+.cmp-h2h__score-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    line-height: 1;
+}
+
+.cmp-h2h__score-lbl {
+    font-size: 0.66rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.35);
+}
+
 .cmp-h2h__vs {
-    font-size: 1.1rem;
-    font-weight: 900;
-    color: rgba(255, 255, 255, 0.15);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.18);
     letter-spacing: 2px;
 }
 
@@ -262,10 +537,10 @@
         font-weight: 800;
         letter-spacing: 1px;
         text-transform: uppercase;
-        border-bottom: 2px solid rgba(255,255,255,0.08);
+        border-bottom: 2px solid rgba(255, 255, 255, 0.08);
 
         &:first-child  { text-align: right; }
-        &:nth-child(2) { text-align: center; color: rgba(255,255,255,0.3); }
+        &:nth-child(2) { text-align: center; color: rgba(255, 255, 255, 0.3); }
         &:last-child   { text-align: left; }
     }
 
@@ -273,7 +548,7 @@
         border-bottom: 1px solid rgba(255, 255, 255, 0.04);
         transition: background 0.15s ease;
 
-        &:hover { background: rgba(255,255,255,0.03); }
+        &:hover { background: rgba(255, 255, 255, 0.03); }
     }
 }
 
@@ -284,10 +559,7 @@
 
     &:first-child { text-align: right; }
     &:last-child  { text-align: left; }
-
-    &.winner {
-        font-size: 1rem;
-    }
+    &.winner { font-size: 1rem; }
 }
 
 .cmp-h2h__race {
@@ -297,10 +569,12 @@
     font-size: 0.8rem;
 }
 
-/* ----- LOADING ----- */
+/* ----- LOADING / ERROR ----- */
 .cmp-loading {
     text-align: center;
     padding: 60px 20px;
     color: rgba(255, 255, 255, 0.55);
     font-size: 0.95rem;
+
+    &--error { color: $color-primary; }
 }
