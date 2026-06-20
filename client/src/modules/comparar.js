@@ -235,6 +235,8 @@ function heroCardHTML(driver, slot, removable, allDrivers) {
     const removeBtn = removable
         ? `<button class="cmp-hero-card__remove" data-remove-slot="${slot}" aria-label="Quitar piloto ${label}">×</button>`
         : '';
+    // Disparador del bottom-sheet (sólo visible en mobile vía CSS)
+    const changeBtn = `<button class="cmp-hero-card__change" data-open-slot="${slot}" aria-haspopup="dialog">Cambiar piloto</button>`;
 
     if (!driver) {
         // Sólo ocurre en slots extra sin piloto resuelto → mostramos el picker igual
@@ -244,6 +246,7 @@ function heroCardHTML(driver, slot, removable, allDrivers) {
                 <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
                 <span class="cmp-hero-card__placeholder">Elegí un piloto</span>
                 ${removable ? heroPickerHTML(slot, null, allDrivers) : ''}
+                ${changeBtn}
             </div>`;
     }
 
@@ -262,6 +265,7 @@ function heroCardHTML(driver, slot, removable, allDrivers) {
             </span>
             <span class="cmp-hero-card__num">${esc(driver.permanent_number)}</span>
             ${removable ? heroPickerHTML(slot, driver.id, allDrivers) : ''}
+            ${changeBtn}
         </div>`;
 }
 
@@ -353,18 +357,38 @@ export async function loadCompararView() {
 
                 ${railHTML(1)}
             </div>
+
+            <div class="cmp-sheet" id="cmpSheet" hidden aria-hidden="true">
+                <div class="cmp-sheet__backdrop" data-sheet-close></div>
+                <div class="cmp-sheet__panel" role="dialog" aria-modal="true" aria-labelledby="cmpSheetTitle">
+                    <div class="cmp-sheet__grip"></div>
+                    <div class="cmp-sheet__head">
+                        <h2 class="cmp-sheet__title" id="cmpSheetTitle">Elegí piloto</h2>
+                        <button class="cmp-sheet__close" data-sheet-close aria-label="Cerrar">×</button>
+                    </div>
+                    <input type="search" class="cmp-sheet__search" id="cmpSheetSearch" placeholder="Buscar piloto..." aria-label="Buscar piloto">
+                    <select class="cmp-sheet__filter f1-select" id="cmpSheetTeam" aria-label="Filtrar por equipo">
+                        <option value="">Todos los equipos</option>
+                        ${teamOptions}
+                    </select>
+                    <div class="cmp-sheet__list" id="cmpSheetList"></div>
+                </div>
+            </div>
         </div>
     `;
 
     // ── Render helpers ──────────────────────────────────────────────────────────
-    function filteredDrivers(slot) {
-        const q = cmp.railSearch[slot].trim().toLowerCase();
-        const team = cmp.railTeam[slot];
+    function matchDrivers(query, team) {
+        const q = (query || '').trim().toLowerCase();
         return drivers.filter(d => {
             if (team && d.team_name !== team) return false;
             if (!q) return true;
             return `${d.first_name} ${d.last_name} ${d.team_name}`.toLowerCase().includes(q);
         });
+    }
+
+    function filteredDrivers(slot) {
+        return matchDrivers(cmp.railSearch[slot], cmp.railTeam[slot]);
     }
 
     function renderRail(slot) {
@@ -430,14 +454,80 @@ export async function loadCompararView() {
         });
     });
 
-    // Quitar slot extra (delegación en el hero)
+    // Clicks en el hero: abrir sheet (mobile) o quitar slot extra
     document.getElementById('cmpHero').addEventListener('click', (e) => {
+        const open = e.target.closest('[data-open-slot]');
+        if (open) { openSheet(Number(open.dataset.openSlot), open); return; }
+
         const rm = e.target.closest('[data-remove-slot]');
         if (!rm) return;
         const slot = Number(rm.dataset.removeSlot);
         cmp.ids.splice(slot, 1);
         renderHero();
         runCompare();
+    });
+
+    // ── Bottom sheet (selección en mobile) ──────────────────────────────────────
+    const sheet = { slot: null, search: '', team: '', trigger: null };
+    const sheetEl = document.getElementById('cmpSheet');
+    const sheetList = document.getElementById('cmpSheetList');
+    const sheetSearch = document.getElementById('cmpSheetSearch');
+    const sheetTeam = document.getElementById('cmpSheetTeam');
+    const sheetTitle = document.getElementById('cmpSheetTitle');
+
+    function renderSheetList() {
+        const activeId = cmp.ids[sheet.slot];
+        const items = matchDrivers(sheet.search, sheet.team);
+        sheetList.innerHTML = items.length
+            ? items.map(d => railItemHTML(d, sheet.slot, d.id == activeId)).join('')
+            : `<div class="cmp-rail__empty">No hay pilotos que coincidan.</div>`;
+    }
+
+    function openSheet(slot, trigger) {
+        sheet.slot = slot;
+        sheet.search = '';
+        sheet.team = '';
+        sheet.trigger = trigger || null;
+        sheetSearch.value = '';
+        sheetTeam.value = '';
+        sheetTitle.textContent = `Elegí Piloto ${SLOT_LABELS[slot] || ''}`;
+        renderSheetList();
+        sheetEl.hidden = false;
+        sheetEl.setAttribute('aria-hidden', 'false');
+        requestAnimationFrame(() => sheetEl.classList.add('is-open'));
+        document.body.style.overflow = 'hidden';
+        setTimeout(() => sheetSearch.focus(), 60);
+    }
+
+    function closeSheet() {
+        const trigger = sheet.trigger;
+        sheetEl.classList.remove('is-open');
+        sheetEl.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        setTimeout(() => { sheetEl.hidden = true; }, 240);
+        sheet.slot = null;
+        sheet.trigger = null;
+        if (trigger && trigger.focus) trigger.focus();
+    }
+
+    sheetEl.querySelectorAll('[data-sheet-close]').forEach(el => el.addEventListener('click', closeSheet));
+    sheetEl.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+    sheetSearch.addEventListener('input', (e) => { sheet.search = e.target.value; renderSheetList(); });
+    sheetTeam.addEventListener('change', (e) => { sheet.team = e.target.value; renderSheetList(); });
+
+    sheetList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.cmp-rail__item');
+        if (!btn || sheet.slot == null) return;
+        const slot = sheet.slot;
+        const id = Number(btn.dataset.driverId);
+        if (cmp.ids[slot] != id) {
+            cmp.ids[slot] = id;
+            if (slot < 2) renderRail(slot);
+            renderHero();
+            runCompare();
+        }
+        closeSheet();
     });
 
     // Cambiar el piloto de un slot extra (C/D) desde su propio selector
