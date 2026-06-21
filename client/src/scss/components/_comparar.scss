@@ -405,6 +405,42 @@
         font-weight: 700;
         text-transform: uppercase;
     }
+
+    /* 3-4 pilotos: mini tabla de tiempos (código + valor) en vez de "a vs b" */
+    &--multi { gap: 8px; }
+
+    &__list {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+    }
+
+    &__line {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+        &:last-child { border-bottom: none; }
+    }
+
+    &__code {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 0.82rem;
+        font-weight: 800;
+        letter-spacing: 0.6px;
+    }
+
+    &__lineval {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.25rem;
+        font-weight: 800;
+        line-height: 1;
+        color: white;
+    }
 }
 
 /* ----- CHARTS ----- */

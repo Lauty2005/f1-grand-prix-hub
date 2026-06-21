@@ -32,10 +32,31 @@ function imgSrc(url) {
 const SLOT_LABELS = ['A', 'B', 'C', 'D'];
 
 // ─── STAT BOX ─────────────────────────────────────────────────────────────────
-function statBox(label, values, colors) {
-    const cells = values.map((v, i) => `
-        <span class="cmp-stat__value" style="color:${colors[i]};">${esc(v)}</span>
-    `).join('<span class="cmp-stat__sep">vs</span>');
+// Código de 3 letras estilo timing F1 (Verstappen → VER), sin acentos.
+function driverCode(d) {
+    return (d.last_name || d.first_name || '')
+        .normalize('NFD').replace(/[̀-ͯ]/g, '')
+        .slice(0, 3).toUpperCase();
+}
+
+// 2 pilotos → duelo "A vs B"; 3-4 → mini tabla de tiempos (código + valor).
+function statBox(label, values, meta) {
+    if (values.length > 2) {
+        const lines = values.map((v, i) => `
+            <div class="cmp-stat__line">
+                <span class="cmp-stat__code" style="color:${meta[i].color};">${esc(meta[i].code)}</span>
+                <span class="cmp-stat__lineval">${esc(v)}</span>
+            </div>`).join('');
+        return `
+            <div class="cmp-stat cmp-stat--multi">
+                <span class="cmp-stat__label">${esc(label)}</span>
+                <div class="cmp-stat__list">${lines}</div>
+            </div>`;
+    }
+
+    const cells = values.map((v, i) =>
+        `<span class="cmp-stat__value" style="color:${meta[i].color};">${esc(v)}</span>`
+    ).join('<span class="cmp-stat__sep">vs</span>');
     return `
         <div class="cmp-stat">
             <span class="cmp-stat__label">${esc(label)}</span>
@@ -94,7 +115,7 @@ function h2hTableHTML(h2h, drivers) {
 // ─── RENDER RESULTS (stats + charts + h2h) ─────────────────────────────────────
 function renderResults(data) {
     const { drivers, perRace, h2h } = data;
-    const colors = drivers.map(d => d.primary_color);
+    const statMeta = drivers.map(d => ({ color: d.primary_color, code: driverCode(d) }));
 
     // Build race labels union (all rounds any driver participated in)
     const roundMap = {};
@@ -145,13 +166,13 @@ function renderResults(data) {
 
     const statsHTML = `
         <div class="cmp-stats-grid">
-            ${statBox('Puntos',    drivers.map(d => d.points),       colors)}
-            ${statBox('Carreras',  drivers.map(d => d.races),        colors)}
-            ${statBox('Victorias', drivers.map(d => d.wins),         colors)}
-            ${statBox('Podios',    drivers.map(d => d.podiums),      colors)}
-            ${statBox('Top 10',    drivers.map(d => d.top10),        colors)}
-            ${statBox('DNF',       drivers.map(d => d.dnfs),         colors)}
-            ${statBox('V. Rápida', drivers.map(d => d.fastest_laps), colors)}
+            ${statBox('Puntos',    drivers.map(d => d.points),       statMeta)}
+            ${statBox('Carreras',  drivers.map(d => d.races),        statMeta)}
+            ${statBox('Victorias', drivers.map(d => d.wins),         statMeta)}
+            ${statBox('Podios',    drivers.map(d => d.podiums),      statMeta)}
+            ${statBox('Top 10',    drivers.map(d => d.top10),        statMeta)}
+            ${statBox('DNF',       drivers.map(d => d.dnfs),         statMeta)}
+            ${statBox('V. Rápida', drivers.map(d => d.fastest_laps), statMeta)}
         </div>`;
 
     const resultsContainer = document.getElementById('cmpResults');
