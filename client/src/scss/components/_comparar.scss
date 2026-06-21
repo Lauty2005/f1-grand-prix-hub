@@ -5,7 +5,7 @@
    ============================================================ */
 
 .cmp-page {
-    max-width: 1280px;
+    max-width: 880px;
     margin: 0 auto;
     padding: 20px 16px 80px;
 }
@@ -37,180 +37,95 @@
     margin: 0;
 }
 
-/* ----- 3-COLUMN LAYOUT ----- */
-.cmp-layout {
-    display: grid;
-    grid-template-columns: 250px minmax(0, 1fr) 250px;
-    gap: 18px;
-    align-items: start;
-
-    @media (max-width: 1080px) {
-        grid-template-columns: 200px minmax(0, 1fr) 200px;
-        gap: 12px;
-    }
-
-    @media (max-width: 860px) {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ----- SIDE RAILS ----- */
-.cmp-rail {
-    background: $color-surface;
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    border-radius: 14px;
-    padding: 14px;
-    position: sticky;
-    top: 86px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-
-    @media (max-width: 860px) {
-        position: static;
-    }
-
-    &__head {
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 1.1rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: white;
-        padding-bottom: 8px;
-        border-bottom: 2px solid $color-primary;
-    }
-
-    &--b &__head { border-bottom-color: rgba(255, 255, 255, 0.25); }
-
-    &__search {
-        width: 100%;
-        padding: 8px 12px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.12);
-        background: #1f1f27;
-        color: white;
-        font-size: 0.82rem;
-        outline: none;
-        transition: border-color 0.2s ease;
-
-        &::placeholder { color: rgba(255, 255, 255, 0.35); }
-        &:focus { border-color: $color-primary; }
-    }
-
-    /* el filtro reusa .f1-select pero más compacto */
-    &__filter.f1-select {
-        width: 100%;
-        font-size: 0.8rem;
-        font-weight: 600;
-        padding: 8px 28px 8px 12px;
-    }
-
-    &__list {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        max-height: 560px;
-        overflow-y: auto;
-        margin: 0 -6px;
-        padding: 0 6px;
-
-        @media (max-width: 860px) { max-height: 280px; }
-
-        /* scrollbar discreto */
-        &::-webkit-scrollbar { width: 6px; }
-        &::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 3px;
-        }
-    }
-
-    &__item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        text-align: left;
-        padding: 8px 10px;
-        border-radius: 9px;
-        border: 1px solid transparent;
-        background: rgba(255, 255, 255, 0.03);
-        cursor: pointer;
-        transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
-
-        &:hover {
-            background: rgba(255, 255, 255, 0.07);
-            transform: translateX(2px);
-        }
-
-        &.is-active {
-            background: color-mix(in srgb, var(--team-color, #{$color-primary}) 22%, transparent);
-            border-color: var(--team-color, $color-primary);
-        }
-    }
-
-    &__logo {
-        width: 30px;
-        height: 30px;
-        flex-shrink: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        padding: 5px;
-        background: color-mix(in srgb, var(--team-color, #{$color-primary}) 28%, #1a1a24);
-
-        img { width: 100%; height: 100%; object-fit: contain; }
-    }
-
-    &__names {
-        display: flex;
-        flex-direction: column;
-        min-width: 0;
-        line-height: 1.2;
-    }
-
-    &__driver {
-        font-size: 0.82rem;
-        font-weight: 700;
-        color: white;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    &__team {
-        font-size: 0.66rem;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        color: rgba(255, 255, 255, 0.4);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    &__num {
-        margin-left: auto;
-        font-family: 'Barlow Condensed', sans-serif;
-        font-size: 1.15rem;
-        font-weight: 800;
-        color: var(--team-color, $color-primary);
-        flex-shrink: 0;
-    }
-
-    &__empty {
-        text-align: center;
-        padding: 24px 8px;
-        color: rgba(255, 255, 255, 0.3);
-        font-size: 0.8rem;
-    }
-}
-
-/* ----- CENTER COLUMN ----- */
+/* ----- SINGLE CENTERED COLUMN ----- */
 .cmp-center {
     min-width: 0;
+}
 
-    @media (max-width: 860px) { order: -1; }   /* el duelo arriba en mobile */
+/* ----- PICKER ROWS (lista del sheet/modal) ----- */
+.cmp-pick__item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    width: 100%;
+    text-align: left;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    cursor: pointer;
+    transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.07);
+        transform: translateX(2px);
+    }
+
+    &.is-active {
+        background: color-mix(in srgb, var(--team-color, #{$color-primary}) 22%, transparent);
+        border-color: var(--team-color, $color-primary);
+    }
+
+    &:focus-visible {
+        outline: 2px solid var(--team-color, $color-primary);
+        outline-offset: 2px;
+    }
+}
+
+.cmp-pick__logo {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 5px;
+    background: color-mix(in srgb, var(--team-color, #{$color-primary}) 28%, #1a1a24);
+
+    img { width: 100%; height: 100%; object-fit: contain; }
+}
+
+.cmp-pick__names {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+}
+
+.cmp-pick__driver {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cmp-pick__team {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: rgba(255, 255, 255, 0.4);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.cmp-pick__num {
+    margin-left: auto;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--team-color, $color-primary);
+    flex-shrink: 0;
+}
+
+.cmp-pick__empty {
+    text-align: center;
+    padding: 28px 8px;
+    color: rgba(255, 255, 255, 0.3);
+    font-size: 0.85rem;
 }
 
 /* ----- VS HERO ----- */
@@ -381,28 +296,9 @@
         &:hover { background: $color-primary; color: white; }
     }
 
-    /* selector de piloto para slots extra (C/D) — sólo desktop */
-    &__select {
-        margin-top: 10px;
-        width: 100%;
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        background: #1f1f27;
-        color: white;
-        font-size: 0.78rem;
-        font-weight: 600;
-        cursor: pointer;
-        outline: none;
-        transition: border-color 0.2s ease;
-
-        &:hover { border-color: var(--team-color, $color-primary); }
-        &:focus { border-color: var(--team-color, $color-primary); }
-    }
-
-    /* disparador del bottom-sheet — sólo mobile (ver media query) */
+    /* disparador del sheet/modal de selección — visible en todos los viewports */
     &__change {
-        display: none;
+        display: flex;
         margin-top: 12px;
         width: 100%;
         padding: 9px 10px;
@@ -624,12 +520,16 @@
 }
 
 /* ============================================================
-   BOTTOM SHEET (selección de pilotos en mobile)
+   BOTTOM SHEET — selección de pilotos (igual en mobile y desktop;
+   en desktop queda acotado en ancho y centrado horizontalmente)
    ============================================================ */
 .cmp-sheet {
     position: fixed;
     inset: 0;
     z-index: 1000;
+    display: flex;
+    align-items: flex-end;       /* el panel sube desde abajo, como en mobile */
+    justify-content: center;
 
     &[hidden] { display: none; }
 
@@ -643,10 +543,10 @@
     &.is-open &__backdrop { opacity: 1; }
 
     &__panel {
-        position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
+        position: relative;
+        z-index: 1;
+        width: 100%;
+        max-width: 560px;            /* en desktop no ocupa todo el ancho */
         display: flex;
         flex-direction: column;
         max-height: 86vh;
@@ -737,22 +637,10 @@
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
         padding-bottom: 4px;
-
-        /* las filas reutilizan .cmp-rail__item, pero acá más altas para el dedo */
-        .cmp-rail__item { padding: 11px 12px; }
-        .cmp-rail__logo { width: 34px; height: 34px; }
-        .cmp-rail__driver { font-size: 0.9rem; }
     }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .cmp-sheet__backdrop,
     .cmp-sheet__panel { transition: none; }
-}
-
-/* ----- MOBILE: rails fuera, selección por sheet ----- */
-@media (max-width: 860px) {
-    .cmp-rail { display: none; }              /* los rails desktop se ocultan */
-    .cmp-hero-card__select { display: none; } /* el <select> nativo de extras también */
-    .cmp-hero-card__change { display: flex; } /* aparece el disparador del sheet */
 }

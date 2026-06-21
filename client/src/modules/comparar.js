@@ -218,34 +218,21 @@ async function fetchAndCompare(ids) {
 }
 
 // ─── VS HERO CARD ─────────────────────────────────────────────────────────────
-// Los slots A/B se eligen desde los rails. Los slots extra (C/D) son removibles
-// y traen su propio <select> para poder cambiar el piloto (los rails no los cubren).
-function heroPickerHTML(slot, selectedId, allDrivers) {
-    const opts = (allDrivers || []).map(d =>
-        `<option value="${esc(d.id)}" ${d.id == selectedId ? 'selected' : ''}>${esc(d.first_name)} ${esc(d.last_name)}</option>`
-    ).join('');
-    return `
-        <select class="cmp-hero-card__select" data-select-slot="${slot}" aria-label="Elegir piloto ${SLOT_LABELS[slot] || ''}">
-            ${opts}
-        </select>`;
-}
-
-function heroCardHTML(driver, slot, removable, allDrivers) {
+// La selección (en cualquier viewport) ocurre desde el bottom-sheet/modal que
+// abre el botón "Cambiar piloto". Los slots extra (C/D) además son removibles.
+function heroCardHTML(driver, slot, removable) {
     const label = SLOT_LABELS[slot] || '';
     const removeBtn = removable
         ? `<button class="cmp-hero-card__remove" data-remove-slot="${slot}" aria-label="Quitar piloto ${label}">×</button>`
         : '';
-    // Disparador del bottom-sheet (sólo visible en mobile vía CSS)
     const changeBtn = `<button class="cmp-hero-card__change" data-open-slot="${slot}" aria-haspopup="dialog">Cambiar piloto</button>`;
 
     if (!driver) {
-        // Sólo ocurre en slots extra sin piloto resuelto → mostramos el picker igual
         return `
             <div class="cmp-hero-card cmp-hero-card--empty" data-slot="${slot}">
                 ${removeBtn}
                 <span class="cmp-hero-card__eyebrow">Piloto ${label}</span>
                 <span class="cmp-hero-card__placeholder">Elegí un piloto</span>
-                ${removable ? heroPickerHTML(slot, null, allDrivers) : ''}
                 ${changeBtn}
             </div>`;
     }
@@ -264,24 +251,22 @@ function heroCardHTML(driver, slot, removable, allDrivers) {
                 ${esc(driver.team_name)}
             </span>
             <span class="cmp-hero-card__num">${esc(driver.permanent_number)}</span>
-            ${removable ? heroPickerHTML(slot, driver.id, allDrivers) : ''}
             ${changeBtn}
         </div>`;
 }
 
-// ─── RAIL ITEM ────────────────────────────────────────────────────────────────
-function railItemHTML(driver, slot, active) {
+// ─── PICKER ITEM (lista del sheet) ─────────────────────────────────────────────
+function pickerItemHTML(driver, active) {
     return `
-        <button class="cmp-rail__item ${active ? 'is-active' : ''}"
+        <button class="cmp-pick__item ${active ? 'is-active' : ''}"
                 style="--team-color:${esc(driver.primary_color)};"
-                data-driver-id="${esc(driver.id)}" data-slot="${slot}"
-                aria-pressed="${active}">
-            <span class="cmp-rail__logo"><img src="${imgSrc(driver.logo_url)}" alt="" width="22" height="22" loading="lazy" role="presentation"></span>
-            <span class="cmp-rail__names">
-                <span class="cmp-rail__driver">${esc(driver.first_name)} ${esc(driver.last_name)}</span>
-                <span class="cmp-rail__team">${esc(driver.team_name)}</span>
+                data-driver-id="${esc(driver.id)}" aria-pressed="${active}">
+            <span class="cmp-pick__logo"><img src="${imgSrc(driver.logo_url)}" alt="" width="22" height="22" loading="lazy" role="presentation"></span>
+            <span class="cmp-pick__names">
+                <span class="cmp-pick__driver">${esc(driver.first_name)} ${esc(driver.last_name)}</span>
+                <span class="cmp-pick__team">${esc(driver.team_name)}</span>
             </span>
-            <span class="cmp-rail__num">${esc(driver.permanent_number)}</span>
+            <span class="cmp-pick__num">${esc(driver.permanent_number)}</span>
         </button>`;
 }
 
@@ -312,30 +297,11 @@ export async function loadCompararView() {
     }
 
     // Estado local del comparador
-    const cmp = {
-        ids: [drivers[0].id, drivers[1].id],   // slot 0 (A) y slot 1 (B) por defecto
-        railSearch: ['', ''],                  // texto de búsqueda por rail
-        railTeam: ['', ''],                    // filtro de equipo por rail
-    };
+    const cmp = { ids: [drivers[0].id, drivers[1].id] };   // slot 0 (A) y 1 (B) por defecto
 
-    // Lista de equipos únicos (para el filtro de cada rail)
+    // Equipos únicos (filtro del sheet)
     const teams = [...new Set(drivers.map(d => d.team_name))].sort();
     const teamOptions = teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-
-    function railHTML(slot) {
-        const label = SLOT_LABELS[slot];
-        return `
-            <aside class="cmp-rail cmp-rail--${slot === 0 ? 'a' : 'b'}" data-slot="${slot}">
-                <div class="cmp-rail__head">Piloto ${label}</div>
-                <input type="search" class="cmp-rail__search" placeholder="Buscar piloto..."
-                       data-rail-search="${slot}" aria-label="Buscar piloto ${label}">
-                <select class="cmp-rail__filter f1-select" data-rail-team="${slot}" aria-label="Filtrar por equipo ${label}">
-                    <option value="">Todos los equipos</option>
-                    ${teamOptions}
-                </select>
-                <div class="cmp-rail__list" data-rail-list="${slot}"></div>
-            </aside>`;
-    }
 
     app.innerHTML = `
         <div class="cmp-page">
@@ -344,19 +310,13 @@ export async function loadCompararView() {
                 <p class="cmp-subtitle">Elegí dos pilotos para enfrentarlos — o sumá hasta cuatro.</p>
             </div>
 
-            <div class="cmp-layout">
-                ${railHTML(0)}
-
-                <section class="cmp-center">
-                    <div class="cmp-hero" id="cmpHero"></div>
-                    <div class="cmp-extra-actions">
-                        <button class="cmp-add-btn" id="btnAddSlot">+ Agregar piloto</button>
-                    </div>
-                    <div id="cmpResults"></div>
-                </section>
-
-                ${railHTML(1)}
-            </div>
+            <section class="cmp-center">
+                <div class="cmp-hero" id="cmpHero"></div>
+                <div class="cmp-extra-actions">
+                    <button class="cmp-add-btn" id="btnAddSlot">+ Agregar piloto</button>
+                </div>
+                <div id="cmpResults"></div>
+            </section>
 
             <div class="cmp-sheet" id="cmpSheet" hidden aria-hidden="true">
                 <div class="cmp-sheet__backdrop" data-sheet-close></div>
@@ -387,27 +347,12 @@ export async function loadCompararView() {
         });
     }
 
-    function filteredDrivers(slot) {
-        return matchDrivers(cmp.railSearch[slot], cmp.railTeam[slot]);
-    }
-
-    function renderRail(slot) {
-        const list = app.querySelector(`[data-rail-list="${slot}"]`);
-        if (!list) return;
-        const activeId = cmp.ids[slot];
-        const items = filteredDrivers(slot);
-        list.innerHTML = items.length
-            ? items.map(d => railItemHTML(d, slot, d.id == activeId)).join('')
-            : `<div class="cmp-rail__empty">Sin resultados</div>`;
-    }
-
     function renderHero() {
         const hero = document.getElementById('cmpHero');
         const cards = [];
         cmp.ids.forEach((id, i) => {
             const d = drivers.find(x => x.id == id) || null;
-            // Slots A y B nunca removibles; los extras (C, D) sí, con su propio selector
-            cards.push(heroCardHTML(d, i, i >= 2, drivers));
+            cards.push(heroCardHTML(d, i, i >= 2));   // A y B fijos; extras removibles
             if (i < cmp.ids.length - 1) cards.push(`<span class="cmp-vs-badge">VS</span>`);
         });
         hero.innerHTML = cards.join('');
@@ -423,51 +368,7 @@ export async function loadCompararView() {
         fetchAndCompare(ids);
     }
 
-    // ── Eventos: selección en rails (delegación) ────────────────────────────────
-    app.querySelectorAll('[data-rail-list]').forEach(listEl => {
-        listEl.addEventListener('click', (e) => {
-            const btn = e.target.closest('.cmp-rail__item');
-            if (!btn) return;
-            const slot = Number(btn.dataset.slot);
-            const id = Number(btn.dataset.driverId);
-            if (cmp.ids[slot] == id) return;
-            cmp.ids[slot] = id;
-            renderRail(slot);
-            renderHero();
-            runCompare();
-        });
-    });
-
-    // Búsqueda y filtro por rail
-    app.querySelectorAll('[data-rail-search]').forEach(input => {
-        input.addEventListener('input', (e) => {
-            const slot = Number(e.target.dataset.railSearch);
-            cmp.railSearch[slot] = e.target.value;
-            renderRail(slot);
-        });
-    });
-    app.querySelectorAll('[data-rail-team]').forEach(sel => {
-        sel.addEventListener('change', (e) => {
-            const slot = Number(e.target.dataset.railTeam);
-            cmp.railTeam[slot] = e.target.value;
-            renderRail(slot);
-        });
-    });
-
-    // Clicks en el hero: abrir sheet (mobile) o quitar slot extra
-    document.getElementById('cmpHero').addEventListener('click', (e) => {
-        const open = e.target.closest('[data-open-slot]');
-        if (open) { openSheet(Number(open.dataset.openSlot), open); return; }
-
-        const rm = e.target.closest('[data-remove-slot]');
-        if (!rm) return;
-        const slot = Number(rm.dataset.removeSlot);
-        cmp.ids.splice(slot, 1);
-        renderHero();
-        runCompare();
-    });
-
-    // ── Bottom sheet (selección en mobile) ──────────────────────────────────────
+    // ── Bottom sheet / modal de selección ───────────────────────────────────────
     const sheet = { slot: null, search: '', team: '', trigger: null };
     const sheetEl = document.getElementById('cmpSheet');
     const sheetList = document.getElementById('cmpSheetList');
@@ -479,8 +380,8 @@ export async function loadCompararView() {
         const activeId = cmp.ids[sheet.slot];
         const items = matchDrivers(sheet.search, sheet.team);
         sheetList.innerHTML = items.length
-            ? items.map(d => railItemHTML(d, sheet.slot, d.id == activeId)).join('')
-            : `<div class="cmp-rail__empty">No hay pilotos que coincidan.</div>`;
+            ? items.map(d => pickerItemHTML(d, d.id == activeId)).join('')
+            : `<div class="cmp-pick__empty">No hay pilotos que coincidan.</div>`;
     }
 
     function openSheet(slot, trigger) {
@@ -517,27 +418,27 @@ export async function loadCompararView() {
     sheetTeam.addEventListener('change', (e) => { sheet.team = e.target.value; renderSheetList(); });
 
     sheetList.addEventListener('click', (e) => {
-        const btn = e.target.closest('.cmp-rail__item');
+        const btn = e.target.closest('.cmp-pick__item');
         if (!btn || sheet.slot == null) return;
         const slot = sheet.slot;
         const id = Number(btn.dataset.driverId);
         if (cmp.ids[slot] != id) {
             cmp.ids[slot] = id;
-            if (slot < 2) renderRail(slot);
             renderHero();
             runCompare();
         }
         closeSheet();
     });
 
-    // Cambiar el piloto de un slot extra (C/D) desde su propio selector
-    document.getElementById('cmpHero').addEventListener('change', (e) => {
-        const sel = e.target.closest('[data-select-slot]');
-        if (!sel) return;
-        const slot = Number(sel.dataset.selectSlot);
-        const id = Number(sel.value);
-        if (!id || cmp.ids[slot] == id) return;
-        cmp.ids[slot] = id;
+    // ── Clicks en el hero: abrir sheet o quitar slot extra ──────────────────────
+    document.getElementById('cmpHero').addEventListener('click', (e) => {
+        const open = e.target.closest('[data-open-slot]');
+        if (open) { openSheet(Number(open.dataset.openSlot), open); return; }
+
+        const rm = e.target.closest('[data-remove-slot]');
+        if (!rm) return;
+        const slot = Number(rm.dataset.removeSlot);
+        cmp.ids.splice(slot, 1);
         renderHero();
         runCompare();
     });
@@ -553,8 +454,6 @@ export async function loadCompararView() {
     });
 
     // ── Render inicial ──────────────────────────────────────────────────────────
-    renderRail(0);
-    renderRail(1);
     renderHero();
     runCompare();
 }
