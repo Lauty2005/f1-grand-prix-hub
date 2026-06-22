@@ -134,8 +134,8 @@ export async function loadCalendarView() {
                     <p class="calendar-header__subtitle">Temporada ${state.currentYear} de Fórmula 1</p>
                 </div>
                 <div id="calendar-next-banner" class="next-race-banner"></div>
-                ${section('Próximas', upcoming, 'upcoming')}
                 ${section('Completadas', completed, 'done')}
+                ${section('Próximas', upcoming, 'upcoming')}
             </div>
         `;
 
@@ -161,6 +161,13 @@ export async function loadCalendarView() {
 function startCalendarCountdown(races) {
     const valid = races.filter(r => r.status !== 'suspended');
 
+    // Carrera que representa el banner ahora mismo. Permite que al hacer clic
+    // se abra la tarjeta (modal) de esa carrera, igual que en las tarjetas.
+    let bannerRace = null;
+
+    const resolveMap = (url) =>
+        url && !url.startsWith('http') ? `${SERVER_URL}${url}` : url;
+
     const render = () => {
         const banner = document.getElementById('calendar-next-banner');
         // La vista cambió de pestaña → el banner ya no existe: frenamos el timer.
@@ -176,6 +183,8 @@ function startCalendarCountdown(races) {
         for (const race of valid) {
             const live = getRaceLiveState(race, now);
             if (live.status === 'live' && live.liveSession) {
+                bannerRace = race;
+                banner.style.cursor = 'pointer';
                 banner.className = 'next-race-banner next-race-banner--live';
                 banner.innerHTML = `
                     <span class="next-race-banner__label">● En vivo &mdash; ${live.liveSession.label}</span>
@@ -190,19 +199,21 @@ function startCalendarCountdown(races) {
         for (const race of valid) {
             for (const s of getSessionSchedule(race)) {
                 if (s.start > now && (!next || s.start < next.start)) {
-                    next = { start: s.start, name: race.name };
+                    next = { start: s.start, race };
                 }
             }
         }
 
         // 3. Respaldo: si ninguna carrera tiene horarios, usar la fecha de carrera.
-        let targetDate, raceName;
+        let targetDate, race;
         if (next) {
             targetDate = next.start;
-            raceName = next.name;
+            race = next.race;
         } else {
             const nextRace = valid.find(r => new Date(r.date) > now);
             if (!nextRace) {
+                bannerRace = null;
+                banner.style.cursor = 'default';
                 banner.className = 'next-race-banner next-race-banner--done';
                 banner.innerHTML = '<span class="next-race-banner__label">Temporada finalizada 🏁</span>';
                 clearInterval(calendarCountdownInterval);
@@ -210,8 +221,12 @@ function startCalendarCountdown(races) {
                 return;
             }
             targetDate = new Date(nextRace.date);
-            raceName = nextRace.name;
+            race = nextRace;
         }
+
+        bannerRace = race;
+        banner.style.cursor = 'pointer';
+        const raceName = race.name;
 
         const diff = targetDate - now;
         if (diff <= 0) {
@@ -242,6 +257,17 @@ function startCalendarCountdown(races) {
 
     render();
     calendarCountdownInterval = setInterval(render, 1000);
+
+    // El banner abre la tarjeta de la carrera que esté mostrando (próxima o en
+    // vivo). El listener sobrevive a los re-render del contador porque éstos
+    // sólo cambian el innerHTML del banner, no el elemento en sí.
+    const banner = document.getElementById('calendar-next-banner');
+    if (banner) {
+        banner.addEventListener('click', () => {
+            if (!bannerRace) return;
+            openRaceModal(bannerRace.id, resolveMap(bannerRace.map_image_url), bannerRace.has_sprint || false);
+        });
+    }
 }
 
 // --- HORARIOS (schedule tab) ---
