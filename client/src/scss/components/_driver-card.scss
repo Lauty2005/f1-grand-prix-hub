@@ -159,6 +159,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+
+    // En mobile (<769px) solo dejamos el logo del equipo: ocultamos el nombre
+    &__team-name {
+        @include mobile {
+            display: none;
+        }
+    }
 }
 
 // ─────────────────────────────────────────────

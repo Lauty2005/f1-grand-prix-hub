@@ -38,7 +38,7 @@ export async function loadDriversView() {
                             <span class="teamLogo">
                                 <img src="${logoSrc}" alt="${d.team_name}" width="24" height="24" loading="lazy" role="presentation">
                             </span>
-                            ${d.team_name}
+                            <span class="driver-card__team-name">${d.team_name}</span>
                         </span>
                         <span class="driver-number-display">${d.permanent_number /* El backend ya trae la suma total aquí */}</span>
                     </div>
