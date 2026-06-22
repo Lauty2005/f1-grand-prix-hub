@@ -525,20 +525,10 @@ async function loadQualyResults(raceId) {
         const renderSession = (sessionKey) => {
             const tableContainer = document.getElementById('qualy-table-container');
 
-            // Actualizar botones
+            // Actualizar botones (estado activo vía clase)
             ['q1', 'q2', 'q3'].forEach(key => {
-                const btn = document.getElementById(`btn-${key}`);
-                if (btn) {
-                    if (key === sessionKey) {
-                        btn.style.background = '#e10600';
-                        btn.style.color = 'white';
-                        btn.style.border = '1px solid #e10600';
-                    } else {
-                        btn.style.background = 'rgba(255,255,255,0.05)';
-                        btn.style.color = '#aaa';
-                        btn.style.border = '1px solid #333';
-                    }
-                }
+                document.getElementById(`btn-${key}`)
+                    ?.classList.toggle('is-active', key === sessionKey);
             });
 
             // Filtrar por sesión
@@ -607,13 +597,11 @@ async function loadQualyResults(raceId) {
                 </div>`;
         };
 
-        const subBtnStyle = `background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 5px 15px; cursor: pointer; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;`;
-
         container.innerHTML = `
-            <div style="display:flex; justify-content:center; gap:10px; margin-bottom:20px; padding-top:10px;">
-                <button id="btn-q1" style="${subBtnStyle}">Q1</button>
-                <button id="btn-q2" style="${subBtnStyle}">Q2</button>
-                <button id="btn-q3" style="${subBtnStyle}">Q3</button>
+            <div class="session-switch">
+                <button class="session-switch__btn" id="btn-q1">Q1</button>
+                <button class="session-switch__btn" id="btn-q2">Q2</button>
+                <button class="session-switch__btn" id="btn-q3">Q3</button>
             </div>
             <div id="qualy-table-container"></div>`;
 
@@ -653,18 +641,8 @@ async function loadPracticesResults(raceId, isSprint) {
             // A. ACTUALIZAR BOTONES (Solo si existen, es decir, si NO es Sprint)
             if (!isSprint) {
                 ['p1', 'p2', 'p3'].forEach(key => {
-                    const btn = document.getElementById(`btn-${key}`);
-                    if (btn) {
-                        if (key === sessionKey) {
-                            btn.style.background = '#e10600';
-                            btn.style.color = 'white';
-                            btn.style.border = '1px solid #e10600';
-                        } else {
-                            btn.style.background = 'rgba(255,255,255,0.05)';
-                            btn.style.color = '#aaa';
-                            btn.style.border = '1px solid #333';
-                        }
-                    }
+                    document.getElementById(`btn-${key}`)
+                        ?.classList.toggle('is-active', key === sessionKey);
                 });
             }
 
@@ -737,13 +715,11 @@ async function loadPracticesResults(raceId, isSprint) {
             renderSession('p1');
         } else {
             // --- MODO NORMAL: Mostramos botones FP1, FP2, FP3 ---
-            const subBtnStyle = `background: rgba(255,255,255,0.05); border: 1px solid #333; color: #aaa; padding: 5px 15px; cursor: pointer; border-radius: 20px; font-size: 0.8rem; font-weight: bold; transition: all 0.2s;`;
-
             container.innerHTML = `
-                <div style="display:flex; justify-content:center; gap:10px; margin-bottom: 20px; padding-top: 10px;">
-                    <button id="btn-p1" style="${subBtnStyle}">FP1</button>
-                    <button id="btn-p2" style="${subBtnStyle}">FP2</button>
-                    <button id="btn-p3" style="${subBtnStyle}">FP3</button>
+                <div class="session-switch">
+                    <button class="session-switch__btn" id="btn-p1">FP1</button>
+                    <button class="session-switch__btn" id="btn-p2">FP2</button>
+                    <button class="session-switch__btn" id="btn-p3">FP3</button>
                 </div>
                 <div id="practice-table-container"></div>
             `;

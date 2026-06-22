@@ -220,6 +220,57 @@
 }
 
 // ─────────────────────────────────────────────
+//  SESSION SWITCH — selector de sesión (FP1/2/3 · Q1/2/3)
+//  Control segmentado tipo "card" con acento F1 en la activa.
+// ─────────────────────────────────────────────
+.session-switch {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-top: 10px;
+
+    &__btn {
+        flex: 1 1 0;
+        max-width: 130px;
+        padding: 11px 16px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        color: $color-text-dim;
+        font-size: 0.85rem;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+
+        &:hover {
+            color: #fff;
+            border-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        &.is-active {
+            color: #fff;
+            background: rgba(225, 6, 0, 0.18);
+            border-color: $color-primary;
+            box-shadow: 0 0 16px rgba(225, 6, 0, 0.25);
+        }
+    }
+
+    @include mobile {
+        gap: 8px;
+
+        &__btn {
+            padding: 10px 8px;
+            font-size: 0.78rem;
+            letter-spacing: 0.5px;
+        }
+    }
+}
+
+// ─────────────────────────────────────────────
 //  RESULTS TABLE
 // ─────────────────────────────────────────────
 .results-table {
