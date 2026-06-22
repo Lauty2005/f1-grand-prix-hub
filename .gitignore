@@ -34,7 +34,11 @@ docs/
 skills-lock.json
 .agents/
 stitch-export/
+.stitch/
+.stitch-tmp/
 
 # Codex files
 AGENTS.md
 WEBSITE_UPGRADE_FEEDBACK.md
+IMPORT_GUIDE.md
+MIAMI_DATA_FILES.md
