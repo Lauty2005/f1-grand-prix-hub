@@ -2,7 +2,7 @@ import './scss/admin.scss';
 import 'quill/dist/quill.snow.css';
 import Quill from 'quill';
 import { COUNTRY_NAMES } from './modules/utils.js';
-import { API, SERVER_URL, resolveImgUrl } from './modules/config.js';
+import { API, SERVER_URL, resolveImgUrl, escHtml } from './modules/config.js';
 
 let allRacesData = [];
 let _quill = null;
@@ -2215,11 +2215,13 @@ function displayBulkPreview() {
     const btnImport = document.getElementById('btnBulkImport');
     const btnCancel = document.getElementById('btnCancelImport');
 
+    // Los campos provienen de un archivo de importación (CSV/JSON) cargado por el
+    // admin → se escapan antes de interpolarlos para evitar XSS en el panel.
     tbody.innerHTML = bulkDataCache.map(d => `
         <tr style="border-bottom:1px solid #333;">
-            <td style="padding:8px; color:#00ff88;">${d.driver}</td>
-            <td style="padding:8px; text-align:center; color:#aaa;">${d.value}</td>
-            <td style="padding:8px; text-align:center; color:#${d.status ? 'ff4444' : '00ff88'};">${d.status || 'OK'}</td>
+            <td style="padding:8px; color:#00ff88;">${escHtml(d.driver)}</td>
+            <td style="padding:8px; text-align:center; color:#aaa;">${escHtml(d.value)}</td>
+            <td style="padding:8px; text-align:center; color:#${d.status ? 'ff4444' : '00ff88'};">${escHtml(d.status || 'OK')}</td>
         </tr>
     `).join('');
 
