@@ -8,6 +8,12 @@ import { getRaceLiveState, getSessionSchedule } from './sessions.js';
 // para poder limpiarla cuando la vista se vuelve a renderizar o se cambia de pestaña.
 let calendarCountdownInterval = null;
 
+// CTA visible del banner "Próxima carrera". Actúa como pista de que el banner
+// es clickeable (clave en mobile, donde no hay hover) y replica el botón de
+// acción de las tarjetas.
+const BANNER_CTA =
+    '<span class="next-race-banner__cta">Race Hub<span class="next-race-banner__cta-arrow">›</span></span>';
+
 // Etiqueta de la acción (botón derecho de la tarjeta) según el estado de la carrera.
 function actionLabelFor(statusKey) {
     if (statusKey === 'done')      return 'Resultados';
@@ -189,7 +195,8 @@ function startCalendarCountdown(races) {
                 banner.innerHTML = `
                     <span class="next-race-banner__label">● En vivo &mdash; ${live.liveSession.label}</span>
                     <span class="next-race-banner__name">${race.name}</span>
-                    <span class="next-race-banner__countdown next-race-banner__countdown--live">🔴 EN PISTA</span>`;
+                    <span class="next-race-banner__countdown next-race-banner__countdown--live">🔴 EN PISTA</span>
+                    ${BANNER_CTA}`;
                 return;
             }
         }
@@ -234,7 +241,8 @@ function startCalendarCountdown(races) {
             banner.innerHTML = `
                 <span class="next-race-banner__label">Próxima carrera</span>
                 <span class="next-race-banner__name">${raceName}</span>
-                <span class="next-race-banner__countdown next-race-banner__countdown--live">¡ES HOY! 🏁</span>`;
+                <span class="next-race-banner__countdown next-race-banner__countdown--live">¡ES HOY! 🏁</span>
+                ${BANNER_CTA}`;
             return;
         }
 
@@ -252,7 +260,8 @@ function startCalendarCountdown(races) {
                 <b>${String(h).padStart(2, '0')}</b>h
                 <b>${String(m).padStart(2, '0')}</b>m
                 <b>${String(s).padStart(2, '0')}</b>s
-            </span>`;
+            </span>
+            ${BANNER_CTA}`;
     };
 
     render();

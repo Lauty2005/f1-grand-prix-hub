@@ -519,6 +519,48 @@
         }
     }
 
+    // ── CTA (botón "Race Hub", mismo lenguaje que .race-card-wide__action) ──
+    // Pista visible de que el banner es clickeable; imprescindible en mobile,
+    // donde no existe el estado :hover.
+    &__cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        flex-shrink: 0;
+        padding: 7px 14px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        color: #fff;
+        background: rgba(225, 6, 0, 0.16);
+        border: 1px solid rgba(225, 6, 0, 0.40);
+        transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
+
+        &-arrow {
+            font-size: 1rem;
+            font-weight: 300;
+            line-height: 1;
+            transition: transform 0.22s ease;
+        }
+    }
+
+    // Hover del banner (solo cuando es clickeable, no en "temporada finalizada").
+    &:not(.next-race-banner--done):hover {
+        border-color: $color-primary;
+        box-shadow:
+            0 6px 24px rgba(0, 0, 0, 0.5),
+            -3px 0 28px rgba(225, 6, 0, 0.22);
+
+        .next-race-banner__cta {
+            background: rgba(225, 6, 0, 0.30);
+            border-color: $color-primary;
+        }
+        .next-race-banner__cta-arrow { transform: translateX(3px); }
+    }
+
     // Variante en vivo: glow rojo animado
     &--live {
         border-color: rgba(225, 6, 0, 0.55);
