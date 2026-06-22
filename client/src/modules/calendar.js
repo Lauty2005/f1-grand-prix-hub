@@ -134,8 +134,8 @@ export async function loadCalendarView() {
                     <p class="calendar-header__subtitle">Temporada ${state.currentYear} de Fórmula 1</p>
                 </div>
                 <div id="calendar-next-banner" class="next-race-banner"></div>
-                ${section('Completadas', completed, 'done')}
                 ${section('Próximas', upcoming, 'upcoming')}
+                ${section('Completadas', completed, 'done')}
             </div>
         `;
 
