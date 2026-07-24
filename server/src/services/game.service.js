@@ -54,3 +54,29 @@ export const getStatsPool = async (year) => {
     const result = await query(sql, [startDate, endDate, `%${year}%`, year]);
     return result.rows;
 };
+
+// ─── "Adivina el Piloto" ────────────────────────────────────────────────────
+// Pool de identidad: todos los pilotos con al menos una temporada cargada
+// (titulares y reservas, sin filtrar por carreras corridas), con su equipo
+// más reciente y el año de debut calculado sobre todas sus temporadas.
+export const getGuessPool = async () => {
+    const sql = `
+        SELECT DISTINCT ON (d.id)
+            d.id, d.first_name, d.last_name, d.country_code, d.profile_image_url,
+            d.is_practice_only,
+            COALESCE(ds.number, d.permanent_number) AS number,
+            c.name AS team_name, c.primary_color, c.logo_url,
+            debut.debut_year
+        FROM drivers d
+        JOIN driver_seasons ds ON ds.driver_id = d.id
+        JOIN constructors c    ON c.id = ds.constructor_id
+        JOIN (
+            SELECT driver_id, MIN(year) AS debut_year
+            FROM driver_seasons
+            GROUP BY driver_id
+        ) debut ON debut.driver_id = d.id
+        ORDER BY d.id, ds.year DESC;
+    `;
+    const result = await query(sql);
+    return result.rows;
+};

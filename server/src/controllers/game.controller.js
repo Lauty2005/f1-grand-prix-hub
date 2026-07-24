@@ -11,3 +11,13 @@ export const getMayorMenorPool = async (req, res) => {
         res.status(500).json({ error: 'Error cargando datos del juego' });
     }
 };
+
+export const getAdivinaPilotoPool = async (req, res) => {
+    try {
+        const pool = await gameService.getGuessPool();
+        res.json({ success: true, data: pool });
+    } catch (err) {
+        console.error('ERROR adivina-piloto pool:', err.message);
+        res.status(500).json({ error: 'Error cargando datos del juego' });
+    }
+};
