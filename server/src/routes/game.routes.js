@@ -13,4 +13,7 @@ router.get('/adivina-piloto/pool', gameController.getAdivinaPilotoPool);
 // GET /api/game/silueta-circuito/pool
 router.get('/silueta-circuito/pool', gameController.getSiluetaCircuitoPool);
 
+// GET /api/game/arma-grid/pool?year=2026
+router.get('/arma-grid/pool', gameController.getArmaGridPool);
+
 export default router;

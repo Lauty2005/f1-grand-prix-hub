@@ -24,6 +24,7 @@ const lazyTimeline  = () => import('./modules/timeline.js').then(m => m.loadTime
 const lazyMayorMenor = () => import('./modules/mayorMenor.js').then(m => m.loadMayorMenorView());
 const lazyAdivinaPiloto = () => import('./modules/adivinaPiloto.js').then(m => m.loadAdivinaPilotoView());
 const lazySiluetaCircuito = () => import('./modules/siluetaCircuito.js').then(m => m.loadSiluetaCircuitoView());
+const lazyArmaGrid = () => import('./modules/armaGrid.js').then(m => m.loadArmaGridView());
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
@@ -59,6 +60,7 @@ function init() {
                 <button id="btn-mayor-menor" class="nav-btn">MAYOR O MENOR</button>
                 <button id="btn-adivina-piloto" class="nav-btn">ADIVINA EL PILOTO</button>
                 <button id="btn-silueta-circuito" class="nav-btn">SILUETA DEL CIRCUITO</button>
+                <button id="btn-arma-grid" class="nav-btn">ARMA TU GRID</button>
                 <a href="/sobre.html" class="nav-btn" style="display:inline-flex;align-items:center;text-decoration:none;">NOSOTROS</a>
             </div>
         </nav>
@@ -116,6 +118,11 @@ function init() {
         lazySiluetaCircuito();
     });
 
+    document.getElementById('btn-arma-grid').addEventListener('click', () => {
+        updateButtons('arma-grid');
+        lazyArmaGrid();
+    });
+
     // Carga inicial
     updateButtons('noticias');
     loadNoticiasView();
@@ -170,6 +177,7 @@ function refreshActiveView() {
     if (document.getElementById('btn-mayor-menor').classList.contains('active-btn')) lazyMayorMenor();
     if (document.getElementById('btn-adivina-piloto').classList.contains('active-btn')) lazyAdivinaPiloto();
     if (document.getElementById('btn-silueta-circuito').classList.contains('active-btn')) lazySiluetaCircuito();
+    if (document.getElementById('btn-arma-grid').classList.contains('active-btn')) lazyArmaGrid();
 }
 
 function updateButtons(activeId) {
