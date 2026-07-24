@@ -1,0 +1,56 @@
+// server/src/services/game.service.js
+// Datos para los mini-juegos del hub. "Mayor o Menor" reutiliza el mismo patrón
+// de agregación de estadísticas que drivers.service.js#compareDrivers, pero sin
+// filtrar por IDs: devuelve el pool completo de pilotos con carreras corridas
+// en la temporada para que el juego elija pares al azar del lado del cliente.
+import { query } from '../config/db.js';
+
+export const getStatsPool = async (year) => {
+    const sql = `
+        SELECT
+            d.id, d.first_name, d.last_name,
+            COALESCE(ds.number, d.permanent_number) AS permanent_number,
+            d.country_code, d.profile_image_url,
+            c.name AS team_name, c.primary_color, c.logo_url,
+            (COALESCE(rp.total_points, 0) + COALESCE(sp.total_points, 0)) AS points,
+            COALESCE(rp.wins,          0) AS wins,
+            COALESCE(rp.podiums,       0) AS podiums,
+            COALESCE(rp.top5,          0) AS top5,
+            COALESCE(rp.top10,         0) AS top10,
+            COALESCE(rp.fastest_laps,  0) AS fastest_laps,
+            COALESCE(rp.races,         0) AS races
+        FROM drivers d
+        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = $4::int
+        JOIN constructors c    ON c.id = ds.constructor_id
+        LEFT JOIN (
+            SELECT
+                res.driver_id,
+                SUM(res.points) AS total_points,
+                COUNT(*) FILTER (WHERE res.position = 1  AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS wins,
+                COUNT(*) FILTER (WHERE res.position <= 3 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS podiums,
+                COUNT(*) FILTER (WHERE res.position <= 5 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS top5,
+                COUNT(*) FILTER (WHERE res.position <= 10 AND NOT res.dnf AND NOT res.dsq AND NOT res.dns) AS top10,
+                COUNT(*) FILTER (WHERE res.fastest_lap) AS fastest_laps,
+                COUNT(*) AS races
+            FROM results res
+            JOIN races r ON res.race_id = r.id
+            WHERE r.date >= $1 AND r.date < $2
+            GROUP BY res.driver_id
+        ) rp ON d.id = rp.driver_id
+        LEFT JOIN (
+            SELECT s.driver_id, SUM(s.points) AS total_points
+            FROM sprint_results s
+            JOIN races r ON s.race_id = r.id
+            WHERE r.date >= $1 AND r.date < $2
+            GROUP BY s.driver_id
+        ) sp ON d.id = sp.driver_id
+        WHERE d.active_seasons::text LIKE $3
+          AND d.is_practice_only = false
+          AND rp.races > 0
+        ORDER BY points DESC;
+    `;
+    const startDate = `${year}-01-01`;
+    const endDate = `${parseInt(year) + 1}-01-01`;
+    const result = await query(sql, [startDate, endDate, `%${year}%`, year]);
+    return result.rows;
+};

@@ -19,6 +19,7 @@ import sitemapRouter from './src/routes/sitemap.routes.js';
 import newsletterRouter from './src/routes/newsletter.routes.js';
 import cronRoutes from './src/routes/cron.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
+import gameRoutes from './src/routes/game.routes.js';
 
 dotenv.config();
 
@@ -89,6 +90,7 @@ app.use('/', sitemapRouter);  // /sitemap.xml — debe estar en la raíz, sin pr
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/cron', cronRoutes);
 app.use('/api/health', healthRoutes);
+app.use('/api/game', gameRoutes);
 
 app.get('/', (req, res) => {
     res.send(`
