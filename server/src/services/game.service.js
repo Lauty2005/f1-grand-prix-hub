@@ -96,3 +96,24 @@ export const getCircuitPool = async () => {
     const result = await query(sql);
     return result.rows;
 };
+
+// ─── "Estratega de Boxes" ───────────────────────────────────────────────────
+// Por carrera con datos de pit stops cargados (race_strategies): la secuencia
+// real de compuestos que usó el ganador, en orden de stint. El jugador arma
+// su propia estrategia (cantidad de paradas + compuestos) antes de ver esto,
+// y se compara del lado del cliente.
+export const getStrategyPool = async () => {
+    const sql = `
+        SELECT
+            r.id, r.name AS race_name, r.circuit_name, r.country_code, r.total_laps,
+            array_agg(rs.tire_compound ORDER BY rs.stint_number) AS actual_compounds
+        FROM races r
+        JOIN results res         ON res.race_id = r.id AND res.position = 1
+                                     AND NOT res.dnf AND NOT res.dsq AND NOT res.dns
+        JOIN race_strategies rs  ON rs.race_id = r.id AND rs.driver_id = res.driver_id
+        GROUP BY r.id, r.name, r.circuit_name, r.country_code, r.total_laps
+        ORDER BY r.date DESC;
+    `;
+    const result = await query(sql);
+    return result.rows;
+};

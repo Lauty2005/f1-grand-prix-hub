@@ -1,0 +1,357 @@
+@use '../abstracts/variables' as *;
+
+/* ============================================================
+   ESTRATEGA DE BOXES — Decisión de estrategia vs. dato real
+   ============================================================ */
+
+.eb-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+}
+
+.eb-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.eb-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 0.95;
+    color: white;
+    margin: 0 0 6px;
+
+    span { color: $color-primary; }
+
+    @include mobile { font-size: 1.8rem; }
+}
+
+.eb-subtitle {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ----- SCOREBOARD ----- */
+.eb-scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.eb-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 110px;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 20px;
+
+    &__val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1;
+        color: $color-primary;
+    }
+
+    &__lbl {
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 4px;
+    }
+}
+
+/* ----- RACE CARD ----- */
+.eb-race-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 3px solid $color-primary;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 18px;
+
+    &__name {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.5rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: white;
+        line-height: 1.1;
+    }
+
+    &__meta {
+        font-size: 0.78rem;
+        color: rgba(255, 255, 255, 0.45);
+        margin-top: 4px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+}
+
+/* ----- DECISION STEPS ----- */
+.eb-decision {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.eb-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+}
+
+.eb-step__label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.eb-stops-row {
+    display: flex;
+    gap: 10px;
+}
+
+.eb-stops-btn {
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+
+    &:hover { background: rgba(255, 255, 255, 0.09); border-color: $color-primary; transform: translateY(-2px); }
+
+    &.is-active {
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        border-color: transparent;
+        box-shadow: 0 4px 14px rgba(225, 6, 0, 0.4);
+    }
+}
+
+/* ----- SEQUENCE SLOTS ----- */
+.eb-sequence {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.eb-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 34px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    font-weight: 800;
+
+    &--empty {
+        border: 1px dashed rgba(255, 255, 255, 0.25);
+        color: rgba(255, 255, 255, 0.3);
+    }
+}
+
+.eb-arrow {
+    color: rgba(255, 255, 255, 0.25);
+    font-weight: 700;
+}
+
+.eb-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #111;
+    background: var(--chip-color, #888);
+}
+
+.eb-compound-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.eb-compound-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.04);
+    color: white;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.15s ease;
+
+    &::before {
+        content: '';
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: var(--chip-color, #888);
+        flex-shrink: 0;
+    }
+
+    &:not(:disabled):hover { background: rgba(255, 255, 255, 0.09); transform: translateY(-2px); }
+    &:disabled { opacity: 0.3; cursor: not-allowed; }
+}
+
+.eb-undo {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.78rem;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover { color: white; }
+}
+
+/* ----- RESULT ----- */
+.eb-result {
+    margin-top: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+
+    &--win { border-top: 3px solid #00c46a; }
+    &--lose { border-top: 3px solid $color-primary; }
+
+    &__eyebrow {
+        font-size: 0.85rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: white;
+        margin-bottom: 16px;
+    }
+
+    &__block {
+        width: 100%;
+        margin-bottom: 14px;
+    }
+
+    &__label {
+        display: block;
+        font-size: 0.64rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-bottom: 8px;
+    }
+
+    &__row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    &__actions {
+        display: flex;
+        justify-content: center;
+        gap: 14px;
+        margin-top: 10px;
+        width: 100%;
+    }
+}
+
+.eb-result-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 60px;
+    height: 34px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #111;
+    background: var(--chip-color, #888);
+    border: 2px solid transparent;
+
+    &--hit { border-color: #00c46a; }
+    &--miss { border-color: $color-primary; opacity: 0.75; }
+}
+
+.eb-guess-btn {
+    flex: 0 1 200px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:hover { transform: translateY(-2px); }
+
+    &--share {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    &--again {
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(225, 6, 0, 0.35);
+    }
+
+    @include mobile { flex: 1 1 0; font-size: 0.88rem; padding: 11px 8px; }
+}
+
+/* ----- LOADING / ERROR ----- */
+.eb-loading {
+    text-align: center;
+    padding: 40px 20px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95rem;
+
+    &--error { color: $color-primary; }
+}
