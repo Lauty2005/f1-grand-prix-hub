@@ -21,6 +21,9 @@ const lazyCalendar  = () => import('./modules/calendar.js').then(m => m.loadCale
 const lazyStandings = () => import('./modules/standings.js').then(m => m.loadStandingsView());
 const lazyComparar  = () => import('./modules/comparar.js').then(m => m.loadCompararView());
 const lazyTimeline  = () => import('./modules/timeline.js').then(m => m.loadTimelineView());
+const lazyMayorMenor = () => import('./modules/mayorMenor.js').then(m => m.loadMayorMenorView());
+const lazyAdivinaPiloto = () => import('./modules/adivinaPiloto.js').then(m => m.loadAdivinaPilotoView());
+const lazySiluetaCircuito = () => import('./modules/siluetaCircuito.js').then(m => m.loadSiluetaCircuitoView());
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
@@ -53,6 +56,9 @@ function init() {
                 <button id="btn-standings" class="nav-btn">CAMPEONATO</button>
                 <button id="btn-comparar" class="nav-btn">COMPARAR</button>
                 <button id="btn-timeline" class="nav-btn">TIMELINE</button>
+                <button id="btn-mayor-menor" class="nav-btn">MAYOR O MENOR</button>
+                <button id="btn-adivina-piloto" class="nav-btn">ADIVINA EL PILOTO</button>
+                <button id="btn-silueta-circuito" class="nav-btn">SILUETA DEL CIRCUITO</button>
                 <a href="/sobre.html" class="nav-btn" style="display:inline-flex;align-items:center;text-decoration:none;">NOSOTROS</a>
             </div>
         </nav>
@@ -93,6 +99,21 @@ function init() {
     document.getElementById('btn-timeline').addEventListener('click', () => {
         updateButtons('timeline');
         lazyTimeline();
+    });
+
+    document.getElementById('btn-mayor-menor').addEventListener('click', () => {
+        updateButtons('mayor-menor');
+        lazyMayorMenor();
+    });
+
+    document.getElementById('btn-adivina-piloto').addEventListener('click', () => {
+        updateButtons('adivina-piloto');
+        lazyAdivinaPiloto();
+    });
+
+    document.getElementById('btn-silueta-circuito').addEventListener('click', () => {
+        updateButtons('silueta-circuito');
+        lazySiluetaCircuito();
     });
 
     // Carga inicial
@@ -146,6 +167,9 @@ function refreshActiveView() {
     if (document.getElementById('btn-noticias').classList.contains('active-btn')) loadNoticiasView();
     if (document.getElementById('btn-comparar').classList.contains('active-btn')) lazyComparar();
     if (document.getElementById('btn-timeline').classList.contains('active-btn')) lazyTimeline();
+    if (document.getElementById('btn-mayor-menor').classList.contains('active-btn')) lazyMayorMenor();
+    if (document.getElementById('btn-adivina-piloto').classList.contains('active-btn')) lazyAdivinaPiloto();
+    if (document.getElementById('btn-silueta-circuito').classList.contains('active-btn')) lazySiluetaCircuito();
 }
 
 function updateButtons(activeId) {

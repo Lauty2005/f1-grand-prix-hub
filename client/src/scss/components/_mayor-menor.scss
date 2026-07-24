@@ -1,0 +1,335 @@
+@use '../abstracts/variables' as *;
+
+/* ============================================================
+   MAYOR O MENOR — Mini-juego de estadísticas (streak)
+   ============================================================ */
+
+.mm-page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 20px 16px 80px;
+}
+
+.mm-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.mm-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    line-height: 0.95;
+    color: white;
+    margin: 0 0 6px;
+
+    span { color: $color-primary; }
+
+    @include mobile { font-size: 1.8rem; }
+}
+
+.mm-subtitle {
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ----- SCOREBOARD ----- */
+.mm-scoreboard {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 22px;
+}
+
+.mm-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 110px;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 12px 20px;
+
+    &__val {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1;
+        color: $color-primary;
+    }
+
+    &__lbl {
+        font-size: 0.66rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 4px;
+    }
+}
+
+/* ----- ARENA (duelo de cartas) ----- */
+.mm-arena {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mm-duel {
+    width: 100%;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0;
+}
+
+.mm-vs-badge {
+    align-self: center;
+    flex-shrink: 0;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white;
+    background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+    padding: 8px 10px;
+    border-radius: 8px;
+    box-shadow: 0 4px 14px rgba(225, 6, 0, 0.45);
+    margin: 0 -10px;
+    z-index: 3;
+    letter-spacing: 0.5px;
+    max-width: 110px;
+    text-align: center;
+
+    @include mobile { font-size: 0.72rem; padding: 6px 8px; max-width: 84px; }
+}
+
+.mm-card {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: 260px;
+    background:
+        radial-gradient(ellipse 120% 70% at 50% 0%, color-mix(in srgb, var(--team-color, #{$color-primary}) 22%, transparent) 0%, transparent 70%),
+        $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 3px solid var(--team-color, $color-primary);
+    border-radius: 14px;
+    padding: 16px 12px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+
+    &--correct {
+        border-color: #00ff88;
+        box-shadow: 0 0 22px rgba(0, 255, 136, 0.25);
+    }
+
+    &--wrong {
+        border-color: $color-primary;
+        box-shadow: 0 0 22px rgba(225, 6, 0, 0.3);
+    }
+
+    &__photo {
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 3px solid var(--team-color, $color-primary);
+        background: #1a1a24;
+        box-shadow: 0 0 22px color-mix(in srgb, var(--team-color, #{$color-primary}) 35%, transparent);
+        margin-bottom: 10px;
+
+        img { width: 100%; height: 100%; object-fit: cover; object-position: top center; }
+    }
+
+    &__first {
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.2px;
+        color: rgba(255, 255, 255, 0.55);
+    }
+
+    &__last {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 1.4rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        line-height: 1;
+        color: white;
+        margin-bottom: 6px;
+    }
+
+    &__team {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        color: rgba(255, 255, 255, 0.6);
+        max-width: 100%;
+        margin-bottom: 12px;
+    }
+
+    &__logo {
+        width: 20px;
+        height: 20px;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        padding: 3px;
+        background: color-mix(in srgb, var(--team-color, #{$color-primary}) 25%, #1a1a24);
+
+        img { width: 100%; height: 100%; object-fit: contain; }
+    }
+
+    &__stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        width: 100%;
+        padding-top: 10px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    &__stat-label {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: rgba(255, 255, 255, 0.4);
+    }
+
+    &__stat-value {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 2.2rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: var(--team-color, $color-primary);
+    }
+
+    @include mobile {
+        padding: 12px 8px 14px;
+
+        &__photo { width: 68px; height: 68px; }
+        &__last { font-size: 1.1rem; }
+        &__stat-value { font-size: 1.6rem; }
+    }
+}
+
+/* ----- ACTIONS ----- */
+.mm-actions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.mm-guess-btn {
+    flex: 0 1 200px;
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+
+    &:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    &:not(:disabled):hover { transform: translateY(-2px); }
+
+    &--higher {
+        background: linear-gradient(145deg, #00c46a 0%, #009951 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(0, 196, 106, 0.35);
+    }
+
+    &--lower {
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(225, 6, 0, 0.35);
+    }
+
+    &--share {
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+    }
+
+    &--again {
+        background: linear-gradient(145deg, #e10600 0%, #b80400 100%);
+        color: white;
+        box-shadow: 0 4px 14px rgba(225, 6, 0, 0.35);
+    }
+
+    @include mobile { flex: 1 1 0; font-size: 0.9rem; padding: 12px 10px; }
+}
+
+/* ----- GAME OVER ----- */
+.mm-gameover {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 30px 20px;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    width: 100%;
+
+    &__eyebrow {
+        font-size: 0.72rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: $color-primary;
+        margin-bottom: 10px;
+    }
+
+    &__streak {
+        font-family: 'Barlow Condensed', sans-serif;
+        font-size: 4rem;
+        font-weight: 800;
+        line-height: 1;
+        color: white;
+    }
+
+    &__label {
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.5);
+        margin-bottom: 14px;
+    }
+
+    &__best {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.7);
+    }
+}
+
+/* ----- LOADING / ERROR ----- */
+.mm-loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95rem;
+
+    &--error { color: $color-primary; }
+}
