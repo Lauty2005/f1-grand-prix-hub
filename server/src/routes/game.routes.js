@@ -13,4 +13,7 @@ router.get('/adivina-piloto/pool', gameController.getAdivinaPilotoPool);
 // GET /api/game/silueta-circuito/pool
 router.get('/silueta-circuito/pool', gameController.getSiluetaCircuitoPool);
 
+// GET /api/game/grid-inmaculado/pool
+router.get('/grid-inmaculado/pool', gameController.getGridInmaculadoPool);
+
 export default router;

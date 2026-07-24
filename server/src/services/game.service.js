@@ -96,3 +96,82 @@ export const getCircuitPool = async () => {
     const result = await query(sql);
     return result.rows;
 };
+
+// ─── "Grid Inmaculado" ──────────────────────────────────────────────────────
+// Por piloto: todos los equipos por los que pasó (con cantidad de carreras
+// por equipo, para categorías tipo "corrió más de N carreras para X"), países
+// donde ganó (para categorías tipo "ganó en Australia"), temporadas corridas,
+// y logros agregados sobre todos los resultados cargados (sin acotar por año,
+// dado que solo hay 2025-2026 por ahora). El armado de la grilla — mezclar
+// categorías de cualquier tipo en filas/columnas y validar que cada celda
+// tenga respuesta — se hace del lado del cliente sobre este pool completo.
+export const getGridPool = async () => {
+    const sql = `
+        WITH per_race AS (
+            SELECT
+                res.driver_id, res.position, res.dnf, res.dsq, res.dns, res.fastest_lap,
+                r.country_code,
+                c.id AS constructor_id, c.name AS team_name, c.primary_color, c.logo_url
+            FROM results res
+            JOIN races r           ON r.id = res.race_id
+            JOIN driver_seasons ds ON ds.driver_id = res.driver_id AND ds.year = EXTRACT(YEAR FROM r.date)::int
+            JOIN constructors c    ON c.id = ds.constructor_id
+        ),
+        driver_teams AS (
+            SELECT DISTINCT ds.driver_id, c.name AS team_name, c.primary_color, c.logo_url
+            FROM driver_seasons ds
+            JOIN constructors c ON c.id = ds.constructor_id
+        ),
+        driver_seasons_years AS (
+            SELECT driver_id, ARRAY_AGG(DISTINCT year) AS seasons
+            FROM driver_seasons
+            GROUP BY driver_id
+        ),
+        team_races AS (
+            SELECT driver_id, jsonb_agg(jsonb_build_object('team_name', team_name, 'races', races)) AS team_races
+            FROM (
+                SELECT driver_id, team_name, COUNT(*) AS races
+                FROM per_race
+                GROUP BY driver_id, team_name
+            ) t
+            GROUP BY driver_id
+        ),
+        win_countries AS (
+            SELECT driver_id, array_agg(DISTINCT country_code::text) AS win_countries
+            FROM per_race
+            WHERE position = 1 AND NOT dnf AND NOT dsq AND NOT dns
+            GROUP BY driver_id
+        ),
+        driver_stats AS (
+            SELECT
+                driver_id,
+                COUNT(*) FILTER (WHERE position = 1  AND NOT dnf AND NOT dsq AND NOT dns) AS wins,
+                COUNT(*) FILTER (WHERE position <= 3 AND NOT dnf AND NOT dsq AND NOT dns) AS podiums,
+                COUNT(*) FILTER (WHERE position <= 10 AND NOT dnf AND NOT dsq AND NOT dns) AS top10,
+                COUNT(*) FILTER (WHERE fastest_lap) AS fastest_laps
+            FROM results
+            GROUP BY driver_id
+        )
+        SELECT
+            d.id, d.first_name, d.last_name, d.country_code, d.profile_image_url, d.is_practice_only,
+            jsonb_agg(DISTINCT jsonb_build_object('name', dt.team_name, 'primary_color', dt.primary_color, 'logo_url', dt.logo_url)) AS teams,
+            dsy.seasons,
+            COALESCE(tr.team_races, '[]'::jsonb)         AS team_races,
+            COALESCE(wc.win_countries, ARRAY[]::text[])  AS win_countries,
+            COALESCE(ds_stats.wins,         0) AS wins,
+            COALESCE(ds_stats.podiums,      0) AS podiums,
+            COALESCE(ds_stats.top10,        0) AS top10,
+            COALESCE(ds_stats.fastest_laps, 0) AS fastest_laps
+        FROM drivers d
+        JOIN driver_teams dt              ON dt.driver_id = d.id
+        JOIN driver_seasons_years dsy     ON dsy.driver_id = d.id
+        LEFT JOIN driver_stats ds_stats   ON ds_stats.driver_id = d.id
+        LEFT JOIN team_races tr           ON tr.driver_id = d.id
+        LEFT JOIN win_countries wc        ON wc.driver_id = d.id
+        GROUP BY d.id, dsy.seasons, ds_stats.wins, ds_stats.podiums, ds_stats.top10, ds_stats.fastest_laps,
+                 tr.team_races, wc.win_countries
+        ORDER BY d.last_name;
+    `;
+    const result = await query(sql);
+    return result.rows;
+};

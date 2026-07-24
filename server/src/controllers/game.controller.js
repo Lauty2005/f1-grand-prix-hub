@@ -31,3 +31,13 @@ export const getSiluetaCircuitoPool = async (req, res) => {
         res.status(500).json({ error: 'Error cargando datos del juego' });
     }
 };
+
+export const getGridInmaculadoPool = async (req, res) => {
+    try {
+        const pool = await gameService.getGridPool();
+        res.json({ success: true, data: pool });
+    } catch (err) {
+        console.error('ERROR grid-inmaculado pool:', err.message);
+        res.status(500).json({ error: 'Error cargando datos del juego' });
+    }
+};
