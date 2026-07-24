@@ -21,3 +21,13 @@ export const getAdivinaPilotoPool = async (req, res) => {
         res.status(500).json({ error: 'Error cargando datos del juego' });
     }
 };
+
+export const getSiluetaCircuitoPool = async (req, res) => {
+    try {
+        const pool = await gameService.getCircuitPool();
+        res.json({ success: true, data: pool });
+    } catch (err) {
+        console.error('ERROR silueta-circuito pool:', err.message);
+        res.status(500).json({ error: 'Error cargando datos del juego' });
+    }
+};

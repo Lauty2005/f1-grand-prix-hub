@@ -80,3 +80,19 @@ export const getGuessPool = async () => {
     const result = await query(sql);
     return result.rows;
 };
+
+// ─── "Silueta del Circuito" ─────────────────────────────────────────────────
+// Un registro por circuito (deduplicado por circuit_name, quedándose con la
+// carrera más reciente que tenga imagen cargada) para evitar mostrar el mismo
+// trazado dos veces como opciones distintas cuando se repite entre temporadas.
+export const getCircuitPool = async () => {
+    const sql = `
+        SELECT DISTINCT ON (circuit_name)
+            id, name AS race_name, circuit_name, country_code, map_image_url
+        FROM races
+        WHERE map_image_url IS NOT NULL AND map_image_url <> ''
+        ORDER BY circuit_name, date DESC;
+    `;
+    const result = await query(sql);
+    return result.rows;
+};

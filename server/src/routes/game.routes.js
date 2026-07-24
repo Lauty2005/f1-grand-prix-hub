@@ -10,4 +10,7 @@ router.get('/mayor-menor/pool', gameController.getMayorMenorPool);
 // GET /api/game/adivina-piloto/pool
 router.get('/adivina-piloto/pool', gameController.getAdivinaPilotoPool);
 
+// GET /api/game/silueta-circuito/pool
+router.get('/silueta-circuito/pool', gameController.getSiluetaCircuitoPool);
+
 export default router;
