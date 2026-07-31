@@ -21,9 +21,9 @@ const lazyCalendar  = () => import('./modules/calendar.js').then(m => m.loadCale
 const lazyStandings = () => import('./modules/standings.js').then(m => m.loadStandingsView());
 const lazyComparar  = () => import('./modules/comparar.js').then(m => m.loadCompararView());
 const lazyTimeline  = () => import('./modules/timeline.js').then(m => m.loadTimelineView());
-const lazyMayorMenor = () => import('./modules/mayorMenor.js').then(m => m.loadMayorMenorView());
-const lazyAdivinaPiloto = () => import('./modules/adivinaPiloto.js').then(m => m.loadAdivinaPilotoView());
-const lazySiluetaCircuito = () => import('./modules/siluetaCircuito.js').then(m => m.loadSiluetaCircuitoView());
+// Los 4 minijuegos (antes cada uno con su propio botón de nav) ahora viven
+// agrupados bajo un único hub "JUEGOS" — ver modules/juegos.js.
+const lazyJuegos = () => import('./modules/juegos.js').then(m => m.loadJuegosView());
 
 // --- VARIABLE GLOBAL ---
 let currentRaceId = null;
@@ -56,9 +56,7 @@ function init() {
                 <button id="btn-standings" class="nav-btn">CAMPEONATO</button>
                 <button id="btn-comparar" class="nav-btn">COMPARAR</button>
                 <button id="btn-timeline" class="nav-btn">TIMELINE</button>
-                <button id="btn-mayor-menor" class="nav-btn">MAYOR O MENOR</button>
-                <button id="btn-adivina-piloto" class="nav-btn">ADIVINA EL PILOTO</button>
-                <button id="btn-silueta-circuito" class="nav-btn">SILUETA DEL CIRCUITO</button>
+                <button id="btn-juegos" class="nav-btn">JUEGOS</button>
                 <a href="/sobre.html" class="nav-btn" style="display:inline-flex;align-items:center;text-decoration:none;">NOSOTROS</a>
             </div>
         </nav>
@@ -101,19 +99,9 @@ function init() {
         lazyTimeline();
     });
 
-    document.getElementById('btn-mayor-menor').addEventListener('click', () => {
-        updateButtons('mayor-menor');
-        lazyMayorMenor();
-    });
-
-    document.getElementById('btn-adivina-piloto').addEventListener('click', () => {
-        updateButtons('adivina-piloto');
-        lazyAdivinaPiloto();
-    });
-
-    document.getElementById('btn-silueta-circuito').addEventListener('click', () => {
-        updateButtons('silueta-circuito');
-        lazySiluetaCircuito();
+    document.getElementById('btn-juegos').addEventListener('click', () => {
+        updateButtons('juegos');
+        lazyJuegos();
     });
 
     // Carga inicial
@@ -167,9 +155,13 @@ function refreshActiveView() {
     if (document.getElementById('btn-noticias').classList.contains('active-btn')) loadNoticiasView();
     if (document.getElementById('btn-comparar').classList.contains('active-btn')) lazyComparar();
     if (document.getElementById('btn-timeline').classList.contains('active-btn')) lazyTimeline();
-    if (document.getElementById('btn-mayor-menor').classList.contains('active-btn')) lazyMayorMenor();
-    if (document.getElementById('btn-adivina-piloto').classList.contains('active-btn')) lazyAdivinaPiloto();
-    if (document.getElementById('btn-silueta-circuito').classList.contains('active-btn')) lazySiluetaCircuito();
+    // Juegos: a diferencia de las otras vistas, no siempre hay que volver al
+    // menú — si había un juego abierto (ej. el jugador cambió de temporada a
+    // mitad de "El Piloto"), refreshJuegosView() lo recuerda y lo refresca a
+    // él, no al hub.
+    if (document.getElementById('btn-juegos').classList.contains('active-btn')) {
+        import('./modules/juegos.js').then(m => m.refreshJuegosView());
+    }
 }
 
 function updateButtons(activeId) {
@@ -180,6 +172,14 @@ function updateButtons(activeId) {
     // El hero SSR (header.home-hero) solo corresponde a la vista NOTICIAS.
     const hero = document.querySelector('header.home-hero');
     if (hero) hero.style.display = activeId === 'noticias' ? '' : 'none';
+
+    // El botón flotante "← Juegos" (inyectado por juegos.js dentro de un
+    // juego, ver ese módulo) no tiene sentido fuera de la sección Juegos.
+    // Se saca por id directo (no por import) para no forzar la descarga del
+    // chunk de juegos.js en cada click de nav de otra sección.
+    if (activeId !== 'juegos') {
+        document.getElementById('juegosVolverBtn')?.remove();
+    }
 }
 
 // 1. MODIFICAMOS EL ANCHO DEL MODAL PARA QUE QUEPAN LAS DOS COLUMNAS
