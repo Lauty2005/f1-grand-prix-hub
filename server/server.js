@@ -20,6 +20,7 @@ import newsletterRouter from './src/routes/newsletter.routes.js';
 import cronRoutes from './src/routes/cron.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
+import elPilotoRoutes from './src/routes/elPiloto.routes.js';
 
 dotenv.config();
 
@@ -91,6 +92,7 @@ app.use('/api/newsletter', newsletterRouter);
 app.use('/api/cron', cronRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/game', gameRoutes);
+app.use('/api/el-piloto', elPilotoRoutes);
 
 app.get('/', (req, res) => {
     res.send(`

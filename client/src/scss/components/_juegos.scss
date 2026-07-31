@@ -1,0 +1,105 @@
+@use '../abstracts/variables' as *;
+
+// Hub de minijuegos (menú "JUEGOS" del navbar) — ver client/src/modules/juegos.js
+
+.juegos-hub {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 16px 80px;
+    text-align: center;
+}
+
+.juegos-hub__title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: white;
+    margin: 0 0 6px;
+}
+
+.juegos-hub__subtitle {
+    color: $color-text-dim;
+    font-size: 0.95rem;
+    margin: 0 0 32px;
+}
+
+.juegos-hub__grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    text-align: left;
+
+    @include mobile {
+        grid-template-columns: 1fr;
+    }
+}
+
+.juegos-hub__card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 22px;
+    background: $color-surface;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    color: white;
+    cursor: pointer;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+    &:hover {
+        border-color: $color-primary;
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    }
+}
+
+.juegos-hub__emoji {
+    font-size: 2rem;
+    line-height: 1;
+}
+
+.juegos-hub__nombre {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.juegos-hub__desc {
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.4;
+}
+
+// Botón flotante para volver al hub desde dentro de un juego — vive en
+// <body>, no en #app, porque cada juego reemplaza #app entero.
+.juegos-hub__volver {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 90;
+    background: rgba(21, 21, 30, 0.92);
+    backdrop-filter: blur(6px);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.2s ease, transform 0.2s ease;
+
+    &:hover {
+        border-color: $color-primary;
+        transform: translateY(-2px);
+    }
+
+    @include mobile {
+        bottom: 12px;
+        left: 12px;
+        padding: 8px 14px;
+        font-size: 0.78rem;
+    }
+}
