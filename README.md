@@ -1,5 +1,8 @@
 # F1 Grand Prix Hub
 
+[![CI](https://github.com/Lauty2005/f1-grand-prix-hub/actions/workflows/ci.yml/badge.svg)](https://github.com/Lauty2005/f1-grand-prix-hub/actions/workflows/ci.yml)
+[![Sync de resultados](https://github.com/Lauty2005/f1-grand-prix-hub/actions/workflows/sync-results.yml/badge.svg)](https://github.com/Lauty2005/f1-grand-prix-hub/actions/workflows/sync-results.yml)
+
 App full-stack para navegar información de Fórmula 1, en español (es_AR): sitio
 público, sistema de artículos y panel de admin, con generación asistida por IA,
 newsletter y notificaciones por mail.
@@ -13,6 +16,45 @@ f1_agent/  agente Python que publica borradores      → GitHub Actions
 ```
 
 Ver [`CLAUDE.md`](CLAUDE.md) para el detalle de arquitectura, rutas y convenciones.
+
+## Cómo funciona el sync de resultados
+
+Cada mañana un workflow trae de la API de Jolpica los resultados, el sprint y
+la clasificación de las carreras que faltan, y los escribe en la base. Durante
+los 7 días posteriores a cada GP vuelve a pasar, para capturar penalizaciones.
+
+```mermaid
+flowchart TD
+    A["GitHub Actions (cron diario)"] --> B["sync_results.py"]
+    B --> C["Jolpica API"]
+    C -- "respuestas completas, sin transformar" --> B
+    B -- "PUT /api/admin/sync/races/:id" --> D["Express"]
+    D -- "valida · mapea · diff · transacción" --> E[("PostgreSQL / Supabase")]
+```
+
+Decisiones que vale la pena señalar:
+
+- **Mapeo explícito, no por nombre ni por número.** `drivers.jolpica_id` y
+  `races.jolpica_round` guardan la correspondencia. Hacía falta: en 2026 las
+  rondas se renumeraron al cancelarse dos carreras (Mónaco es la 8 en la base y
+  la 6 en Jolpica), los números de piloto cambiaron y los nombres no coinciden.
+- **El cliente no transforma nada.** El script manda la respuesta cruda de
+  Jolpica; el backend es la única fuente de verdad sobre las convenciones de
+  datos. Así la lógica se testea sin red y no hay dos versiones de las reglas.
+- **Se valida antes de escribir.** Si la temporada o la ronda de la respuesta
+  no coinciden con la carrera, responde 422 y no toca la base. Una transacción
+  por carrera, con la fila bloqueada.
+- **`dry-run` y `force`.** El dry-run calcula el diff completo y hace rollback.
+  Pisar datos que ya existen, fuera de la ventana de 7 días, exige `force`.
+- **Idempotente.** El upsert lleva un guard `IS DISTINCT FROM`: volver a correr
+  el sync sobre datos iguales no escribe nada.
+- **Tests de paridad contra datos reales.** Los fixtures son respuestas de
+  Jolpica sin editar, y se comparan contra lo que se había cargado a mano.
+
+## Levantar el proyecto en un comando
+
+Ver [Desarrollo local con Docker](#desarrollo-local-con-docker): un Postgres 17
+con una copia de los datos deportivos y el backend apuntando a esa base.
 
 ## Desarrollo local sin Docker
 
