@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down reset snapshot logs psql test test-local token migrate migrate-down
+.PHONY: help up down reset snapshot logs psql test test-local test-agent sync sync-dry token migrate migrate-down
 
 help: ## Lista los targets disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -23,8 +23,9 @@ logs: ## Sigue los logs de todos los servicios
 psql: ## Abre psql contra la base local
 	docker compose exec db psql -U f1 -d f1hub
 
-test: ## Corre los tests del backend dentro del contenedor
+test: ## Corre los tests del backend (contenedor) y los del agente
 	docker compose run --rm api npm test
+	$(MAKE) test-agent
 
 test-local: ## Tests sin Docker
 	cd server && npm test
@@ -39,6 +40,15 @@ migrate: ## Aplica db/migrations/*.sql (sin *.down.sql) a la base local, en orde
 migrate-down: ## Revierte UNA migracion local: make migrate-down M=005_jolpica_mapping
 	@test -n "$(M)" || (echo "Uso: make migrate-down M=<nombre sin .sql>"; exit 1)
 	docker compose exec -T db psql -U f1 -d f1hub -v ON_ERROR_STOP=1 < db/migrations/$(M).down.sql
+
+test-agent: ## Tests del agente Python
+	cd f1_agent && python -m unittest -v test_sync_results
+
+sync-dry: ## Sync de resultados en dry-run contra la base local (ARGS="--jolpica-round 6")
+	docker compose --profile agent run --rm --build agent python sync_results.py --dry-run $(ARGS)
+
+sync: ## Sync de resultados contra la base local (ARGS="--jolpica-round 6 --force")
+	docker compose --profile agent run --rm --build agent python sync_results.py $(ARGS)
 
 token: ## Firma un JWT de agente con el JWT_SECRET local y lo imprime
 	@docker compose exec -T api node scripts/dev-token.js
