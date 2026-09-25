@@ -233,6 +233,31 @@ class RunTest(unittest.TestCase):
         self.assertIn("Nada pendiente", sr.format_summary(report))
 
 
+class GhaOutputsTest(unittest.TestCase):
+    def test_escribe_loaded_errors_y_nombres(self):
+        import os
+        import tempfile
+        report = sr.Report(season=2026, dry_run=False, force=False, outcomes=[
+            sr.RaceOutcome(53, "AZERBAIJAN GRAND PRIX", 15, "applied"),
+            sr.RaceOutcome(54, "SINGAPORE GRAND PRIX", 17, "not_published"),
+            sr.RaceOutcome(46, "AUSTRIAN GRAND PRIX", 8, "error", "422"),
+        ])
+        with tempfile.NamedTemporaryFile("w+", delete=False, suffix=".txt") as f:
+            path = f.name
+        try:
+            sr.write_gha_outputs(report, path)
+            with open(path, encoding="utf-8") as f:
+                out = f.read()
+        finally:
+            os.unlink(path)
+        self.assertIn("loaded=1\n", out)
+        self.assertIn("errors=1\n", out)
+        self.assertIn("loaded_names=R15 Azerbaijan Grand Prix\n", out)
+
+    def test_sin_path_no_hace_nada(self):
+        sr.write_gha_outputs(sr.Report(2026, False, False), None)
+
+
 class MainTest(unittest.TestCase):
     def test_force_sin_ronda_se_rechaza(self):
         with self.assertRaises(SystemExit):

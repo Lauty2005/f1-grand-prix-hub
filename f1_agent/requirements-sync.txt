@@ -1,0 +1,3 @@
+# Dependencias de sync_results.py (sin Gemini: instala en segundos en CI).
+# Mantener la versión alineada con requirements.txt.
+requests==2.32.3

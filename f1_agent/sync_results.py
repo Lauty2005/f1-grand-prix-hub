@@ -338,8 +338,21 @@ def main(argv=None) -> int:
     if step_summary:
         with open(step_summary, "a", encoding="utf-8") as f:
             f.write(summary + "\n")
+    write_gha_outputs(report, os.environ.get("GITHUB_OUTPUT"))
 
     return 1 if report.errors else 0
+
+
+def write_gha_outputs(report: Report, path: Optional[str]) -> None:
+    """Outputs para pasos siguientes del workflow (p. ej. avisar solo si se cargó algo)."""
+    if not path:
+        return
+    loaded = [o for o in report.outcomes if o.status == "applied"]
+    names = ", ".join(f"R{o.jolpica_round} {o.name.title()}" for o in loaded)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(f"loaded={len(loaded)}\n")
+        f.write(f"errors={len(report.errors)}\n")
+        f.write(f"loaded_names={names}\n")
 
 
 if __name__ == "__main__":
