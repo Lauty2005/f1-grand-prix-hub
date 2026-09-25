@@ -21,6 +21,7 @@ import cronRoutes from './src/routes/cron.routes.js';
 import healthRoutes from './src/routes/health.routes.js';
 import gameRoutes from './src/routes/game.routes.js';
 import elPilotoRoutes from './src/routes/elPiloto.routes.js';
+import syncRoutes from './src/routes/sync.routes.js';
 
 dotenv.config();
 
@@ -90,6 +91,7 @@ app.use('/api/strategy', strategyRoutes);
 app.use('/', sitemapRouter);  // /sitemap.xml — debe estar en la raíz, sin prefijo /api
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/cron', cronRoutes);
+app.use('/api/admin/sync', syncRoutes);
 app.use('/api/health', healthRoutes);
 app.use('/api/game', gameRoutes);
 app.use('/api/el-piloto', elPilotoRoutes);
