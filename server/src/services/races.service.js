@@ -72,8 +72,13 @@ export const getSessionResults = async (raceId, sessionType) => {
         FROM ${cfg.table}
         JOIN drivers d         ON ${alias}.driver_id = d.id
         JOIN races r           ON ${cfg.cond} = r.id
-        JOIN driver_seasons ds ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM r.date)::int
-        JOIN constructors c    ON c.id = ds.constructor_id
+        -- Equipo con el que corrió ESE fin de semana (results.constructor_id, que
+        -- contempla cambios a mitad de temporada); si no corrió la carrera
+        -- (práctica, reserva), el de driver_seasons. LEFT JOIN: un piloto sin
+        -- driver_seasons para el año no desaparece de la tabla.
+        LEFT JOIN results wk          ON wk.race_id = r.id AND wk.driver_id = d.id
+        LEFT JOIN driver_seasons ds   ON ds.driver_id = d.id AND ds.year = EXTRACT(YEAR FROM r.date)::int
+        LEFT JOIN constructors c      ON c.id = COALESCE(wk.constructor_id, ds.constructor_id, d.constructor_id)
         WHERE ${cfg.cond} = $1
         ORDER BY ${cfg.order};
     `;

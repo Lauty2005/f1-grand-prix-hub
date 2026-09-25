@@ -1,36 +1,37 @@
 import { query } from '../config/db.js';
 
+/**
+ * Campeonato de constructores: suma los puntos de cada resultado para el equipo
+ * con el que se corrió ESA carrera (results/sprint_results.constructor_id).
+ * Así cuenta bien los cambios de equipo a mitad de temporada (p. ej. Lawson y
+ * Tsunoda en 2025 R1-2 y en 2026 desde R12), que driver_seasons —un equipo por
+ * piloto y año— no puede representar.
+ */
 export const getConstructorsStandings = async (year) => {
     const startDate = `${year}-01-01`;
     const endDate = `${parseInt(year) + 1}-01-01`;
     const sql = `
+        WITH pts AS (
+            SELECT r.constructor_id, r.points
+              FROM results r JOIN races ra ON ra.id = r.race_id
+             WHERE ra.date >= $1 AND ra.date < $2
+            UNION ALL
+            SELECT s.constructor_id, s.points
+              FROM sprint_results s JOIN races ra ON ra.id = s.race_id
+             WHERE ra.date >= $1 AND ra.date < $2
+        )
         SELECT
             c.id,
             c.name,
             c.primary_color,
             c.logo_url,
-            COALESCE(SUM(rp.race_pts), 0) + COALESCE(SUM(sp.sprint_pts), 0) AS points
+            COALESCE(SUM(pts.points), 0) AS points
         FROM constructors c
-        JOIN driver_seasons ds ON ds.constructor_id = c.id AND ds.year = $4::int
-        JOIN drivers d         ON d.id = ds.driver_id
-            AND d.active_seasons::text LIKE $3
-        LEFT JOIN (
-            SELECT driver_id, SUM(points) AS race_pts
-            FROM results
-            WHERE race_id IN (SELECT id FROM races WHERE date >= $1 AND date < $2)
-            GROUP BY driver_id
-        ) rp ON rp.driver_id = d.id
-        LEFT JOIN (
-            SELECT driver_id, SUM(points) AS sprint_pts
-            FROM sprint_results
-            WHERE race_id IN (SELECT id FROM races WHERE date >= $1 AND date < $2)
-            GROUP BY driver_id
-        ) sp ON sp.driver_id = d.id
-        WHERE $4 = ANY(c.active_seasons)
+        LEFT JOIN pts ON pts.constructor_id = c.id
+        WHERE $3::int = ANY(c.active_seasons)
         GROUP BY c.id, c.name, c.primary_color, c.logo_url
-        HAVING $4::int = ANY(c.active_seasons)
         ORDER BY points DESC, c.name ASC;
     `;
-    const result = await query(sql, [startDate, endDate, `%${year}%`, year]);
+    const result = await query(sql, [startDate, endDate, year]);
     return result.rows;
 };
