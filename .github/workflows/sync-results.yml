@@ -1,0 +1,115 @@
+name: 🏁 Sync de resultados (Jolpica)
+
+# Carga automáticamente resultados, sprint y clasificación desde Jolpica.
+# Idempotente: si no hay nada nuevo, no escribe. Los 7 días posteriores a cada
+# carrera se re-sincroniza para capturar penalizaciones.
+
+on:
+  schedule:
+    # Diario 08:17 ART (11:17 UTC): carreras del día anterior y penalizaciones.
+    - cron: '17 11 * * *'
+    # Domingo 21:47 ART (00:47 UTC lunes): carreras del mismo domingo.
+    - cron: '47 0 * * 1'
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Temporada (vacío = actual)'
+        required: false
+        default: ''
+      jolpica_round:
+        description: 'Ronda de Jolpica (vacío = solo pendientes)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run: calcular el diff sin escribir'
+        type: boolean
+        default: true
+      force:
+        description: 'Force: sobrescribir datos existentes (requiere ronda)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-results
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: f1_agent/requirements-sync.txt
+
+      - name: Dependencias
+        run: pip install -r f1_agent/requirements-sync.txt
+
+      - name: Tests del script
+        working-directory: f1_agent
+        run: python -m unittest test_sync_results
+
+      - name: Validar inputs
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          IN_ROUND: ${{ inputs.jolpica_round }}
+          IN_SEASON: ${{ inputs.season }}
+          IN_FORCE: ${{ inputs.force }}
+        run: |
+          [[ -z "$IN_ROUND"  || "$IN_ROUND"  =~ ^[0-9]{1,2}$ ]] || { echo "::error::jolpica_round inválido"; exit 1; }
+          [[ -z "$IN_SEASON" || "$IN_SEASON" =~ ^[0-9]{4}$ ]]   || { echo "::error::season inválida"; exit 1; }
+          if [[ "$IN_FORCE" == "true" && -z "$IN_ROUND" ]]; then
+            echo "::error::force requiere jolpica_round"; exit 1
+          fi
+
+      - name: Sync
+        id: sync
+        working-directory: f1_agent
+        env:
+          F1_API_URL:  ${{ secrets.F1_API_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          IN_ROUND:    ${{ inputs.jolpica_round }}
+          IN_SEASON:   ${{ inputs.season }}
+          IN_DRY_RUN:  ${{ inputs.dry_run }}
+          IN_FORCE:    ${{ inputs.force }}
+        run: |
+          args=()
+          [[ -n "$IN_SEASON" ]]        && args+=(--season "$IN_SEASON")
+          [[ -n "$IN_ROUND" ]]         && args+=(--jolpica-round "$IN_ROUND")
+          [[ "$IN_DRY_RUN" == "true" ]] && args+=(--dry-run)
+          [[ "$IN_FORCE" == "true" ]]   && args+=(--force)
+          python sync_results.py "${args[@]}"
+
+      - name: 📬 Telegram — resultados cargados
+        if: success() && steps.sync.outputs.loaded != '' && steps.sync.outputs.loaded != '0'
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          LOADED_NAMES:       ${{ steps.sync.outputs.loaded_names }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=🏁 Resultados cargados: ${LOADED_NAMES}"
+
+      - name: 📬 Telegram — fallo
+        if: failure()
+        continue-on-error: true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" \
+            --data-urlencode "text=❌ Sync de resultados FALLÓ. Log: ${RUN_URL}"
