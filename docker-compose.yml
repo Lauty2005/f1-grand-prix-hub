@@ -25,6 +25,8 @@ services:
       # Pisan lo que venga del .env: dotenv no sobreescribe process.env.
       DATABASE_URL: postgres://f1:f1@db:5432/f1hub
       DATABASE_SSL: "false"
+      # Habilita los tests de integracion del sync (schema aislado).
+      TEST_DATABASE_URL: postgres://f1:f1@db:5432/f1hub
       NODE_ENV: development
       PORT: "3000"
       # El agente corre dentro de la red de compose, sin Origin.
