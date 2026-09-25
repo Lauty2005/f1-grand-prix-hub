@@ -5,6 +5,10 @@ Transporte puro: pide al backend qué carreras faltan, trae de Jolpica las
 respuestas COMPLETAS (sin transformar) y las manda a PUT /api/admin/sync/races/:id.
 El backend valida, mapea y escribe (una transacción por carrera).
 
+Horarios: en las corridas completas (sin --jolpica-round) también manda el
+calendario de la temporada a PUT /api/admin/sync/schedule. Carreras futuras: se
+actualizan los horarios que cambiaron; pasadas: solo se completan los vacíos.
+
 Uso:
   python f1_agent/sync_results.py                         # temporada actual, solo pendientes
   python f1_agent/sync_results.py --season 2026 --dry-run
@@ -102,9 +106,9 @@ class JolpicaClient:
     def session(self, season: int, rnd: int, kind: str) -> dict:
         return self.get(f"{season}/{rnd}/{kind}.json?limit=100")
 
-    def calendar(self, season: int) -> list:
-        data = self.get(f"{season}.json?limit=100")
-        return data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+    def calendar(self, season: int) -> dict:
+        """Respuesta COMPLETA del calendario (se manda tal cual al backend)."""
+        return self.get(f"{season}.json?limit=100")
 
 
 def is_published(response: dict) -> bool:
@@ -132,6 +136,19 @@ class HubClient:
         if r.status_code != 200:
             raise EnvironmentError(f"GET /pending → {r.status_code} {r.text[:300]}")
         return r.json()
+
+    def put_schedule(self, season: int, calendar: dict, dry_run: bool):
+        params = {"season": season}
+        if dry_run:
+            params["dry_run"] = 1
+        r = self.http.put(f"{self.api_url}/api/admin/sync/schedule", params=params,
+                          data=json.dumps({"source": "jolpica", "calendar": calendar}),
+                          headers=self.headers, timeout=self.timeout)
+        try:
+            body = r.json()
+        except ValueError:
+            body = {"error": r.text[:300]}
+        return r.status_code, body
 
     def put_race(self, race_id: int, payload: dict, dry_run: bool, force: bool):
         params = {}
@@ -170,10 +187,16 @@ class Report:
     outcomes: list = field(default_factory=list)
     unlinked: list = field(default_factory=list)   # rondas de Jolpica sin carrera en la base
     warnings: list = field(default_factory=list)
+    schedule: Optional[dict] = None                # respuesta de PUT /schedule (data)
+    schedule_error: Optional[str] = None
 
     @property
     def errors(self):
         return [o for o in self.outcomes if o.status == "error"]
+
+    @property
+    def error_count(self) -> int:
+        return len(self.errors) + (1 if self.schedule_error else 0)
 
     def count(self, status):
         return sum(1 for o in self.outcomes if o.status == status)
@@ -260,16 +283,44 @@ def run(season: int, hub: HubClient, jolpica: JolpicaClient, jolpica_round: Opti
             log.info(f"    {line}")
         report.outcomes.append(outcome)
 
-    # Rondas de Jolpica que no están vinculadas a ninguna carrera (informativo).
+    # Calendario: rondas sin vincular (informativo) + horarios de sesiones.
+    try:
+        calendar = jolpica.calendar(season)
+    except JolpicaError as e:
+        report.schedule_error = f"Jolpica (calendario): {e}"
+        return report
+
     try:
         mapped = set(pending.get("mapped_rounds", []))
-        for r in jolpica.calendar(season):
+        for r in calendar.get("MRData", {}).get("RaceTable", {}).get("Races", []):
             if int(r["round"]) not in mapped:
                 report.unlinked.append(f"R{r['round']} {r.get('raceName', '?')} ({r.get('date', '?')})")
-    except (JolpicaError, KeyError, ValueError) as e:
+    except (KeyError, ValueError) as e:
         report.warnings.append(f"No se pudo verificar el calendario: {e}")
 
+    # Horarios: solo en corridas completas; una corrección puntual (--jolpica-round) no los toca.
+    if jolpica_round is None:
+        try:
+            status, body = hub.put_schedule(season, calendar, dry_run=dry_run)
+        except requests.RequestException as e:
+            report.schedule_error = f"backend (horarios): {e}"
+        else:
+            if status == 200:
+                report.schedule = body.get("data", {})
+                for c in report.schedule.get("changes", []):
+                    log.info(f"[horarios] R{c['jolpica_round']} {c['name']}: {', '.join(c['changes'])}")
+            else:
+                issues = body.get("issues") or [body.get("error", "")]
+                report.schedule_error = f"horarios HTTP {status}: {' | '.join(issues)}"
+
     return report
+
+
+def _fmt_utc(iso: Optional[str]) -> str:
+    """'2026-09-26T11:00:00.000Z' → '26/09 11:00Z'."""
+    if not iso:
+        return "—"
+    return f"{iso[8:10]}/{iso[5:7]} {iso[11:16]}Z"
 
 
 ICONS = {"applied": "✅", "unchanged": "➖", "dry_run": "🔍", "not_published": "⏳", "error": "❌"}
@@ -282,7 +333,7 @@ def format_summary(report: Report) -> str:
         "",
         f"Cargadas: **{report.count('applied')}** · Sin cambios: {report.count('unchanged')} · "
         f"Dry-run: {report.count('dry_run')} · Sin publicar: {report.count('not_published')} · "
-        f"Errores: **{len(report.errors)}**",
+        f"Errores: **{report.error_count}**",
         "",
     ]
     if report.outcomes:
@@ -297,6 +348,20 @@ def format_summary(report: Report) -> str:
         lines.append(f"<details><summary>{o.name}: {len(o.changes)} cambios</summary>\n")
         lines += [f"- {c}" for c in o.changes]
         lines.append("\n</details>\n")
+    if report.schedule is not None:
+        sch = report.schedule
+        verb = "a actualizar" if report.dry_run else "actualizadas"
+        lines.append(f"### Horarios\n\nCarreras {verb}: **{sch.get('updated', 0)}** · sin cambios: {sch.get('unchanged', 0)}")
+        lines.append("")
+        for c in sch.get("changes", []):
+            det = ", ".join(f"{k.replace('_time', '')} {_fmt_utc(v[0])}→{_fmt_utc(v[1])}" for k, v in c["changes"].items())
+            lines.append(f"- R{c['jolpica_round']} {c['name']}: {det}")
+        for w in sch.get("warnings", []):
+            lines.append(f"- ⚠️ {w}")
+        lines.append("")
+    if report.schedule_error:
+        lines.append(f"❌ {report.schedule_error}")
+        lines.append("")
     if report.unlinked:
         lines.append("**Rondas de Jolpica sin carrera en la base** (no se sincronizan): " + ", ".join(report.unlinked))
         lines.append("")
@@ -340,7 +405,7 @@ def main(argv=None) -> int:
             f.write(summary + "\n")
     write_gha_outputs(report, os.environ.get("GITHUB_OUTPUT"))
 
-    return 1 if report.errors else 0
+    return 1 if report.error_count else 0
 
 
 def write_gha_outputs(report: Report, path: Optional[str]) -> None:
@@ -351,7 +416,7 @@ def write_gha_outputs(report: Report, path: Optional[str]) -> None:
     names = ", ".join(f"R{o.jolpica_round} {o.name.title()}" for o in loaded)
     with open(path, "a", encoding="utf-8") as f:
         f.write(f"loaded={len(loaded)}\n")
-        f.write(f"errors={len(report.errors)}\n")
+        f.write(f"errors={report.error_count}\n")
         f.write(f"loaded_names={names}\n")
 
 

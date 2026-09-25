@@ -104,11 +104,17 @@ class JolpicaClientTest(unittest.TestCase):
 # ── run() con fakes de backend y Jolpica ────────────────────────────────────
 
 class FakeHub:
-    def __init__(self, pending, put_responses):
+    def __init__(self, pending, put_responses, schedule_response=None):
         self._pending = pending
         self.put_responses = dict(put_responses)
         self.puts = []
         self.pending_calls = []
+        self.schedule_calls = []
+        self.schedule_response = schedule_response or (200, {"data": {"updated": 0, "unchanged": 0, "changes": [], "warnings": []}})
+
+    def put_schedule(self, season, calendar, dry_run):
+        self.schedule_calls.append((season, calendar, dry_run))
+        return self.schedule_response
 
     def pending(self, season, jolpica_round=None):
         self.pending_calls.append((season, jolpica_round))
@@ -134,7 +140,7 @@ class FakeJolpica:
         return jolpica_resp(season, rnd, key) if self.published.get((rnd, kind)) else jolpica_resp(season, rnd)
 
     def calendar(self, season):
-        return self._calendar
+        return {"MRData": {"RaceTable": {"season": str(season), "Races": self._calendar}}}
 
 
 def race(rid, rnd, needs, name=None):
@@ -272,6 +278,48 @@ class MainTest(unittest.TestCase):
             for k, v in old.items():
                 if v is not None:
                     os.environ[k] = v
+
+
+# ── Horarios ────────────────────────────────────────────────────────────────
+
+class ScheduleTest(unittest.TestCase):
+    CHANGES = {"updated": 1, "unchanged": 7, "warnings": ["R16 X: fecha distinta"], "changes": [
+        {"race_id": 53, "name": "AZERBAIJAN GRAND PRIX", "jolpica_round": 15,
+         "changes": {"race_time": [None, "2026-09-26T11:00:00.000Z"], "qualy_time": [None, "2026-09-25T12:00:00.000Z"]}}]}
+
+    def test_corrida_completa_manda_el_calendario_completo(self):
+        hub = FakeHub({"data": [], "mapped_rounds": [15]}, {}, (200, {"data": self.CHANGES}))
+        jolpica = FakeJolpica({}, calendar=[{"round": "15", "raceName": "Azerbaijan Grand Prix", "date": "2026-09-26"}])
+        report = sr.run(2026, hub, jolpica, dry_run=True)
+        season, calendar, dry = hub.schedule_calls[0]
+        self.assertEqual((season, dry), (2026, True))
+        self.assertIn("MRData", calendar, "se manda la respuesta completa, sin transformar")
+        summary = sr.format_summary(report)
+        self.assertIn("### Horarios", summary)
+        self.assertIn("Carreras a actualizar: **1**", summary)
+        self.assertIn("R15 AZERBAIJAN GRAND PRIX: race —→26/09 11:00Z, qualy —→25/09 12:00Z", summary)
+        self.assertIn("⚠️ R16 X: fecha distinta", summary)
+        self.assertEqual(report.error_count, 0)
+
+    def test_correccion_puntual_no_toca_horarios(self):
+        hub = FakeHub({"data": [], "mapped_rounds": [6]}, {})
+        sr.run(2026, hub, FakeJolpica({}), jolpica_round=6)
+        self.assertEqual(hub.schedule_calls, [])
+
+    def test_error_de_horarios_cuenta_como_error(self):
+        hub = FakeHub({"data": [], "mapped_rounds": []}, {}, (422, {"issues": ["El calendario no es de la temporada 2026"]}))
+        report = sr.run(2026, hub, FakeJolpica({}))
+        self.assertEqual(report.error_count, 1)
+        self.assertIn("horarios HTTP 422", sr.format_summary(report))
+
+    def test_falla_del_calendario_de_jolpica_es_error(self):
+        class Broken(FakeJolpica):
+            def calendar(self, season):
+                raise sr.JolpicaError("HTTP 500")
+        hub = FakeHub({"data": [], "mapped_rounds": []}, {})
+        report = sr.run(2026, hub, Broken({}))
+        self.assertEqual(report.error_count, 1)
+        self.assertEqual(hub.schedule_calls, [])
 
 
 if __name__ == "__main__":
