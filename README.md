@@ -59,6 +59,37 @@ En Windows, `make` no viene instalado. O lo instalás
 (`winget install GnuWin32.Make`, o `choco install make`), o corrés los comandos
 de cada target a mano desde Git Bash — son una o dos líneas cada uno.
 
+### Probar el sync de Jolpica en local
+
+Los endpoints de sync viven en `/api/admin/sync` y piden un JWT de admin.
+Contrato completo en [`CLAUDE.md`](CLAUDE.md).
+
+```bash
+make reset && make migrate        # base con datos + columnas de mapeo
+TOKEN=$(make -s token)
+
+# Que carreras necesitan sync
+curl -s "localhost:3000/api/admin/sync/pending?season=2026" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Dry-run: calcula el diff y no escribe nada. El body son las respuestas
+# completas de Jolpica; sirven los fixtures de los tests.
+F=server/src/services/jolpica/__fixtures__
+jq -n --slurpfile r $F/2026-6-results.json --slurpfile q $F/2026-6-qualifying.json \
+  '{source:"jolpica", results:$r[0], qualifying:$q[0]}' > /tmp/monaco.json
+
+curl -s -X PUT "localhost:3000/api/admin/sync/races/44?dry_run=1" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  --data @/tmp/monaco.json
+```
+
+Sin `dry_run`, sobrescribir datos distintos fuera de la ventana de 7 dias
+devuelve 409 con el diff: hace falta agregar `&force=1`.
+
+Los tests de integracion del sync necesitan `TEST_DATABASE_URL`, que
+`docker-compose.yml` ya define para el servicio `api`. Por eso `make test`
+los corre y `make test-local` los saltea.
+
 ### Qué no funciona en local
 
 El `.env` de la raíz usa valores dummy para los servicios externos, así que
