@@ -1,0 +1,8 @@
+node_modules
+.env*
+__pycache__
+.git
+*.sql
+*.pyc
+Dockerfile
+.dockerignore

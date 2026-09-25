@@ -6,10 +6,16 @@ server/node_modules/
 # Archivos de entorno (Secretos, nunca se suben)
 .env
 server/.env
-server/scripts
+server/scripts/*
+!server/scripts/dev-token.js
 server/public
 server/migrations
 client/.env
+
+# Snapshot de datos de Supabase (db/init/01_schema.sql SÍ se commitea)
+db/init/02_seed.sql
+db/init/*.raw
+db/init/*.tmp
 
 # Carpetas de compilación
 dist/

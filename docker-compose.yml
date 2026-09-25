@@ -1,0 +1,53 @@
+name: f1-grand-prix-hub
+
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: f1
+      POSTGRES_PASSWORD: f1
+      POSTGRES_DB: f1hub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U f1 -d f1hub"]
+      interval: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ./server
+      target: dev
+    env_file: .env
+    environment:
+      # Pisan lo que venga del .env: dotenv no sobreescribe process.env.
+      DATABASE_URL: postgres://f1:f1@db:5432/f1hub
+      DATABASE_SSL: "false"
+      NODE_ENV: development
+      PORT: "3000"
+      # El agente corre dentro de la red de compose, sin Origin.
+      ALLOWED_ORIGINS: http://localhost:5173,http://localhost:4173
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    ports: ["3000:3000"]
+    depends_on:
+      db: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 10s
+      retries: 6
+
+  agent:
+    build: ./f1_agent
+    profiles: ["agent"]               # no arranca con `up`, solo con `run`
+    env_file: .env
+    environment:
+      F1_API_URL: http://api:3000
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:
