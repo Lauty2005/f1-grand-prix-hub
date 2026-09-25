@@ -24,6 +24,9 @@
  *      resto         → gap en segundos con "s"       "+1:01.344" → "+61.344s"
  *      DNF/DNS/DSQ   → "DNF" / "DNS" / "DSQ"
  *  - Qualifying: sesión ausente o vacía → '' (string vacío, no NULL).
+ *  - constructor_id (results y sprint): el equipo de Jolpica para ESA carrera
+ *    (Constructor.constructorId), no el de driver_seasons. Soporta cambios de
+ *    equipo a mitad de temporada (Lawson/Tsunoda 2025 R1-2 y 2026 desde R12).
  *
  * Diferencias conocidas con datos históricos (NO se replican a propósito):
  *  - 2025 R1 Hadjar: Jolpica = 'R' (0 vueltas), la base = dns.
@@ -72,6 +75,14 @@ export function extractRows(apiResponse, kind) {
  * @param {{id:number, jolpica_id:string|null}[]} drivers
  * @returns {Map<string, number>}
  */
+/**
+ * @param {{id:number, jolpica_id:string|null}[]} constructors
+ * @returns {Map<string, number>}  jolpica constructorId → constructors.id
+ */
+export function buildConstructorMap(constructors) {
+    return buildDriverMap(constructors);
+}
+
 export function buildDriverMap(drivers) {
     const map = new Map();
     for (const d of drivers) {
@@ -116,7 +127,7 @@ export function sprintTimeGap(row, winnerLaps, flags) {
 
 // ── Validación ──────────────────────────────────────────────────────────────
 
-function validate(rows, driverMap, { checkPoints }) {
+function validate(rows, driverMap, { checkPoints, constructorMap = null }) {
     const issues = [];
 
     if (!Array.isArray(rows) || rows.length === 0) {
@@ -131,6 +142,15 @@ function validate(rows, driverMap, { checkPoints }) {
     )];
     if (unmapped.length > 0) {
         issues.push(`Pilotos sin jolpica_id en la base: ${unmapped.map((id) => id ?? '<sin driverId>').join(', ')}`);
+    }
+
+    if (constructorMap) {
+        const unmappedC = [...new Set(
+            rows.map((r) => r.Constructor?.constructorId).filter((id) => !id || !constructorMap.has(id)),
+        )];
+        if (unmappedC.length > 0) {
+            issues.push(`Equipos sin jolpica_id en la base: ${unmappedC.map((id) => id ?? '<sin constructorId>').join(', ')}`);
+        }
     }
 
     const driverIds = rows.map((r) => r.Driver?.driverId);
@@ -166,28 +186,37 @@ function winnerLapsOf(rows) {
 
 // ── Mappers ─────────────────────────────────────────────────────────────────
 
-/** Filas de `results`, ordenadas por posición. */
-export function mapRaceResults(rows, driverMap) {
-    validate(rows, driverMap, { checkPoints: true });
+/** constructor_id solo si se pasó constructorMap (el equipo con el que corrió ESE fin de semana). */
+function withConstructor(row, r, constructorMap) {
+    if (constructorMap) row.constructor_id = constructorMap.get(r.Constructor.constructorId);
+    return row;
+}
+
+/**
+ * Filas de `results`, ordenadas por posición.
+ * @param {Map<string,number>} [constructorMap] si se pasa, agrega constructor_id y valida equipos.
+ */
+export function mapRaceResults(rows, driverMap, constructorMap = null) {
+    validate(rows, driverMap, { checkPoints: true, constructorMap });
     return rows
-        .map((r) => ({
+        .map((r) => withConstructor({
             driver_id: driverMap.get(r.Driver.driverId),
             position: Number(r.position),
             points: Number(r.points),
             fastest_lap: r.FastestLap?.rank === '1',
             ...classifyResult(r),
-        }))
+        }, r, constructorMap))
         .sort((a, b) => a.position - b.position);
 }
 
 /** Filas de `sprint_results`, ordenadas por posición. */
-export function mapSprintResults(rows, driverMap) {
-    validate(rows, driverMap, { checkPoints: true });
+export function mapSprintResults(rows, driverMap, constructorMap = null) {
+    validate(rows, driverMap, { checkPoints: true, constructorMap });
     const winnerLaps = winnerLapsOf(rows);
     return rows
         .map((r) => {
             const { dnf, dsq, dns } = classifyResult(r);
-            return {
+            return withConstructor({
                 driver_id: driverMap.get(r.Driver.driverId),
                 position: Number(r.position),
                 points: Number(r.points),
@@ -195,7 +224,7 @@ export function mapSprintResults(rows, driverMap) {
                 dns,
                 dsq,
                 time_gap: sprintTimeGap(r, winnerLaps, { dnf, dsq, dns }),
-            };
+            }, r, constructorMap);
         })
         .sort((a, b) => a.position - b.position);
 }

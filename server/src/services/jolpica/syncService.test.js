@@ -29,8 +29,12 @@ function apiResponse(season, round, key, rows) {
     return { MRData: { RaceTable: { season: String(season), Races: rows === null ? [] : [{ season: String(season), round: String(round), [key]: rows }] } } };
 }
 
-function raceRows({ order = JIDS, points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] } = {}) {
+/** Equipo por piloto: drv1-11 → team_a, drv12-22 → team_b (overrides para cambios de equipo). */
+const teamOf = (jid, overrides = {}) => overrides[jid] ?? (Number(jid.slice(3)) <= 11 ? 'team_a' : 'team_b');
+
+function raceRows({ order = JIDS, points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], teams = {} } = {}) {
     return order.map((jid, i) => ({
+        Constructor: { constructorId: teamOf(jid, teams) },
         position: String(i + 1),
         positionText: i >= 20 ? 'R' : String(i + 1),
         points: String(points[i] ?? 0),
@@ -43,6 +47,7 @@ function raceRows({ order = JIDS, points = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1] }
 
 function sprintRows() {
     return JIDS.map((jid, i) => ({
+        Constructor: { constructorId: teamOf(jid) },
         position: String(i + 1), positionText: String(i + 1), points: String(Math.max(8 - i, 0)),
         Driver: { driverId: jid }, laps: '19', status: 'Finished',
         Time: { time: i === 0 ? '30:00.000' : `+${i}.000` },
@@ -73,20 +78,23 @@ describe('syncService (integración)', { skip }, () => {
         sync = createSyncService(pool);
 
         await q(`
+            CREATE TABLE constructors (id serial PRIMARY KEY, name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
             CREATE TABLE drivers (id serial PRIMARY KEY, last_name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
             CREATE TABLE races (id serial PRIMARY KEY, round int NOT NULL, name varchar NOT NULL, date date NOT NULL,
                                 status varchar, has_sprint boolean DEFAULT false, jolpica_round int);
             CREATE TABLE results (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
                                   position int NOT NULL, points numeric DEFAULT 0, fastest_lap boolean DEFAULT false,
                                   dnf boolean DEFAULT false, dsq boolean DEFAULT false, dns boolean DEFAULT false, dnq boolean DEFAULT false,
-                                  UNIQUE (race_id, driver_id));
+                                  constructor_id int REFERENCES constructors(id), UNIQUE (race_id, driver_id));
             CREATE TABLE sprint_results (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
                                   position int NOT NULL, points numeric DEFAULT 0, dnf boolean DEFAULT false, dns boolean DEFAULT false,
-                                  dsq boolean DEFAULT false, time_gap varchar, UNIQUE (race_id, driver_id));
+                                  dsq boolean DEFAULT false, time_gap varchar, constructor_id int REFERENCES constructors(id),
+                                  UNIQUE (race_id, driver_id));
             CREATE TABLE qualifying (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
                                   position int NOT NULL, q1 varchar, q2 varchar, q3 varchar, UNIQUE (race_id, driver_id));
         `);
 
+        await q(`INSERT INTO constructors (name, jolpica_id) VALUES ('Equipo A', 'team_a'), ('Equipo B', 'team_b'), ('Sin mapear', NULL)`);
         for (const [i, jid] of JIDS.entries()) {
             await q('INSERT INTO drivers (last_name, jolpica_id) VALUES ($1, $2)', [`Piloto${i + 1}`, jid]);
         }
@@ -247,6 +255,41 @@ describe('syncService (integración)', { skip }, () => {
         const s = ids.seasonOf[ids.reciente];
         const out = await sync.applyRaceData(ids.reciente, { qualifying: apiResponse(s, 4, 'QualifyingResults', null) });
         assert.deepEqual(out.skipped, { qualifying: 'not_published' });
+    });
+
+    // ── Equipo por resultado (cambios de equipo a mitad de temporada) ─────────
+
+    test('guarda constructor_id del equipo de ESA carrera', async () => {
+        const [{ y: s }] = await q('SELECT EXTRACT(YEAR FROM date)::int AS y FROM races WHERE id = $1', [ids.vieja_vacia]);
+        const rows = await q(
+            `SELECT d.jolpica_id, c.jolpica_id AS team FROM results r JOIN drivers d ON d.id = r.driver_id
+               JOIN constructors c ON c.id = r.constructor_id WHERE r.race_id = $1 AND d.jolpica_id IN ('drv1', 'drv22')
+              ORDER BY d.jolpica_id`, [ids.vieja_vacia]);
+        assert.deepEqual(rows.map((r) => `${r.jolpica_id}:${r.team}`), ['drv1:team_a', 'drv22:team_b']);
+        assert.ok(s);
+    });
+
+    test('cambio de equipo: el diff muestra constructor_id y con force se corrige', async () => {
+        const s = ids.seasonOf[ids.vieja_vacia];
+        const payload = { results: apiResponse(s, 1, 'Results', raceRows({ teams: { drv5: 'team_b' } })) };
+        const dry = await sync.applyRaceData(ids.vieja_vacia, payload, { dryRun: true });
+        assert.equal(dry.tables.results.changed.length, 1);
+        const [{ id: teamA }] = await q("SELECT id FROM constructors WHERE jolpica_id = 'team_a'");
+        const [{ id: teamB }] = await q("SELECT id FROM constructors WHERE jolpica_id = 'team_b'");
+        assert.deepEqual(dry.tables.results.changed[0].changes, { constructor_id: [teamA, teamB] });
+        await sync.applyRaceData(ids.vieja_vacia, payload, { force: true });
+        const [{ constructor_id }] = await q(
+            "SELECT r.constructor_id FROM results r JOIN drivers d ON d.id = r.driver_id WHERE r.race_id = $1 AND d.jolpica_id = 'drv5'",
+            [ids.vieja_vacia]);
+        assert.equal(constructor_id, teamB);
+    });
+
+    test('equipo sin jolpica_id → 422 que lo nombra', async () => {
+        const s = ids.seasonOf[ids.vieja_vacia];
+        await assert.rejects(
+            sync.applyRaceData(ids.vieja_vacia, { results: apiResponse(s, 1, 'Results', raceRows({ teams: { drv2: 'equipo_nuevo' } })) }, { force: true }),
+            (err) => err instanceof ValidationError && /Equipos sin jolpica_id en la base: equipo_nuevo/.test(err.message),
+        );
     });
 
     // ── Errores (nada se escribe) ───────────────────────────────────────────

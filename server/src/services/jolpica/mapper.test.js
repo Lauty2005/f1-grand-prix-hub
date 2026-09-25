@@ -3,7 +3,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    ValidationError, MIN_ROWS, extractRows, buildDriverMap, classifyResult,
+    ValidationError, MIN_ROWS, extractRows, buildDriverMap, buildConstructorMap, classifyResult,
     toSecondsGap, sprintTimeGap, mapRaceResults, mapSprintResults, mapQualifying,
 } from './mapper.js';
 
@@ -229,5 +229,33 @@ describe('extractRows', () => {
     });
     test('respuesta malformada → ValidationError', () => {
         assert.throws(() => extractRows({}, 'results'), ValidationError);
+    });
+});
+
+// ── Equipo por resultado ────────────────────────────────────────────────────
+
+describe('constructor_id', () => {
+    const withTeam = (r, team) => ({ ...r, Constructor: { constructorId: team } });
+    const rows = padded([
+        withTeam(row(1, '1', 'max_verstappen', { points: '25' }), 'red_bull'),
+        withTeam(row(2, '2', 'lawson', { points: '18' }), 'red_bull'),     // Lawson en Red Bull (2026 desde R12)
+        withTeam(row(3, '3', 'tsunoda', { points: '15' }), 'rb'),          // Tsunoda en Racing Bulls
+    ]).map((r) => r.Constructor ? r : withTeam(r, 'rb'));
+    const cmap = buildConstructorMap([{ id: 1, jolpica_id: 'red_bull' }, { id: 6, jolpica_id: 'rb' }, { id: 99, jolpica_id: null }]);
+
+    test('sin constructorMap no agrega constructor_id (compatibilidad)', () => {
+        assert.equal('constructor_id' in mapRaceResults(rows, mapFor(rows))[0], false);
+    });
+    test('con constructorMap usa el equipo de Jolpica de esa carrera', () => {
+        const out = mapRaceResults(rows, mapFor(rows), cmap);
+        assert.deepEqual(out.slice(0, 3).map((r) => r.constructor_id), [1, 1, 6]);
+    });
+    test('sprint también', () => {
+        const sprint = rows.map((r) => ({ ...r, laps: '19', Time: { time: r.position === '1' ? '30:00.000' : '+1.000' } }));
+        assert.deepEqual(mapSprintResults(sprint, mapFor(sprint), cmap).slice(0, 3).map((r) => r.constructor_id), [1, 1, 6]);
+    });
+    test('equipo sin jolpica_id → ValidationError que lista todos', () => {
+        const bad = rows.map((r, i) => (i === 0 ? withTeam(r, 'nuevo_a') : i === 1 ? withTeam(r, 'nuevo_b') : r));
+        assert.throws(() => mapRaceResults(bad, mapFor(bad), cmap), /Equipos sin jolpica_id en la base: nuevo_a, nuevo_b/);
     });
 });

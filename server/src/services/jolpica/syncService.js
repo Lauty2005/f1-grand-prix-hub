@@ -18,7 +18,7 @@
  * una base aislada. La instancia por defecto usa src/config/db.js.
  */
 import {
-    ValidationError, extractRows, buildDriverMap,
+    ValidationError, extractRows, buildDriverMap, buildConstructorMap,
     mapRaceResults, mapSprintResults, mapQualifying,
 } from './mapper.js';
 
@@ -38,12 +38,12 @@ export class SyncError extends Error {
 const KINDS = {
     results: {
         table: 'results',
-        columns: ['position', 'points', 'fastest_lap', 'dnf', 'dsq', 'dns', 'dnq'],
+        columns: ['position', 'points', 'fastest_lap', 'dnf', 'dsq', 'dns', 'dnq', 'constructor_id'],
         map: mapRaceResults,
     },
     sprint: {
         table: 'sprint_results',
-        columns: ['position', 'points', 'dnf', 'dns', 'dsq', 'time_gap'],
+        columns: ['position', 'points', 'dnf', 'dns', 'dsq', 'time_gap', 'constructor_id'],
         map: mapSprintResults,
     },
     qualifying: {
@@ -60,6 +60,7 @@ const TEXT_EMPTY_COLS = new Set(['q1', 'q2', 'q3']);
 /** Normaliza un valor de la base para comparar con la salida del mapper. */
 function normalize(col, value) {
     if (col === 'position') return Number(value);
+    if (col === 'constructor_id') return value === null || value === undefined ? null : Number(value);
     if (col === 'points') return Number(value ?? 0); // pg devuelve numeric como string
     if (BOOL_COLS.has(col)) return value === true;   // null/false → false
     if (TEXT_EMPTY_COLS.has(col)) return value ?? '';
@@ -224,6 +225,8 @@ export function createSyncService(pool) {
             );
             const driverMap = buildDriverMap(drivers);
             const driverNames = new Map(drivers.map((d) => [Number(d.id), d.last_name]));
+            const { rows: constructors } = await client.query('SELECT id, jolpica_id FROM constructors');
+            const constructorMap = buildConstructorMap(constructors);
 
             // 1) Validar y mapear TODO antes de escribir nada.
             const issues = [];
@@ -237,7 +240,7 @@ export function createSyncService(pool) {
                         skipped[kind] = 'not_published';
                         continue;
                     }
-                    mapped[kind] = KINDS[kind].map(rows, driverMap);
+                    mapped[kind] = KINDS[kind].map(rows, driverMap, constructorMap);
                 } catch (err) {
                     if (!(err instanceof ValidationError)) throw err;
                     issues.push(...err.issues.map((i) => (i.startsWith(`${kind}:`) ? i : `${kind}: ${i}`)));
