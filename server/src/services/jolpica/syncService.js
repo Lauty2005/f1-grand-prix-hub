@@ -128,8 +128,12 @@ export function createSyncService(pool) {
      * Carreras de la temporada que necesitan sync.
      * needs: qué sesiones pedir a Jolpica. Dentro de la ventana de re-sync se
      * piden todas (para capturar penalizaciones).
+     *
+     * Con jolpicaRound devuelve ESA carrera aunque no esté pendiente, con todas
+     * sus sesiones en needs (sync manual / corrección con force). Sigue
+     * excluyendo suspendidas y futuras.
      */
-    async function getPendingRaces(season) {
+    async function getPendingRaces(season, { jolpicaRound = null } = {}) {
         const { rows } = await pool.query(
             `SELECT r.id AS race_id, r.name, r.jolpica_round, r.date::text AS date, r.has_sprint,
                     (SELECT count(*) FROM results        x WHERE x.race_id = r.id)::int AS n_results,
@@ -141,16 +145,18 @@ export function createSyncService(pool) {
                 AND r.jolpica_round IS NOT NULL
                 AND r.status IS DISTINCT FROM 'suspended'
                 AND r.date <= CURRENT_DATE
+                AND ($3::int IS NULL OR r.jolpica_round = $3::int)
               ORDER BY r.date`,
-            [season, RESYNC_WINDOW_DAYS],
+            [season, RESYNC_WINDOW_DAYS, jolpicaRound],
         );
 
+        const all = jolpicaRound !== null;
         return rows
             .map((r) => {
                 const needs = [];
-                if (r.in_window || r.n_results === 0) needs.push('results');
-                if (r.has_sprint && (r.in_window || r.n_sprint === 0)) needs.push('sprint');
-                if (r.in_window || r.n_qualifying === 0) needs.push('qualifying');
+                if (all || r.in_window || r.n_results === 0) needs.push('results');
+                if (r.has_sprint && (all || r.in_window || r.n_sprint === 0)) needs.push('sprint');
+                if (all || r.in_window || r.n_qualifying === 0) needs.push('qualifying');
                 return {
                     race_id: r.race_id,
                     name: r.name,
@@ -164,6 +170,17 @@ export function createSyncService(pool) {
                 };
             })
             .filter((r) => r.needs.length > 0);
+    }
+
+    /** Rondas Jolpica vinculadas a alguna carrera de la temporada (para detectar las que faltan en la base). */
+    async function getMappedRounds(season) {
+        const { rows } = await pool.query(
+            `SELECT jolpica_round FROM races
+              WHERE EXTRACT(YEAR FROM date) = $1 AND jolpica_round IS NOT NULL
+              ORDER BY jolpica_round`,
+            [season],
+        );
+        return rows.map((r) => r.jolpica_round);
     }
 
     /**
@@ -294,5 +311,5 @@ export function createSyncService(pool) {
         }
     }
 
-    return { getPendingRaces, applyRaceData };
+    return { getPendingRaces, getMappedRounds, applyRaceData };
 }

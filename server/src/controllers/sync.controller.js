@@ -26,13 +26,29 @@ function sendError(res, err) {
     return res.status(500).json({ success: false, error: 'Error interno en el sync' });
 }
 
-/** GET /api/admin/sync/pending?season=2026 */
+/**
+ * GET /api/admin/sync/pending?season=2026[&jolpica_round=6]
+ * Con jolpica_round devuelve esa carrera aunque no esté pendiente (sync manual).
+ * mapped_rounds: rondas Jolpica vinculadas en la base (el cliente detecta las que faltan).
+ */
 export const getPending = async (req, res) => {
     const season = parseSeason(req.query.season);
     if (season === null) return res.status(400).json({ success: false, error: 'season inválida' });
+
+    let jolpicaRound = null;
+    if (req.query.jolpica_round !== undefined && req.query.jolpica_round !== '') {
+        jolpicaRound = Number(req.query.jolpica_round);
+        if (!Number.isInteger(jolpicaRound) || jolpicaRound < 1 || jolpicaRound > 30) {
+            return res.status(400).json({ success: false, error: 'jolpica_round inválido' });
+        }
+    }
+
     try {
-        const data = await sync.getPendingRaces(season);
-        res.json({ success: true, season, count: data.length, data });
+        const [data, mappedRounds] = await Promise.all([
+            sync.getPendingRaces(season, { jolpicaRound }),
+            sync.getMappedRounds(season),
+        ]);
+        res.json({ success: true, season, count: data.length, mapped_rounds: mappedRounds, data });
     } catch (err) {
         sendError(res, err);
     }
