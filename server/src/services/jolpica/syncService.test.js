@@ -81,7 +81,9 @@ describe('syncService (integración)', { skip }, () => {
             CREATE TABLE constructors (id serial PRIMARY KEY, name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
             CREATE TABLE drivers (id serial PRIMARY KEY, last_name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
             CREATE TABLE races (id serial PRIMARY KEY, round int NOT NULL, name varchar NOT NULL, date date NOT NULL,
-                                status varchar, has_sprint boolean DEFAULT false, jolpica_round int);
+                                status varchar, has_sprint boolean DEFAULT false, jolpica_round int,
+                                fp1_time timestamptz, fp2_time timestamptz, fp3_time timestamptz, sprint_quali_time timestamptz,
+                                sprint_time timestamptz, qualy_time timestamptz, race_time timestamptz);
             CREATE TABLE results (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
                                   position int NOT NULL, points numeric DEFAULT 0, fastest_lap boolean DEFAULT false,
                                   dnf boolean DEFAULT false, dsq boolean DEFAULT false, dns boolean DEFAULT false, dnq boolean DEFAULT false,
@@ -289,6 +291,72 @@ describe('syncService (integración)', { skip }, () => {
         await assert.rejects(
             sync.applyRaceData(ids.vieja_vacia, { results: apiResponse(s, 1, 'Results', raceRows({ teams: { drv2: 'equipo_nuevo' } })) }, { force: true }),
             (err) => err instanceof ValidationError && /Equipos sin jolpica_id en la base: equipo_nuevo/.test(err.message),
+        );
+    });
+
+    // ── Horarios (applySchedule) ────────────────────────────────────────────
+
+    const cal = (season, races) => ({ MRData: { RaceTable: { season: String(season), Races: races.map((r) => ({ season: String(season), ...r })) } } });
+
+    test('horarios: futura se actualiza, pasada solo completa vacíos; dry-run no escribe; idempotente', async () => {
+        const [{ id: fut }] = await q(
+            `INSERT INTO races (round, name, date, jolpica_round, has_sprint, fp1_time)
+             VALUES (1, 'FUTURA 2031', '2031-05-04', 1, false, '2031-05-02T10:00:00Z') RETURNING id`);
+        const [{ id: past }] = await q(
+            `INSERT INTO races (round, name, date, jolpica_round, has_sprint, race_time)
+             VALUES (1, 'PASADA 2019', '2019-03-17', 1, false, '2019-03-17T05:10:00Z') RETURNING id`);
+
+        const futura = cal(2031, [{ round: '1', raceName: 'Futura', date: '2031-05-04', time: '13:00:00Z',
+            FirstPractice: { date: '2031-05-02', time: '11:30:00Z' }, Qualifying: { date: '2031-05-03', time: '14:00:00Z' } }]);
+
+        const dry = await sync.applySchedule(2031, futura, { dryRun: true });
+        assert.equal(dry.updated, 1);
+        assert.deepEqual(dry.changes[0].changes, {
+            fp1_time: ['2031-05-02T10:00:00.000Z', '2031-05-02T11:30:00.000Z'],   // reprogramada: se actualiza
+            qualy_time: [null, '2031-05-03T14:00:00.000Z'],
+            race_time: [null, '2031-05-04T13:00:00.000Z'],
+        });
+        const [{ fp1 }] = await q('SELECT fp1_time::text AS fp1 FROM races WHERE id = $1', [fut]);
+        assert.match(fp1, /10:00:00/, 'dry-run no escribe');
+
+        const out = await sync.applySchedule(2031, futura);
+        assert.equal(out.applied, true);
+        const [row] = await q('SELECT fp1_time, qualy_time, race_time FROM races WHERE id = $1', [fut]);
+        assert.equal(row.fp1_time.toISOString(), '2031-05-02T11:30:00.000Z');
+        assert.equal(row.race_time.toISOString(), '2031-05-04T13:00:00.000Z');
+
+        const again = await sync.applySchedule(2031, futura);
+        assert.deepEqual([again.updated, again.unchanged], [0, 1]);
+
+        const pasada = cal(2019, [{ round: '1', date: '2019-03-17', time: '06:10:00Z', Qualifying: { date: '2019-03-16', time: '06:00:00Z' } }]);
+        const outPast = await sync.applySchedule(2019, pasada);
+        assert.deepEqual(outPast.changes[0].changes, { qualy_time: [null, '2019-03-16T06:00:00.000Z'] }, 'race_time cargado no se pisa');
+        const [rp] = await q('SELECT race_time FROM races WHERE id = $1', [past]);
+        assert.equal(rp.race_time.toISOString(), '2019-03-17T05:10:00.000Z');
+    });
+
+    test('horarios: warnings por has_sprint, fecha y carrera ausente; nunca pone NULL', async () => {
+        await q(`INSERT INTO races (round, name, date, jolpica_round, has_sprint, qualy_time)
+                 VALUES (2, 'SPRINT MAL', '2031-06-01', 2, false, '2031-05-31T14:00:00Z'),
+                        (3, 'FECHA MAL', '2031-07-01', 3, false, NULL),
+                        (4, 'NO ESTA', '2031-08-01', 4, false, NULL)`);
+        const out = await sync.applySchedule(2031, cal(2031, [
+            { round: '1', date: '2031-05-04', time: '13:00:00Z' },
+            { round: '2', date: '2031-06-01', time: '13:00:00Z', Sprint: { date: '2031-05-31', time: '10:00:00Z' } },
+            { round: '3', date: '2031-07-05', time: '13:00:00Z' },
+        ]), { dryRun: true });
+        const w = out.warnings.join(' | ');
+        assert.match(w, /SPRINT MAL: has_sprint=false en la base, Jolpica dice true/);
+        assert.match(w, /FECHA MAL: fecha 2031-07-01 en la base, 2031-07-05 en Jolpica/);
+        assert.match(w, /R4 NO ESTA: no está en el calendario/);
+        const sprintMal = out.changes.find((c) => c.name === 'SPRINT MAL');
+        assert.equal('qualy_time' in sprintMal.changes, false, 'Jolpica no informa qualy: no se toca');
+    });
+
+    test('horarios: calendario de otra temporada → 422', async () => {
+        await assert.rejects(
+            sync.applySchedule(2031, cal(2030, [{ round: '1', date: '2030-05-04', time: '13:00:00Z' }])),
+            (err) => err instanceof ValidationError && /no es de la temporada 2031/.test(err.message),
         );
     });
 

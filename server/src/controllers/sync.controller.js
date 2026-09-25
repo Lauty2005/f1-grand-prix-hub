@@ -55,6 +55,35 @@ export const getPending = async (req, res) => {
 };
 
 /**
+ * PUT /api/admin/sync/schedule?season=2026&dry_run=1
+ * Body: { source: "jolpica", calendar: <JSON completo de GET /{season}.json> }
+ * Futuras: se actualizan los horarios distintos. Pasadas: solo se completan vacíos.
+ */
+export const putSchedule = async (req, res) => {
+    const season = parseSeason(req.query.season);
+    if (season === null) return res.status(400).json({ success: false, error: 'season inválida' });
+
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body) || body.source !== 'jolpica') {
+        return res.status(400).json({ success: false, error: 'Body { source: "jolpica", calendar } requerido' });
+    }
+    const unknown = Object.keys(body).filter((k) => k !== 'source' && k !== 'calendar');
+    if (unknown.length > 0) {
+        return res.status(400).json({ success: false, error: `Claves desconocidas: ${unknown.join(', ')}` });
+    }
+    if (!body.calendar || typeof body.calendar !== 'object' || !body.calendar.MRData) {
+        return res.status(400).json({ success: false, error: 'Se espera la respuesta completa de Jolpica (con MRData) en: calendar' });
+    }
+
+    try {
+        const data = await sync.applySchedule(season, body.calendar, { dryRun: isFlag(req.query.dry_run) });
+        res.json({ success: true, data });
+    } catch (err) {
+        sendError(res, err);
+    }
+};
+
+/**
  * PUT /api/admin/sync/races/:raceId?dry_run=1&force=1
  * Body: { source: "jolpica", results?: <JSON Jolpica>, sprint?: <...>, qualifying?: <...> }
  */

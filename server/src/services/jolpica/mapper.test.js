@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 import {
     ValidationError, MIN_ROWS, extractRows, buildDriverMap, buildConstructorMap, classifyResult,
     toSecondsGap, sprintTimeGap, mapRaceResults, mapSprintResults, mapQualifying,
+    mapSchedule, toUtcIso,
 } from './mapper.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -257,5 +258,57 @@ describe('constructor_id', () => {
     test('equipo sin jolpica_id → ValidationError que lista todos', () => {
         const bad = rows.map((r, i) => (i === 0 ? withTeam(r, 'nuevo_a') : i === 1 ? withTeam(r, 'nuevo_b') : r));
         assert.throws(() => mapRaceResults(bad, mapFor(bad), cmap), /Equipos sin jolpica_id en la base: nuevo_a, nuevo_b/);
+    });
+});
+
+// ── Horarios ────────────────────────────────────────────────────────────────
+
+describe('mapSchedule', () => {
+    // Valores reales de Jolpica (2026 R15 Bakú, R17 Singapur; 2023 R4 con SprintShootout)
+    const baku = {
+        round: '15', raceName: 'Azerbaijan Grand Prix', date: '2026-09-26', time: '11:00:00Z',
+        FirstPractice: { date: '2026-09-24', time: '08:30:00Z' }, SecondPractice: { date: '2026-09-24', time: '12:00:00Z' },
+        ThirdPractice: { date: '2026-09-25', time: '08:30:00Z' }, Qualifying: { date: '2026-09-25', time: '12:00:00Z' },
+    };
+    const singapore = {
+        round: '17', raceName: 'Singapore Grand Prix', date: '2026-10-11', time: '12:00:00Z',
+        FirstPractice: { date: '2026-10-09', time: '08:30:00Z' }, Qualifying: { date: '2026-10-10', time: '13:00:00Z' },
+        Sprint: { date: '2026-10-10', time: '09:00:00Z' }, SprintQualifying: { date: '2026-10-09', time: '12:30:00Z' },
+    };
+    const baku2023 = {
+        round: '4', date: '2023-04-30', time: '11:00:00Z',
+        SprintShootout: { date: '2023-04-29', time: '09:30:00Z' }, Sprint: { date: '2023-04-29', time: '13:30:00Z' },
+    };
+
+    test('fin de semana normal: FP1-3, clasificación y carrera en UTC', () => {
+        const [s] = mapSchedule([baku]);
+        assert.deepEqual(s.times, {
+            fp1_time: '2026-09-24T08:30:00.000Z', fp2_time: '2026-09-24T12:00:00.000Z', fp3_time: '2026-09-25T08:30:00.000Z',
+            qualy_time: '2026-09-25T12:00:00.000Z', race_time: '2026-09-26T11:00:00.000Z',
+        });
+        assert.equal(s.has_sprint, false);
+        assert.equal(s.round, 15);
+    });
+    test('sprint: SprintQualifying y Sprint; sin FP2/FP3 (no se inventan)', () => {
+        const [s] = mapSchedule([singapore]);
+        assert.equal(s.has_sprint, true);
+        assert.equal(s.times.sprint_quali_time, '2026-10-09T12:30:00.000Z');
+        assert.equal(s.times.sprint_time, '2026-10-10T09:00:00.000Z');
+        assert.equal('fp2_time' in s.times, false);
+        assert.equal('fp3_time' in s.times, false);
+    });
+    test('2023: SprintShootout → sprint_quali_time', () => {
+        assert.equal(mapSchedule([baku2023])[0].times.sprint_quali_time, '2023-04-29T09:30:00.000Z');
+    });
+    test('sin hora (datos históricos) → la sesión no aparece', () => {
+        assert.deepEqual(mapSchedule([{ round: '1', date: '1990-03-11' }])[0].times, {});
+    });
+    test('toUtcIso acepta hora sin Z', () => {
+        assert.equal(toUtcIso('2026-09-26', '11:00:00'), '2026-09-26T11:00:00.000Z');
+        assert.equal(toUtcIso('2026-09-26', null), null);
+    });
+    test('calendario vacío o rondas duplicadas → ValidationError', () => {
+        assert.throws(() => mapSchedule([]), ValidationError);
+        assert.throws(() => mapSchedule([baku, baku]), /duplicadas/);
     });
 });

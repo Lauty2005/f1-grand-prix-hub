@@ -242,3 +242,59 @@ export function mapQualifying(rows, driverMap) {
         }))
         .sort((a, b) => a.position - b.position);
 }
+
+// ── Horarios (calendario de la temporada) ───────────────────────────────────
+
+/** Sesión de Jolpica → columna de `races`. SprintShootout es el nombre de 2023. */
+export const SCHEDULE_SESSIONS = [
+    ['FirstPractice', 'fp1_time'],
+    ['SecondPractice', 'fp2_time'],
+    ['ThirdPractice', 'fp3_time'],
+    ['SprintQualifying', 'sprint_quali_time'],
+    ['SprintShootout', 'sprint_quali_time'],
+    ['Sprint', 'sprint_time'],
+    ['Qualifying', 'qualy_time'],
+];
+export const SCHEDULE_COLUMNS = [
+    'fp1_time', 'fp2_time', 'fp3_time', 'sprint_quali_time', 'sprint_time', 'qualy_time', 'race_time',
+];
+
+/** {date:'2026-09-26', time:'11:00:00Z'} → ISO UTC. Sin hora (datos históricos) → null. */
+export function toUtcIso(date, time) {
+    if (!date || !time) return null;
+    const t = /Z$|[+-]\d{2}:?\d{2}$/.test(time) ? time : `${time}Z`;
+    const d = new Date(`${date}T${t}`);
+    return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+/**
+ * Calendario de Jolpica → horarios por ronda.
+ * @returns {{round:number, name:string, date:string, has_sprint:boolean, times:Object<string,string>}[]}
+ *          times solo trae las columnas que Jolpica informa (nunca null).
+ */
+export function mapSchedule(races) {
+    if (!Array.isArray(races) || races.length === 0) {
+        throw new ValidationError(['Calendario vacío']);
+    }
+    const rounds = races.map((r) => Number(r.round));
+    const dup = rounds.filter((n, i) => rounds.indexOf(n) !== i);
+    if (rounds.some((n) => !Number.isInteger(n) || n < 1) || dup.length > 0) {
+        throw new ValidationError([`Rondas inválidas o duplicadas en el calendario: [${rounds.join(',')}]`]);
+    }
+    return races.map((r) => {
+        const times = {};
+        for (const [key, col] of SCHEDULE_SESSIONS) {
+            const iso = toUtcIso(r[key]?.date, r[key]?.time);
+            if (iso) times[col] = iso;
+        }
+        const raceIso = toUtcIso(r.date, r.time);
+        if (raceIso) times.race_time = raceIso;
+        return {
+            round: Number(r.round),
+            name: r.raceName ?? '',
+            date: r.date,
+            has_sprint: Boolean(r.Sprint),
+            times,
+        };
+    });
+}

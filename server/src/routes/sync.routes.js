@@ -9,5 +9,6 @@ router.use(adminAuth);
 
 router.get('/pending', syncController.getPending);
 router.put('/races/:raceId', syncController.putRaceData);
+router.put('/schedule', syncController.putSchedule);
 
 export default router;

@@ -20,6 +20,7 @@
 import {
     ValidationError, extractRows, buildDriverMap, buildConstructorMap,
     mapRaceResults, mapSprintResults, mapQualifying,
+    mapSchedule, SCHEDULE_COLUMNS,
 } from './mapper.js';
 
 /** Días después de la carrera en que se re-sincroniza sin force (penalizaciones). */
@@ -314,5 +315,95 @@ export function createSyncService(pool) {
         }
     }
 
-    return { getPendingRaces, getMappedRounds, applyRaceData };
+    /**
+     * Horarios de sesiones desde el calendario de Jolpica (GET /{season}.json).
+     *
+     * Regla de escritura:
+     *  - Carrera futura (date >= hoy): Jolpica manda. Se actualiza cualquier
+     *    horario distinto (la FIA reprograma sesiones).
+     *  - Carrera pasada: solo se completan horarios vacíos; nunca se pisa algo
+     *    cargado (es historia y ya no cambia).
+     *  - Si Jolpica no informa una sesión, la columna no se toca (nunca se pone NULL).
+     * No requiere force. has_sprint y fechas NO se modifican: si no coinciden, se
+     * reportan en warnings para revisión manual.
+     *
+     * @param {number} season
+     * @param {object} apiResponse  respuesta COMPLETA de Jolpica (con MRData)
+     */
+    async function applySchedule(season, apiResponse, { dryRun = false } = {}) {
+        const table = apiResponse?.MRData?.RaceTable;
+        if (!table || !Array.isArray(table.Races)) {
+            throw new ValidationError(['Respuesta sin MRData.RaceTable.Races']);
+        }
+        const wrong = table.Races.filter((r) => Number(r.season) !== season).map((r) => `${r.season}/${r.round}`);
+        if (Number(table.season) !== season || wrong.length > 0) {
+            throw new ValidationError([`El calendario no es de la temporada ${season}${wrong.length ? `: ${wrong.join(', ')}` : ''}`]);
+        }
+        const schedule = mapSchedule(table.Races);
+        const byRound = new Map(schedule.map((s) => [s.round, s]));
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const { rows: races } = await client.query(
+                `SELECT id, name, jolpica_round, date::text AS date, has_sprint,
+                        (date >= CURRENT_DATE) AS upcoming, ${SCHEDULE_COLUMNS.join(', ')}
+                   FROM races
+                  WHERE EXTRACT(YEAR FROM date) = $1 AND jolpica_round IS NOT NULL
+                  ORDER BY date
+                  FOR UPDATE`,
+                [season],
+            );
+
+            const changes = [];
+            const warnings = [];
+            let unchanged = 0;
+            for (const race of races) {
+                const src = byRound.get(race.jolpica_round);
+                if (!src) {
+                    warnings.push(`R${race.jolpica_round} ${race.name}: no está en el calendario de Jolpica`);
+                    continue;
+                }
+                if (src.has_sprint !== Boolean(race.has_sprint)) {
+                    warnings.push(`R${race.jolpica_round} ${race.name}: has_sprint=${race.has_sprint} en la base, Jolpica dice ${src.has_sprint}`);
+                }
+                const dayDiff = Math.abs(Date.parse(`${src.date}T00:00:00Z`) - Date.parse(`${race.date}T00:00:00Z`)) / 86_400_000;
+                if (dayDiff > 1) {
+                    warnings.push(`R${race.jolpica_round} ${race.name}: fecha ${race.date} en la base, ${src.date} en Jolpica`);
+                }
+
+                const diff = {};
+                for (const col of SCHEDULE_COLUMNS) {
+                    const next = src.times[col];
+                    if (!next) continue;
+                    const current = race[col] ? new Date(race[col]).toISOString() : null;
+                    if (current === next) continue;
+                    if (current !== null && !race.upcoming) continue; // pasada: no se pisa
+                    diff[col] = [current, next];
+                }
+                if (Object.keys(diff).length === 0) {
+                    unchanged += 1;
+                    continue;
+                }
+                changes.push({ race_id: race.id, name: race.name, jolpica_round: race.jolpica_round, changes: diff });
+                if (!dryRun) {
+                    const cols = Object.keys(diff);
+                    await client.query(
+                        `UPDATE races SET ${cols.map((c, i) => `${c} = $${i + 2}`).join(', ')} WHERE id = $1`,
+                        [race.id, ...cols.map((c) => diff[c][1])],
+                    );
+                }
+            }
+
+            await client.query(dryRun ? 'ROLLBACK' : 'COMMIT');
+            return { season, dry_run: dryRun, applied: !dryRun, updated: changes.length, unchanged, changes, warnings };
+        } catch (err) {
+            await client.query('ROLLBACK').catch(() => {});
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    return { getPendingRaces, getMappedRounds, applyRaceData, applySchedule };
 }
