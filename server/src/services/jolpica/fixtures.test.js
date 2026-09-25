@@ -21,6 +21,7 @@ import {
     mapRaceResults,
     mapSprintResults,
     mapQualifying,
+    mapSchedule,
 } from './mapper.js';
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), '__fixtures__');
@@ -188,5 +189,35 @@ describe('2025 R1 Australia — results', () => {
 describe('2026 R23 Abu Dhabi — todavía sin correr', () => {
     test('extractRows devuelve null cuando Races viene vacío', () => {
         assert.equal(extractRows(loadFixture('2026-23-results'), 'results'), null);
+    });
+});
+
+describe('calendario 2026 — mapSchedule', () => {
+    // El calendario completo es lo que el sync usa para los horarios de sesión.
+    const calendario = loadFixture('2026-calendar').MRData.RaceTable.Races;
+    const horarios = mapSchedule(calendario);
+    const porRonda = new Map(horarios.map((r) => [r.round, r]));
+
+    test('trae las 23 carreras del calendario', () => {
+        assert.equal(horarios.length, 23);
+    });
+
+    test('las rondas con sprint son exactamente [2, 4, 5, 9, 12, 17]', () => {
+        const conSprint = horarios.filter((r) => r.has_sprint).map((r) => r.round);
+        assert.deepEqual(conSprint, [2, 4, 5, 9, 12, 17]);
+    });
+
+    test('R15 Azerbaiyán: carrera y clasificación en UTC', () => {
+        const r15 = porRonda.get(15);
+        assert.equal(r15.times.race_time, '2026-09-26T11:00:00.000Z');
+        assert.equal(r15.times.qualy_time, '2026-09-25T12:00:00.000Z');
+    });
+
+    test('R17 Singapur: sprint quali mapeada y sin FP2', () => {
+        // Un fin de semana de sprint no tiene segunda práctica: la sesión que
+        // falta no aparece en times, no queda en null.
+        const r17 = porRonda.get(17);
+        assert.equal(r17.times.sprint_quali_time, '2026-10-09T12:30:00.000Z');
+        assert.equal('fp2_time' in r17.times, false);
     });
 });
