@@ -1,5 +1,7 @@
 # Dependencias (Pesadísimas, nunca se suben)
 node_modules/
+__pycache__/
+*.pyc
 client/node_modules/
 server/node_modules/
 
