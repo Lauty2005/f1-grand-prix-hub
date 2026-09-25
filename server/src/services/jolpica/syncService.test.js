@@ -1,6 +1,8 @@
-// Tests de integración del sync. Necesitan Postgres:
-//   TEST_DATABASE_URL (o DATABASE_URL) → se crea un schema aislado y se borra al final.
-// Sin base disponible, se saltean (npm test sigue pasando).
+// Tests de integración del sync. Necesitan Postgres LOCAL:
+//   TEST_DATABASE_URL → se crea un schema aislado y se borra al final.
+// Sin TEST_DATABASE_URL se saltean (npm test sigue pasando). Nunca se usa
+// DATABASE_URL, y cualquier host de Supabase se rechaza: estos tests no
+// pueden correr contra producción.
 //
 //   make test                                     (dentro de Docker, usa la base local)
 //   TEST_DATABASE_URL=postgres://f1:f1@localhost:5432/f1hub npm test
@@ -10,9 +12,12 @@ import pg from 'pg';
 import { createSyncService, SyncError, diffRows } from './syncService.js';
 import { ValidationError } from './mapper.js';
 
-const DB_URL = process.env.TEST_DATABASE_URL || process.env.DATABASE_URL;
+const DB_URL = process.env.TEST_DATABASE_URL;
+if (DB_URL && /supabase\.(co|com)/i.test(DB_URL)) {
+    throw new Error('TEST_DATABASE_URL apunta a Supabase: los tests de integración solo corren contra Postgres local.');
+}
 const SCHEMA = `sync_test_${process.pid}_${Date.now()}`;
-const skip = !DB_URL && 'sin TEST_DATABASE_URL / DATABASE_URL';
+const skip = !DB_URL && 'sin TEST_DATABASE_URL';
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -137,6 +142,23 @@ describe('syncService (integración)', { skip }, () => {
         assert.equal(byId[ids.vieja_cargada], undefined, 'cargada y fuera de ventana: no pendiente');
         assert.equal(byId[ids.suspendida], undefined);
         assert.equal(byId[ids.futura], undefined);
+    });
+
+    test('pending con jolpicaRound: devuelve la carrera aunque esté cargada, con todas las sesiones', async () => {
+        const s = ids.seasonOf[ids.vieja_cargada];
+        const out = await sync.getPendingRaces(s, { jolpicaRound: 2 });
+        assert.equal(out.length, 1);
+        assert.equal(out[0].race_id, ids.vieja_cargada);
+        assert.deepEqual(out[0].needs, ['results', 'qualifying']);
+        assert.deepEqual(await sync.getPendingRaces(s, { jolpicaRound: 5 }), [], 'futura: no');
+        assert.deepEqual(await sync.getPendingRaces(s, { jolpicaRound: 77 }), [], 'inexistente: vacío');
+    });
+
+    test('getMappedRounds: solo rondas vinculadas de la temporada', async () => {
+        const s = ids.seasonOf[ids.vieja_vacia];
+        const rounds = await sync.getMappedRounds(s);
+        assert.ok(rounds.includes(1) && rounds.includes(2));
+        assert.ok(!rounds.includes(null));
     });
 
     // ── applyRaceData ───────────────────────────────────────────────────────
