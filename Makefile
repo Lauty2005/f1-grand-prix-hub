@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help up down reset snapshot logs psql test token migrate migrate-down
+.PHONY: help up down reset snapshot logs psql test test-local token migrate migrate-down
 
 help: ## Lista los targets disponibles
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-10s\033[0m %s\n", $$1, $$2}'
@@ -23,12 +23,11 @@ logs: ## Sigue los logs de todos los servicios
 psql: ## Abre psql contra la base local
 	docker compose exec db psql -U f1 -d f1hub
 
-test: ## Corre los tests del backend (hoy no hay)
-	@if grep -q '"test": "echo \\"Error: no test specified' server/package.json; then \
-		echo "El backend todavía no tiene tests (server/package.json usa el script por defecto de npm init)."; \
-	else \
-		docker compose run --rm api npm test; \
-	fi
+test: ## Corre los tests del backend dentro del contenedor
+	docker compose run --rm api npm test
+
+test-local: ## Tests sin Docker
+	cd server && npm test
 
 
 migrate: ## Aplica db/migrations/*.sql (sin *.down.sql) a la base local, en orden

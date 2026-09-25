@@ -6,3 +6,5 @@ __pycache__
 npm-debug.log*
 Dockerfile
 .dockerignore
+**/__fixtures__
+**/*.test.js
