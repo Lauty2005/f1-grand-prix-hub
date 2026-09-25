@@ -5,11 +5,17 @@ dotenv.config();
 
 const isProduction = process.env.NODE_ENV === 'production';
 
+// DATABASE_SSL=false fuerza la conexión sin TLS (Postgres local en Docker).
+// Si la variable no está definida, el comportamiento es exactamente el de antes.
+const sslDisabled = process.env.DATABASE_SSL === 'false';
+
 // Prioridad: Si existe DATABASE_URL (Render), la usa. Si no, usa las variables sueltas.
-const connectionConfig = process.env.DATABASE_URL 
+const connectionConfig = process.env.DATABASE_URL
     ? {
         connectionString: process.env.DATABASE_URL,
-        ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+        ssl: sslDisabled
+            ? false
+            : (process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false)
       }
     : {
         user: process.env.DB_USER,
