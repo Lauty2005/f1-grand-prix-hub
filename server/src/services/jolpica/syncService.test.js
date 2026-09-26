@@ -79,7 +79,7 @@ describe('syncService (integración)', { skip }, () => {
 
         await q(`
             CREATE TABLE constructors (id serial PRIMARY KEY, name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
-            CREATE TABLE drivers (id serial PRIMARY KEY, last_name varchar NOT NULL, jolpica_id varchar(64) UNIQUE);
+            CREATE TABLE drivers (id serial PRIMARY KEY, last_name varchar NOT NULL, jolpica_id varchar(64) UNIQUE, acronym varchar(3) UNIQUE);
             CREATE TABLE races (id serial PRIMARY KEY, round int NOT NULL, name varchar NOT NULL, date date NOT NULL,
                                 status varchar, has_sprint boolean DEFAULT false, jolpica_round int,
                                 fp1_time timestamptz, fp2_time timestamptz, fp3_time timestamptz, sprint_quali_time timestamptz,
@@ -94,11 +94,13 @@ describe('syncService (integración)', { skip }, () => {
                                   UNIQUE (race_id, driver_id));
             CREATE TABLE qualifying (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
                                   position int NOT NULL, q1 varchar, q2 varchar, q3 varchar, UNIQUE (race_id, driver_id));
+            CREATE TABLE practices (id serial PRIMARY KEY, race_id int REFERENCES races(id), driver_id int REFERENCES drivers(id),
+                                  p1 varchar, p2 varchar, p3 varchar, UNIQUE (race_id, driver_id));
         `);
 
         await q(`INSERT INTO constructors (name, jolpica_id) VALUES ('Equipo A', 'team_a'), ('Equipo B', 'team_b'), ('Sin mapear', NULL)`);
         for (const [i, jid] of JIDS.entries()) {
-            await q('INSERT INTO drivers (last_name, jolpica_id) VALUES ($1, $2)', [`Piloto${i + 1}`, jid]);
+            await q('INSERT INTO drivers (last_name, jolpica_id, acronym) VALUES ($1, $2, $3)', [`Piloto${i + 1}`, jid, `P${String(i + 1).padStart(2, '0')}`]);
         }
         await q(`INSERT INTO drivers (last_name, jolpica_id) VALUES ('Reserva', NULL)`);
 
@@ -117,6 +119,7 @@ describe('syncService (integración)', { skip }, () => {
         await addRace('sprint_vieja', 4, 3, 20, { has_sprint: true });
         await addRace('reciente', 5, 4, 2);
         await addRace('futura', 6, 5, -5);
+        await addRace('finde', 7, 6, -2);   // fin de semana en curso: FP ya, carrera en 2 días
         ids.season = Number((await q('SELECT EXTRACT(YEAR FROM CURRENT_DATE)::int AS y'))[0].y);
         // Si hoy es enero, las fechas relativas caen en el año anterior: los tests de
         // pending lo contemplan leyendo la temporada real de cada carrera.
@@ -145,11 +148,12 @@ describe('syncService (integración)', { skip }, () => {
         const pending = (await Promise.all(seasons.map((s) => sync.getPendingRaces(s)))).flat();
         const byId = Object.fromEntries(pending.map((p) => [p.race_id, p]));
 
-        assert.deepEqual(byId[ids.vieja_vacia]?.needs, ['results', 'qualifying']);
-        assert.deepEqual(byId[ids.sprint_vieja]?.needs, ['results', 'sprint', 'qualifying']);
-        assert.deepEqual(byId[ids.reciente]?.needs, ['results', 'qualifying']);
+        assert.deepEqual(byId[ids.vieja_vacia]?.needs, ['results', 'qualifying', 'practices']);
+        assert.deepEqual(byId[ids.sprint_vieja]?.needs, ['results', 'sprint', 'qualifying', 'practices']);
+        assert.deepEqual(byId[ids.reciente]?.needs, ['results', 'qualifying', 'practices']);
         assert.equal(byId[ids.reciente].in_window, true);
-        assert.equal(byId[ids.vieja_cargada], undefined, 'cargada y fuera de ventana: no pendiente');
+        assert.deepEqual(byId[ids.vieja_cargada]?.needs, ['practices'], 'cargada fuera de ventana: solo faltan las prácticas');
+        assert.deepEqual(byId[ids.finde]?.needs, ['practices'], 'fin de semana en curso: solo prácticas');
         assert.equal(byId[ids.suspendida], undefined);
         assert.equal(byId[ids.futura], undefined);
     });
@@ -159,7 +163,7 @@ describe('syncService (integración)', { skip }, () => {
         const out = await sync.getPendingRaces(s, { jolpicaRound: 2 });
         assert.equal(out.length, 1);
         assert.equal(out[0].race_id, ids.vieja_cargada);
-        assert.deepEqual(out[0].needs, ['results', 'qualifying']);
+        assert.deepEqual(out[0].needs, ['results', 'qualifying', 'practices']);
         assert.deepEqual(await sync.getPendingRaces(s, { jolpicaRound: 5 }), [], 'futura: no');
         assert.deepEqual(await sync.getPendingRaces(s, { jolpicaRound: 77 }), [], 'inexistente: vacío');
     });
@@ -358,6 +362,72 @@ describe('syncService (integración)', { skip }, () => {
             sync.applySchedule(2031, cal(2030, [{ round: '1', date: '2030-05-04', time: '13:00:00Z' }])),
             (err) => err instanceof ValidationError && /no es de la temporada 2031/.test(err.message),
         );
+    });
+
+    // ── Prácticas (OpenF1) ──────────────────────────────────────────────────
+
+    /** Sesión estilo OpenF1: P01 más rápido (90.000 s), P02 +0.100, ...; 'NEW' = reserva sin sigla en la base. */
+    async function practicePayload(raceId, col, { offsetMs = 0, extra = [] } = {}) {
+        const [{ d }] = await q('SELECT date::text AS d FROM races WHERE id = $1', [raceId]);
+        const start = new Date(Date.parse(`${d}T12:00:00Z`) - 2 * 86_400_000).toISOString();
+        const names = { p1: 'Practice 1', p2: 'Practice 2', p3: 'Practice 3' };
+        const drivers = JIDS.map((_, i) => ({ driver_number: i + 1, name_acronym: `P${String(i + 1).padStart(2, '0')}` }))
+            .concat([{ driver_number: 99, name_acronym: 'NEW' }]);
+        const results = JIDS.map((_, i) => ({ driver_number: i + 1, position: i + 1, duration: (90000 + offsetMs + i * 100) / 1000 }))
+            .concat([{ driver_number: 99, position: 23, duration: 95.5 }], extra);
+        return { session: { session_key: 1000 + raceId, session_name: names[col], date_start: start }, results, drivers };
+    }
+
+    test('prácticas: formato de la base, dry-run no escribe, reserva sin sigla se saltea', async () => {
+        const id = ids.reciente;
+        const payload = { source: 'openf1', p1: await practicePayload(id, 'p1') };
+        const dry = await sync.applyPractices(id, payload, { dryRun: true });
+        assert.equal(dry.tables.practices.added.length, N);
+        assert.match(dry.warnings.join(' '), /pilotos sin sigla en la base \(se saltean\): NEW/);
+        const [{ n: before }] = await q('SELECT count(*)::int AS n FROM practices WHERE race_id = $1', [id]);
+        assert.equal(before, 0, 'dry-run no escribe');
+
+        const out = await sync.applyPractices(id, payload);
+        assert.equal(out.applied, true);
+        const rows = await q(`SELECT d.jolpica_id, p.p1, p.p2 FROM practices p JOIN drivers d ON d.id = p.driver_id
+                               WHERE p.race_id = $1 AND d.jolpica_id IN ('drv1','drv2','drv22') ORDER BY d.id`, [id]);
+        assert.deepEqual(rows.map((r) => [r.jolpica_id, r.p1, r.p2]), [['drv1', '1:30.000', null], ['drv2', '+0.100s', null], ['drv22', '+2.100s', null]]);
+
+        const again = await sync.applyPractices(id, payload);
+        assert.equal(again.tables.practices.unchanged, N, 'idempotente');
+    });
+
+    test('prácticas: FP2 después no toca FP1; filas cargadas a mano que OpenF1 no trae se conservan', async () => {
+        const id = ids.reciente;
+        await q(`INSERT INTO practices (race_id, driver_id, p1) SELECT $1, id, '+9.999s' FROM drivers WHERE last_name = 'Reserva'`, [id]);
+        const out = await sync.applyPractices(id, { source: 'openf1', p2: await practicePayload(id, 'p2', { offsetMs: 500 }) });
+        assert.equal(out.tables.practices.changed.length, N);
+        const [drv1] = await q(`SELECT p.p1, p.p2 FROM practices p JOIN drivers d ON d.id = p.driver_id WHERE p.race_id = $1 AND d.jolpica_id = 'drv1'`, [id]);
+        assert.deepEqual([drv1.p1, drv1.p2], ['1:30.000', '1:30.500']);
+        const [res] = await q(`SELECT p.p1 FROM practices p JOIN drivers d ON d.id = p.driver_id WHERE p.race_id = $1 AND d.last_name = 'Reserva'`, [id]);
+        assert.equal(res.p1, '+9.999s');
+    });
+
+    test('prácticas: fuera de ventana, pisar valores distintos exige force', async () => {
+        const id = ids.vieja_cargada;
+        await sync.applyPractices(id, { source: 'openf1', p1: await practicePayload(id, 'p1') }, { force: true });
+        const changed = { source: 'openf1', p1: await practicePayload(id, 'p1', { offsetMs: 0, extra: [] }) };
+        changed.p1.results[1].duration = 90.05;  // P02 ahora +0.050s
+        const dry = await sync.applyPractices(id, changed, { dryRun: true });
+        assert.equal(dry.requires_force, true);
+        assert.deepEqual(dry.tables.practices.changed[0].changes, { p1: ['+0.100s', '+0.050s'] });
+        await assert.rejects(sync.applyPractices(id, changed), (e) => e.status === 409);
+        const ok = await sync.applyPractices(id, changed, { force: true });
+        assert.equal(ok.applied, true);
+    });
+
+    test('prácticas: sesión equivocada o de otro fin de semana → 422', async () => {
+        const id = ids.reciente;
+        const wrongName = { source: 'openf1', p1: await practicePayload(id, 'p2') };
+        await assert.rejects(sync.applyPractices(id, wrongName), /debería ser "Practice 1"/);
+        const wrongDate = { source: 'openf1', p1: await practicePayload(id, 'p1') };
+        wrongDate.p1.session.date_start = '2020-01-01T10:00:00Z';
+        await assert.rejects(sync.applyPractices(id, wrongDate), /no es del fin de semana/);
     });
 
     // ── Errores (nada se escribe) ───────────────────────────────────────────

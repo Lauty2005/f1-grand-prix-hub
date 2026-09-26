@@ -298,3 +298,86 @@ export function mapSchedule(races) {
         };
     });
 }
+
+// ── Prácticas libres (OpenF1) ───────────────────────────────────────────────
+// Jolpica no publica prácticas; vienen de OpenF1 (session_result + drivers).
+// Formato de la base (tabla practices, columnas p1/p2/p3), verificado contra la
+// carga manual: líder con el tiempo completo "1:20.267", el resto con la
+// diferencia "+0.469s", sin tiempo → ''.
+
+export const PRACTICE_SESSIONS = { p1: 'Practice 1', p2: 'Practice 2', p3: 'Practice 3' };
+
+/** 80.267 → "1:20.267" · 59.5 → "0:59.500" */
+export function formatLapTime(seconds) {
+    const ms = Math.round(Number(seconds) * 1000);
+    if (!Number.isFinite(ms) || ms <= 0) return '';
+    const min = Math.floor(ms / 60000);
+    const rest = ms - min * 60000;
+    const sec = Math.floor(rest / 1000);
+    const milli = rest - sec * 1000;
+    return `${min}:${String(sec).padStart(2, '0')}.${String(milli).padStart(3, '0')}`;
+}
+
+/**
+ * Una sesión de práctica de OpenF1 → { acronym: valor }.
+ * La diferencia se calcula con los tiempos (redondeo al ms), no con gap_to_leader,
+ * para evitar errores de coma flotante (0.30000000000000004).
+ * @param {{driver_number:number, duration:number|null}[]} results  /session_result
+ * @param {{driver_number:number, name_acronym:string}[]} drivers    /drivers
+ * @returns {{values: Map<string,string>, unknownNumbers: number[]}}
+ */
+export function formatPracticeSession(results, drivers) {
+    const acronymOf = new Map(drivers.map((d) => [Number(d.driver_number), String(d.name_acronym || '').toUpperCase()]));
+    const timed = results
+        .map((r) => ({ num: Number(r.driver_number), ms: Math.round(Number(r.duration) * 1000) }))
+        .filter((r) => Number.isFinite(r.ms) && r.ms > 0);
+    const leaderMs = timed.length ? Math.min(...timed.map((r) => r.ms)) : null;
+
+    const values = new Map();
+    const unknownNumbers = [];
+    for (const r of results) {
+        const num = Number(r.driver_number);
+        const acr = acronymOf.get(num);
+        if (!acr) { unknownNumbers.push(num); continue; }
+        const ms = Math.round(Number(r.duration) * 1000);
+        let value = '';
+        if (Number.isFinite(ms) && ms > 0) {
+            value = ms === leaderMs ? formatLapTime(ms / 1000) : `+${((ms - leaderMs) / 1000).toFixed(3)}s`;
+        }
+        values.set(acr, value);
+    }
+    return { values, unknownNumbers };
+}
+
+/**
+ * Sesiones de práctica de una carrera → filas para `practices`.
+ * @param {Object<string,{results:object[], drivers:object[]}>} sessions  claves p1/p2/p3 presentes
+ * @param {Map<string,number>} acronymMap  sigla → drivers.id
+ * @returns {{rows: {driver_id:number, p1?:string, p2?:string, p3?:string}[], columns: string[], warnings: string[]}}
+ *          columns: solo las sesiones presentes (las demás no se tocan).
+ */
+export function mapPractices(sessions, acronymMap) {
+    const columns = Object.keys(PRACTICE_SESSIONS).filter((k) => sessions[k]);
+    if (columns.length === 0) throw new ValidationError(['Sin sesiones de práctica']);
+
+    const byDriver = new Map();
+    const warnings = [];
+    for (const col of columns) {
+        const { results, drivers } = sessions[col];
+        if (!Array.isArray(results) || results.length === 0) {
+            throw new ValidationError([`${col}: sin resultados`]);
+        }
+        if (!Array.isArray(drivers)) throw new ValidationError([`${col}: falta la lista de pilotos`]);
+        const { values, unknownNumbers } = formatPracticeSession(results, drivers);
+        if (unknownNumbers.length) warnings.push(`${col}: números sin piloto en OpenF1: ${unknownNumbers.join(', ')}`);
+        const skipped = [];
+        for (const [acr, value] of values) {
+            const driverId = acronymMap.get(acr);
+            if (!driverId) { skipped.push(acr); continue; }
+            if (!byDriver.has(driverId)) byDriver.set(driverId, { driver_id: driverId });
+            byDriver.get(driverId)[col] = value;
+        }
+        if (skipped.length) warnings.push(`${col}: pilotos sin sigla en la base (se saltean): ${skipped.join(', ')}`);
+    }
+    return { rows: [...byDriver.values()], columns, warnings };
+}

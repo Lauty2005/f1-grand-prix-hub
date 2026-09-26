@@ -20,11 +20,14 @@
 import {
     ValidationError, extractRows, buildDriverMap, buildConstructorMap,
     mapRaceResults, mapSprintResults, mapQualifying,
-    mapSchedule, SCHEDULE_COLUMNS,
+    mapSchedule, SCHEDULE_COLUMNS, mapPractices, PRACTICE_SESSIONS,
 } from './mapper.js';
 
 /** Días después de la carrera en que se re-sincroniza sin force (penalizaciones). */
 export const RESYNC_WINDOW_DAYS = 7;
+
+/** Días ANTES de la carrera en que se empiezan a sincronizar prácticas (jueves → FP1 del viernes). */
+export const PRACTICE_LEAD_DAYS = 3;
 
 export class SyncError extends Error {
     constructor(status, message, extra = {}) {
@@ -141,24 +144,31 @@ export function createSyncService(pool) {
                     (SELECT count(*) FROM results        x WHERE x.race_id = r.id)::int AS n_results,
                     (SELECT count(*) FROM sprint_results x WHERE x.race_id = r.id)::int AS n_sprint,
                     (SELECT count(*) FROM qualifying     x WHERE x.race_id = r.id)::int AS n_qualifying,
-                    (r.date >= CURRENT_DATE - $2::int) AS in_window
+                    (SELECT count(*) FROM practices      x WHERE x.race_id = r.id)::int AS n_practices,
+                    (r.date >= CURRENT_DATE - $2::int) AS in_window,
+                    (r.date <= CURRENT_DATE) AS started
                FROM races r
               WHERE EXTRACT(YEAR FROM r.date) = $1
                 AND r.jolpica_round IS NOT NULL
                 AND r.status IS DISTINCT FROM 'suspended'
-                AND r.date <= CURRENT_DATE
+                AND r.date <= CURRENT_DATE + $4::int
                 AND ($3::int IS NULL OR r.jolpica_round = $3::int)
               ORDER BY r.date`,
-            [season, RESYNC_WINDOW_DAYS, jolpicaRound],
+            [season, RESYNC_WINDOW_DAYS, jolpicaRound, PRACTICE_LEAD_DAYS],
         );
 
         const all = jolpicaRound !== null;
         return rows
             .map((r) => {
                 const needs = [];
-                if (all || r.in_window || r.n_results === 0) needs.push('results');
-                if (r.has_sprint && (all || r.in_window || r.n_sprint === 0)) needs.push('sprint');
-                if (all || r.in_window || r.n_qualifying === 0) needs.push('qualifying');
+                // Resultados, sprint y clasificación: desde el día de la carrera (como siempre).
+                if (r.started) {
+                    if (all || r.in_window || r.n_results === 0) needs.push('results');
+                    if (r.has_sprint && (all || r.in_window || r.n_sprint === 0)) needs.push('sprint');
+                    if (all || r.in_window || r.n_qualifying === 0) needs.push('qualifying');
+                }
+                // Prácticas (OpenF1): desde el jueves previo, para que FP1 aparezca el viernes.
+                if (all || r.in_window || r.n_practices === 0) needs.push('practices');
                 return {
                     race_id: r.race_id,
                     name: r.name,
@@ -167,7 +177,7 @@ export function createSyncService(pool) {
                     date: r.date,
                     has_sprint: r.has_sprint,
                     in_window: r.in_window,
-                    counts: { results: r.n_results, sprint: r.n_sprint, qualifying: r.n_qualifying },
+                    counts: { results: r.n_results, sprint: r.n_sprint, qualifying: r.n_qualifying, practices: r.n_practices },
                     needs,
                 };
             })
@@ -405,5 +415,108 @@ export function createSyncService(pool) {
         }
     }
 
-    return { getPendingRaces, getMappedRounds, applyRaceData, applySchedule };
+    /**
+     * Prácticas libres desde OpenF1.
+     * payload: { source:'openf1', p1?: {session, results, drivers}, p2?: ..., p3?: ... }
+     *   session: { session_key, session_name, date_start }  (de /sessions)
+     *   results: /session_result?session_key=…   drivers: /drivers?session_key=…
+     *
+     * - Cada sesión debe llamarse como corresponde (p1 → "Practice 1") y empezar
+     *   dentro del fin de semana de la carrera (race.date - 4 días … race.date).
+     * - Solo se escriben las columnas de las sesiones recibidas; nada se borra
+     *   (reservas cargados a mano que OpenF1 no trae quedan como están).
+     * - Pilotos sin sigla en la base → warning y se saltean (no es error).
+     * - Fuera de la ventana de 7 días, pisar valores distintos exige force.
+     */
+    async function applyPractices(raceId, payload, { dryRun = false, force = false } = {}) {
+        const cols = Object.keys(PRACTICE_SESSIONS).filter((k) => payload?.[k]);
+        if (cols.length === 0) throw new ValidationError(['El body no trae ninguna sesión (p1, p2, p3)']);
+
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+            const { rows: raceRows } = await client.query(
+                `SELECT id, name, status, date::text AS date,
+                        (date >= CURRENT_DATE - $2::int) AS in_window
+                   FROM races WHERE id = $1 FOR UPDATE`,
+                [raceId, RESYNC_WINDOW_DAYS],
+            );
+            const race = raceRows[0];
+            if (!race) throw new SyncError(404, `Carrera ${raceId} no existe`);
+            if (race.status === 'suspended') throw new SyncError(409, `Carrera ${raceId} (${race.name}) está suspendida`);
+
+            const issues = [];
+            const raceDay = Date.parse(`${race.date}T23:59:59Z`);
+            for (const col of cols) {
+                const s = payload[col].session ?? {};
+                if (s.session_name !== PRACTICE_SESSIONS[col]) {
+                    issues.push(`${col}: la sesión es "${s.session_name}" y debería ser "${PRACTICE_SESSIONS[col]}"`);
+                }
+                const start = Date.parse(s.date_start);
+                if (!Number.isFinite(start) || start > raceDay || start < raceDay - 5 * 86_400_000) {
+                    issues.push(`${col}: la sesión (${s.date_start}) no es del fin de semana de ${race.name} (${race.date})`);
+                }
+            }
+            if (issues.length) throw new ValidationError(issues);
+
+            const { rows: drivers } = await client.query('SELECT id, last_name, acronym FROM drivers');
+            const acronymMap = new Map(drivers.filter((d) => d.acronym).map((d) => [d.acronym.toUpperCase(), Number(d.id)]));
+            const names = new Map(drivers.map((d) => [Number(d.id), d.last_name]));
+            const sessions = Object.fromEntries(cols.map((c) => [c, payload[c]]));
+            const { rows: next, warnings } = mapPractices(sessions, acronymMap);
+
+            const { rows: current } = await client.query(
+                'SELECT driver_id, p1, p2, p3 FROM practices WHERE race_id = $1', [raceId]);
+            const currentBy = new Map(current.map((r) => [Number(r.driver_id), r]));
+            const diff = { added: [], changed: [], unchanged: 0 };
+            let needsForce = false;
+            for (const row of next) {
+                const before = currentBy.get(row.driver_id);
+                const label = names.get(row.driver_id) ?? `#${row.driver_id}`;
+                if (!before) { diff.added.push({ driver_id: row.driver_id, driver: label, ...Object.fromEntries(cols.map((c) => [c, row[c] ?? ''])) }); continue; }
+                const changes = {};
+                for (const c of cols) {
+                    if (!(c in row)) continue;
+                    const a = before[c] ?? '';
+                    if (a !== row[c]) {
+                        changes[c] = [a, row[c]];
+                        if (a !== '' && !race.in_window) needsForce = true;
+                    }
+                }
+                if (Object.keys(changes).length) diff.changed.push({ driver_id: row.driver_id, driver: label, changes });
+                else diff.unchanged += 1;
+            }
+
+            const summary = {
+                race_id: raceId, name: race.name, in_window: race.in_window, dry_run: dryRun,
+                requires_force: needsForce, sessions: cols, warnings, tables: { practices: diff },
+            };
+            if (dryRun) { await client.query('ROLLBACK'); return { ...summary, applied: false }; }
+            if (needsForce && !force) {
+                throw new SyncError(409,
+                    `Carrera ${raceId} (${race.name}) ya tiene prácticas distintas y está fuera de la ventana de ${RESYNC_WINDOW_DAYS} días: usar force`,
+                    { summary });
+            }
+
+            for (const row of next) {
+                const present = cols.filter((c) => c in row);
+                const insertCols = ['race_id', 'driver_id', ...present];
+                const sql = `INSERT INTO practices (${insertCols.join(', ')})
+                             VALUES (${insertCols.map((_, i) => `$${i + 1}`).join(', ')})
+                             ON CONFLICT (race_id, driver_id) DO UPDATE SET ${present.map((c) => `${c} = EXCLUDED.${c}`).join(', ')}
+                             WHERE (${present.map((c) => `COALESCE(practices.${c}, '')`).join(', ')})
+                                   IS DISTINCT FROM (${present.map((c) => `EXCLUDED.${c}`).join(', ')})`;
+                await client.query(sql, [raceId, row.driver_id, ...present.map((c) => row[c])]);
+            }
+            await client.query('COMMIT');
+            return { ...summary, applied: true };
+        } catch (err) {
+            await client.query('ROLLBACK').catch(() => {});
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    return { getPendingRaces, getMappedRounds, applyRaceData, applySchedule, applyPractices };
 }

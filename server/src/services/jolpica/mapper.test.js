@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import {
     ValidationError, MIN_ROWS, extractRows, buildDriverMap, buildConstructorMap, classifyResult,
     toSecondsGap, sprintTimeGap, mapRaceResults, mapSprintResults, mapQualifying,
-    mapSchedule, toUtcIso,
+    mapSchedule, toUtcIso, mapPractices, formatLapTime,
 } from './mapper.js';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -310,5 +310,63 @@ describe('mapSchedule', () => {
     test('calendario vacío o rondas duplicadas → ValidationError', () => {
         assert.throws(() => mapSchedule([]), ValidationError);
         assert.throws(() => mapSchedule([baku, baku]), /duplicadas/);
+    });
+});
+
+// ── Prácticas (OpenF1) ──────────────────────────────────────────────────────
+
+describe('prácticas', () => {
+    test('formatLapTime', () => {
+        assert.equal(formatLapTime(80.267), '1:20.267');
+        assert.equal(formatLapTime(92.741), '1:32.741');
+        assert.equal(formatLapTime(59.5), '0:59.500');
+        assert.equal(formatLapTime(null), '');
+        assert.equal(formatLapTime(0), '');
+    });
+
+    // Australia 2026 FP1 cargada a mano: Leclerc 1:20.267, Hamilton +0.469s
+    const drivers = [
+        { driver_number: 16, name_acronym: 'LEC' }, { driver_number: 44, name_acronym: 'HAM' },
+        { driver_number: 1, name_acronym: 'NOR' }, { driver_number: 3, name_acronym: 'VER' },
+        { driver_number: 67, name_acronym: 'XYZ' },
+    ];
+    const results = [
+        { driver_number: 16, position: 1, duration: 80.267, gap_to_leader: 0 },
+        { driver_number: 44, position: 2, duration: 80.736, gap_to_leader: 0.46900000000000547 },
+        { driver_number: 1, position: 3, duration: 80.8, gap_to_leader: 0.533 },
+        { driver_number: 3, position: 20, duration: null, gap_to_leader: null },   // sin vuelta
+        { driver_number: 67, position: 4, duration: 81.0 },                        // reserva sin sigla en la base
+        { driver_number: 55, position: 5, duration: 81.1 },                        // número sin piloto en OpenF1
+    ];
+    const acr = new Map([['LEC', 2], ['HAM', 4], ['NOR', 3], ['VER', 1]]);
+
+    test('líder con tiempo completo, resto con diferencia calculada al ms (no con gap_to_leader)', () => {
+        const { rows, columns } = mapPractices({ p1: { results, drivers } }, acr);
+        const by = Object.fromEntries(rows.map((r) => [r.driver_id, r.p1]));
+        assert.deepEqual(columns, ['p1']);
+        assert.equal(by[2], '1:20.267');
+        assert.equal(by[4], '+0.469s');
+        assert.equal(by[3], '+0.533s');
+        assert.equal(by[1], '', 'sin tiempo → vacío');
+    });
+
+    test('reserva sin sigla y número desconocido → warnings, no error', () => {
+        const { rows, warnings } = mapPractices({ p1: { results, drivers } }, acr);
+        assert.equal(rows.length, 4);
+        assert.match(warnings.join(' | '), /pilotos sin sigla en la base \(se saltean\): XYZ/);
+        assert.match(warnings.join(' | '), /números sin piloto en OpenF1: 55/);
+    });
+
+    test('solo las sesiones presentes; varias sesiones se combinan por piloto', () => {
+        const p3 = { results: [{ driver_number: 44, duration: 79.9 }, { driver_number: 16, duration: 80 }], drivers };
+        const { rows, columns } = mapPractices({ p1: { results, drivers }, p3 }, acr);
+        assert.deepEqual(columns, ['p1', 'p3']);
+        const ham = rows.find((r) => r.driver_id === 4);
+        assert.deepEqual([ham.p1, ham.p3, 'p2' in ham], ['+0.469s', '1:19.900', false]);
+    });
+
+    test('sin sesiones o sesión vacía → ValidationError', () => {
+        assert.throws(() => mapPractices({}, acr), ValidationError);
+        assert.throws(() => mapPractices({ p1: { results: [], drivers } }, acr), /p1: sin resultados/);
     });
 });

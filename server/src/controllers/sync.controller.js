@@ -84,6 +84,42 @@ export const putSchedule = async (req, res) => {
 };
 
 /**
+ * PUT /api/admin/sync/races/:raceId/practices?dry_run=1&force=1
+ * Body: { source: "openf1", p1?: {session, results, drivers}, p2?: ..., p3?: ... }
+ *   session: objeto de /sessions · results: /session_result · drivers: /drivers (misma session_key)
+ */
+export const putPractices = async (req, res) => {
+    const raceId = Number(req.params.raceId);
+    if (!Number.isInteger(raceId) || raceId <= 0) {
+        return res.status(400).json({ success: false, error: 'raceId inválido' });
+    }
+    const body = req.body;
+    if (!body || typeof body !== 'object' || Array.isArray(body) || body.source !== 'openf1') {
+        return res.status(400).json({ success: false, error: 'Body { source: "openf1", p1|p2|p3 } requerido' });
+    }
+    const allowed = ['source', 'p1', 'p2', 'p3'];
+    const unknown = Object.keys(body).filter((k) => !allowed.includes(k));
+    if (unknown.length > 0) {
+        return res.status(400).json({ success: false, error: `Claves desconocidas: ${unknown.join(', ')}` });
+    }
+    const bad = ['p1', 'p2', 'p3'].filter((k) => body[k] !== undefined && (
+        typeof body[k] !== 'object' || body[k] === null || typeof body[k].session !== 'object'
+        || !Array.isArray(body[k].results) || !Array.isArray(body[k].drivers)));
+    if (bad.length > 0) {
+        return res.status(400).json({ success: false, error: `Cada sesión necesita { session, results[], drivers[] }: ${bad.join(', ')}` });
+    }
+    try {
+        const data = await sync.applyPractices(raceId, body, {
+            dryRun: isFlag(req.query.dry_run),
+            force: isFlag(req.query.force),
+        });
+        res.json({ success: true, data });
+    } catch (err) {
+        sendError(res, err);
+    }
+};
+
+/**
  * PUT /api/admin/sync/races/:raceId?dry_run=1&force=1
  * Body: { source: "jolpica", results?: <JSON Jolpica>, sprint?: <...>, qualifying?: <...> }
  */
