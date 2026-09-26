@@ -322,5 +322,119 @@ class ScheduleTest(unittest.TestCase):
         self.assertEqual(hub.schedule_calls, [])
 
 
+# ── Prácticas (OpenF1) ──────────────────────────────────────────────────────
+
+def _session(key, name, start, cancelled=False):
+    return {"session_key": key, "session_name": name, "date_start": start, "is_cancelled": cancelled}
+
+
+class FakeOpenF1:
+    def __init__(self, sessions, results=None, unavailable=False):
+        self.sessions = sessions
+        self.results = results or {}
+        self.unavailable = unavailable
+        self.calls = []
+
+    def practice_sessions(self, season):
+        if self.unavailable:
+            raise sr.OpenF1Unavailable("OpenF1 sessions: HTTP 401")
+        return self.sessions
+
+    def session_result(self, key):
+        self.calls.append(("result", key))
+        return self.results.get(key, [])
+
+    def drivers(self, key):
+        self.calls.append(("drivers", key))
+        return [{"driver_number": 16, "name_acronym": "LEC"}]
+
+
+BAKU_SESSIONS = [
+    _session(11300, "Practice 1", "2026-09-24T08:30:00+00:00"),
+    _session(11301, "Practice 2", "2026-09-24T12:00:00+00:00"),
+    _session(11302, "Practice 3", "2026-09-25T08:30:00+00:00"),
+    _session(11290, "Practice 1", "2026-09-11T11:30:00+00:00"),   # Madrid: otro fin de semana
+    _session(11303, "Qualifying", "2026-09-25T12:00:00+00:00"),    # no es práctica
+]
+BAKU = {"race_id": 53, "name": "AZERBAIJAN GRAND PRIX", "jolpica_round": 15, "date": "2026-09-26", "needs": ["practices"]}
+
+
+class PracticesTest(unittest.TestCase):
+    def test_elige_las_sesiones_del_fin_de_semana(self):
+        found = sr.practice_sessions_for(BAKU, BAKU_SESSIONS)
+        self.assertEqual({c: s["session_key"] for c, s in found.items()}, {"p1": 11300, "p2": 11301, "p3": 11302})
+
+    def test_sesion_cancelada_se_ignora(self):
+        sessions = [_session(1, "Practice 1", "2026-09-24T08:30:00+00:00", cancelled=True)]
+        self.assertEqual(sr.practice_sessions_for(BAKU, sessions), {})
+
+    def test_manda_solo_sesiones_con_resultados(self):
+        openf1 = FakeOpenF1(BAKU_SESSIONS, {11300: [{"driver_number": 16, "duration": 102.1}]})
+        hub = FakeHub({"data": [BAKU], "mapped_rounds": [15]}, {})
+        sent = {}
+
+        def put_practices(race_id, payload, dry_run, force):
+            sent.update(payload)
+            return 200, {"data": {"tables": {"practices": {"added": [{}], "changed": [], "removed": [], "unchanged": 0}}, "warnings": []}}
+        hub.put_practices = put_practices
+
+        report = sr.run(2026, hub, FakeJolpica({}), openf1=openf1)
+        self.assertEqual(set(sent), {"source", "p1"}, "p2/p3 sin resultados no viajan")
+        self.assertEqual(sent["source"], "openf1")
+        self.assertEqual(sent["p1"]["session"]["session_key"], 11300)
+        self.assertIn("drivers", sent["p1"])
+        o = report.outcomes[0]
+        self.assertEqual((o.status, o.name), ("applied", "AZERBAIJAN GRAND PRIX · prácticas"))
+
+    def test_nada_publicado(self):
+        report = sr.run(2026, FakeHub({"data": [BAKU], "mapped_rounds": [15]}, {}), FakeJolpica({}), openf1=FakeOpenF1(BAKU_SESSIONS))
+        self.assertEqual(report.outcomes[0].status, "not_published")
+
+    def test_openf1_401_no_es_error(self):
+        report = sr.run(2026, FakeHub({"data": [BAKU], "mapped_rounds": [15]}, {}), FakeJolpica({}),
+                        openf1=FakeOpenF1([], unavailable=True))
+        self.assertEqual(report.outcomes[0].status, "not_published")
+        self.assertEqual(report.error_count, 0)
+
+    def test_sin_openf1_no_hace_practicas(self):
+        report = sr.run(2026, FakeHub({"data": [BAKU], "mapped_rounds": [15]}, {}), FakeJolpica({}), openf1=None)
+        self.assertEqual(report.outcomes, [])
+
+    def test_carrera_con_resultados_y_practicas_da_dos_filas(self):
+        race = dict(BAKU, needs=["results", "practices"])
+        hub = FakeHub({"data": [race], "mapped_rounds": [15]}, {53: ok({"results": ADDED22})})
+        hub.put_practices = lambda *a, **k: (200, {"data": {"tables": {"practices": {"added": [], "changed": [], "removed": [], "unchanged": 22}}}})
+        openf1 = FakeOpenF1(BAKU_SESSIONS, {11300: [{"driver_number": 16, "duration": 102.1}]})
+        report = sr.run(2026, hub, FakeJolpica({(15, "results"): True}), openf1=openf1)
+        self.assertEqual([o.status for o in report.outcomes], ["applied", "unchanged"])
+
+
+class OpenF1ClientTest(unittest.TestCase):
+    def make(self, responses):
+        sleeps = []
+        clock = iter(range(0, 10_000, 10))
+        c = sr.OpenF1Client(base_url="https://o.test/v1", session=ScriptedSession(responses), sleep=sleeps.append, clock=lambda: next(clock))
+        return c, sleeps
+
+    def test_401_es_unavailable(self):
+        c, _ = self.make([FakeResponse(401)])
+        with self.assertRaises(sr.OpenF1Unavailable):
+            c.session_result(1)
+
+    def test_404_es_lista_vacia(self):
+        c, _ = self.make([FakeResponse(404)])
+        self.assertEqual(c.drivers(1), [])
+
+    def test_429_reintenta(self):
+        c, sleeps = self.make([FakeResponse(429), FakeResponse(200, [{"driver_number": 1}])])
+        self.assertEqual(c.session_result(1), [{"driver_number": 1}])
+        self.assertEqual(sleeps, [4])
+
+    def test_sessions_se_cachean(self):
+        c, _ = self.make([FakeResponse(200, [{"session_key": 1}])])
+        c.practice_sessions(2026)
+        self.assertEqual(c.practice_sessions(2026), [{"session_key": 1}])
+
+
 if __name__ == "__main__":
     unittest.main()

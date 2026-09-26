@@ -5,6 +5,11 @@ Transporte puro: pide al backend qué carreras faltan, trae de Jolpica las
 respuestas COMPLETAS (sin transformar) y las manda a PUT /api/admin/sync/races/:id.
 El backend valida, mapea y escribe (una transacción por carrera).
 
+Prácticas libres: Jolpica no las publica; vienen de OpenF1 (sessions +
+session_result + drivers) y van a PUT /api/admin/sync/races/:id/practices. Se
+sincronizan desde el jueves previo a la carrera. --skip-practices las omite.
+Si OpenF1 responde 401/403 (sesión en vivo), queda como "no disponible", no es error.
+
 Horarios: en las corridas completas (sin --jolpica-round) también manda el
 calendario de la temporada a PUT /api/admin/sync/schedule. Carreras futuras: se
 actualizan los horarios que cambiaron; pasadas: solo se completan los vacíos.
@@ -40,6 +45,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 log = logging.getLogger("f1-sync")
 
 JOLPICA_BASE_URL = os.getenv("JOLPICA_BASE_URL", "https://api.jolpi.ca/ergast/f1").rstrip("/")
+OPENF1_BASE_URL = os.getenv("OPENF1_BASE_URL", "https://api.openf1.org/v1").rstrip("/")
+PRACTICE_NAMES = {"p1": "Practice 1", "p2": "Practice 2", "p3": "Practice 3"}
 USER_AGENT = "F1GrandPrixHub/1.0 (+https://f1grandprixhub.com)"
 KINDS = ("results", "sprint", "qualifying")
 
@@ -111,6 +118,91 @@ class JolpicaClient:
         return self.get(f"{season}.json?limit=100")
 
 
+class OpenF1Unavailable(Exception):
+    """OpenF1 no da acceso (401/403: sesión en vivo o restricción del plan gratuito). No es error del sync."""
+
+
+class OpenF1Client:
+    """GET a OpenF1 con throttle (plan gratuito: 3 req/s y 30 req/min → 1 pedido cada 2.1 s) y backoff."""
+
+    def __init__(self, base_url: str = OPENF1_BASE_URL, session=None, min_interval: float = 2.1,
+                 retries: int = 4, timeout: int = 30, sleep=time.sleep, clock=time.monotonic):
+        self.base_url = base_url.rstrip("/")
+        self.http = session or requests.Session()
+        self.min_interval = min_interval
+        self.retries = retries
+        self.timeout = timeout
+        self.sleep = sleep
+        self.clock = clock
+        self._last = None
+        self._sessions_cache = {}
+
+    def _throttle(self):
+        if self._last is not None:
+            wait = self.min_interval - (self.clock() - self._last)
+            if wait > 0:
+                self.sleep(wait)
+        self._last = self.clock()
+
+    def get(self, path: str, params: dict) -> list:
+        url = f"{self.base_url}/{path}"
+        last_error = None
+        for attempt in range(1, self.retries + 1):
+            self._throttle()
+            try:
+                r = self.http.get(url, params=params, headers={"User-Agent": USER_AGENT, "Accept": "application/json"},
+                                  timeout=self.timeout)
+            except requests.RequestException as e:
+                last_error = f"red: {e}"
+            else:
+                if r.status_code == 200:
+                    try:
+                        data = r.json()
+                    except ValueError as e:
+                        raise JolpicaError(f"OpenF1 {path}: respuesta no es JSON ({e})") from e
+                    return data if isinstance(data, list) else []
+                if r.status_code == 404:
+                    return []  # OpenF1 responde 404 cuando no hay datos para el filtro
+                if r.status_code in (401, 403):
+                    raise OpenF1Unavailable(f"OpenF1 {path}: HTTP {r.status_code}")
+                if r.status_code == 429 or r.status_code >= 500:
+                    last_error = f"HTTP {r.status_code}"
+                else:
+                    raise JolpicaError(f"OpenF1 {path}: HTTP {r.status_code}")
+            if attempt < self.retries:
+                self.sleep(2 ** attempt * 2)  # 4, 8, 16 s
+        raise JolpicaError(f"OpenF1 {path}: sin respuesta tras {self.retries} intentos ({last_error})")
+
+    def practice_sessions(self, season: int) -> list:
+        if season not in self._sessions_cache:
+            self._sessions_cache[season] = self.get("sessions", {"year": season, "session_type": "Practice"})
+        return self._sessions_cache[season]
+
+    def session_result(self, session_key: int) -> list:
+        return self.get("session_result", {"session_key": session_key})
+
+    def drivers(self, session_key: int) -> list:
+        return self.get("drivers", {"session_key": session_key})
+
+
+def practice_sessions_for(race: dict, sessions: list) -> dict:
+    """Sesiones Practice 1/2/3 de OpenF1 que caen en el fin de semana de la carrera (fecha-4 días … fecha)."""
+    race_day = datetime.fromisoformat(f"{race['date']}T23:59:59+00:00")
+    found = {}
+    for s in sessions:
+        name = s.get("session_name")
+        col = next((c for c, n in PRACTICE_NAMES.items() if n == name), None)
+        if not col or s.get("is_cancelled"):
+            continue
+        try:
+            start = datetime.fromisoformat(str(s.get("date_start")).replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if 0 <= (race_day - start).total_seconds() <= 5 * 86400:
+            found[col] = s
+    return found
+
+
 def is_published(response: dict) -> bool:
     races = response.get("MRData", {}).get("RaceTable", {}).get("Races", [])
     return bool(races)
@@ -144,6 +236,20 @@ class HubClient:
         r = self.http.put(f"{self.api_url}/api/admin/sync/schedule", params=params,
                           data=json.dumps({"source": "jolpica", "calendar": calendar}),
                           headers=self.headers, timeout=self.timeout)
+        try:
+            body = r.json()
+        except ValueError:
+            body = {"error": r.text[:300]}
+        return r.status_code, body
+
+    def put_practices(self, race_id: int, payload: dict, dry_run: bool, force: bool):
+        params = {}
+        if dry_run:
+            params["dry_run"] = 1
+        if force:
+            params["force"] = 1
+        r = self.http.put(f"{self.api_url}/api/admin/sync/races/{race_id}/practices", params=params,
+                          data=json.dumps(payload), headers=self.headers, timeout=self.timeout)
         try:
             body = r.json()
         except ValueError:
@@ -232,7 +338,7 @@ def sync_race(race: dict, season: int, hub: HubClient, jolpica: JolpicaClient,
     payload = {"source": "jolpica"}
     unpublished = []
     try:
-        for kind in race["needs"]:
+        for kind in [k for k in race["needs"] if k in KINDS]:
             response = jolpica.session(season, rnd, kind)
             if is_published(response):
                 payload[kind] = response
@@ -268,7 +374,7 @@ def sync_race(race: dict, season: int, hub: HubClient, jolpica: JolpicaClient,
 
 
 def run(season: int, hub: HubClient, jolpica: JolpicaClient, jolpica_round: Optional[int] = None,
-        dry_run: bool = False, force: bool = False) -> Report:
+        dry_run: bool = False, force: bool = False, openf1: Optional[OpenF1Client] = None) -> Report:
     report = Report(season=season, dry_run=dry_run, force=force)
     pending = hub.pending(season, jolpica_round)
     races = pending.get("data", [])
@@ -277,11 +383,16 @@ def run(season: int, hub: HubClient, jolpica: JolpicaClient, jolpica_round: Opti
         report.warnings.append(f"La ronda {jolpica_round} no existe en la base, es futura o está suspendida.")
 
     for race in races:
-        outcome = sync_race(race, season, hub, jolpica, dry_run, force)
-        log.info(f"[{outcome.status}] {race['race_id']} {race['name']} (R{race['jolpica_round']}): {outcome.detail}")
-        for line in outcome.changes:
-            log.info(f"    {line}")
-        report.outcomes.append(outcome)
+        outcomes = []
+        if any(k in KINDS for k in race["needs"]):
+            outcomes.append(sync_race(race, season, hub, jolpica, dry_run, force))
+        if "practices" in race["needs"] and openf1 is not None:
+            outcomes.append(sync_practices(race, season, hub, openf1, dry_run, force))
+        for outcome in outcomes:
+            log.info(f"[{outcome.status}] {race['race_id']} {outcome.name} (R{race['jolpica_round']}): {outcome.detail}")
+            for line in outcome.changes:
+                log.info(f"    {line}")
+            report.outcomes.append(outcome)
 
     # Calendario: rondas sin vincular (informativo) + horarios de sesiones.
     try:
@@ -321,6 +432,51 @@ def _fmt_utc(iso: Optional[str]) -> str:
     if not iso:
         return "—"
     return f"{iso[8:10]}/{iso[5:7]} {iso[11:16]}Z"
+
+
+def sync_practices(race: dict, season: int, hub: HubClient, openf1: OpenF1Client,
+                   dry_run: bool, force: bool) -> RaceOutcome:
+    rid, rnd = race["race_id"], race["jolpica_round"]
+    name = f"{race['name']} · prácticas"
+    try:
+        matched = practice_sessions_for(race, openf1.practice_sessions(season))
+        payload = {"source": "openf1"}
+        for col, session in sorted(matched.items()):
+            results = openf1.session_result(session["session_key"])
+            if not results:
+                continue  # sesión sin resultados todavía
+            payload[col] = {"session": session, "results": results, "drivers": openf1.drivers(session["session_key"])}
+    except OpenF1Unavailable as e:
+        return RaceOutcome(rid, name, rnd, "not_published", f"OpenF1 no disponible ahora ({e})")
+    except JolpicaError as e:
+        return RaceOutcome(rid, name, rnd, "error", str(e))
+
+    if len(payload) == 1:
+        return RaceOutcome(rid, name, rnd, "not_published", "sin prácticas publicadas en OpenF1")
+
+    try:
+        status, body = hub.put_practices(rid, payload, dry_run=dry_run, force=force)
+    except requests.RequestException as e:
+        return RaceOutcome(rid, name, rnd, "error", f"backend: {e}")
+
+    data = body.get("data", {}) if isinstance(body, dict) else {}
+    warn = data.get("warnings") or []
+    note = f" · ⚠️ {' | '.join(warn)}" if warn else ""
+    sessions = ",".join(c for c in PRACTICE_NAMES if c in payload)
+    if status == 200:
+        tables = data.get("tables", {})
+        detail = f"{sessions}: " + _table_counts(tables) + note
+        if dry_run:
+            extra = " · REQUIERE --force" if data.get("requires_force") else ""
+            return RaceOutcome(rid, name, rnd, "dry_run", detail + extra, _change_lines(tables))
+        st = "applied" if _has_changes(tables) else "unchanged"
+        return RaceOutcome(rid, name, rnd, st, detail, _change_lines(tables))
+    if status == 422:
+        return RaceOutcome(rid, name, rnd, "error", "422 " + " | ".join(body.get("issues", [body.get("error", "")])))
+    if status == 409:
+        tables = body.get("data", {}).get("tables", {})
+        return RaceOutcome(rid, name, rnd, "error", f"409 {body.get('error', '')}", _change_lines(tables))
+    return RaceOutcome(rid, name, rnd, "error", f"HTTP {status} {body.get('error', '')}")
 
 
 ICONS = {"applied": "✅", "unchanged": "➖", "dry_run": "🔍", "not_published": "⏳", "error": "❌"}
@@ -377,6 +533,7 @@ def main(argv=None) -> int:
                         help="Sincronizar solo esta ronda de Jolpica, aunque ya esté cargada")
     parser.add_argument("--dry-run", action="store_true", help="Calcular el diff sin escribir")
     parser.add_argument("--force", action="store_true", help="Sobrescribir datos existentes fuera de la ventana de 7 días")
+    parser.add_argument("--skip-practices", action="store_true", help="No sincronizar prácticas libres (OpenF1)")
     args = parser.parse_args(argv)
 
     if args.force and args.jolpica_round is None:
@@ -392,7 +549,8 @@ def main(argv=None) -> int:
         wake_up_server(api_url)
         token = fetch_agent_token(api_url, cron_secret)
         report = run(args.season, HubClient(api_url, token), JolpicaClient(),
-                     jolpica_round=args.jolpica_round, dry_run=args.dry_run, force=args.force)
+                     jolpica_round=args.jolpica_round, dry_run=args.dry_run, force=args.force,
+                     openf1=None if args.skip_practices else OpenF1Client())
     except (EnvironmentError, JolpicaError, requests.RequestException) as e:
         log.error(f"❌ {e}")
         return 1
